@@ -2,6 +2,7 @@ package com.example.project.service;
 
 import java.util.List;
 
+import com.example.project.model.BidAction;
 import com.example.project.model.Bidding;
 
 public interface BiddingService {
@@ -10,4 +11,6 @@ public interface BiddingService {
     Bidding getBiddingById(Long biddingID);
 
     List<Bidding> getAllBiddings();
+    
+    BidAction placeBid(Long biddingID, Long userID, Double amount);
 }
