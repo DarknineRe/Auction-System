@@ -1,13 +1,14 @@
 package com.example.project.model;
 import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
 
 @Entity 
 @Table (name = "Biddings")
@@ -25,7 +26,7 @@ public class Bidding {
     private List<Comment> comments;
     @OneToMany
     @JoinColumn(name = "bidaction_id", referencedColumnName = "id")
-    private List<Bidaction> bidActions;
+    private List<BidAction> bidActions;
 
     public Bidding() {
     }
@@ -62,11 +63,11 @@ public class Bidding {
         this.comments = comments;
     }
 
-    public List<Bidaction> getBidActions() {
+    public List<BidAction> getBidActions() {
         return this.bidActions;
     }
 
-    public void setBidActions(List<Bidaction> bidActions) {
+    public void setBidActions(List<BidAction> bidActions) {
         this.bidActions = bidActions;
     }
 

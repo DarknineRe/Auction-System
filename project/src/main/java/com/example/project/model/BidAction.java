@@ -10,9 +10,9 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 
-@Entity 
+@Entity
 @Table (name = "Bidactions")
-public class Bidaction {
+public class BidAction {
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY) 
     private Long id;
@@ -24,7 +24,7 @@ public class Bidaction {
     @Column
     private Date timestamp;
 
-    public Bidaction() {
+    public BidAction() {
     }
 
     public Long getId() {
