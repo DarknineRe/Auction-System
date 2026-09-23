@@ -1,5 +1,4 @@
 package com.example.project.model;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -23,12 +22,13 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "artwork_id")
-    private Artwork artwork;
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    private List<Artwork> artworks = new ArrayList<>();
 
     @Column
     private double lastBid;
+
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
@@ -57,12 +57,12 @@ public class Bidding {
         this.id = id;
     }
 
-    public Artwork getArtwork() {
-        return this.artwork;
+    public List<Artwork> getArtworks() {
+        return this.artworks;
     }
 
-    public void setArtwork(Artwork artwork) {
-        this.artwork = artwork;
+    public void setArtworks(List<Artwork> artworks) {
+        this.artworks = artworks;
     }
 
     public double getLastBid() {
