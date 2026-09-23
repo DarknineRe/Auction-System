@@ -1,8 +1,10 @@
 package com.example.project.model;
+
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,19 +23,19 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
-    @JoinColumn(name = "artwork_id", referencedColumnName = "id")
+    @ManyToOne
+    @JoinColumn(name = "artwork_id")
     private Artwork artwork;
 
     @Column
     private double lastBid;
 
-    @OneToMany
-    @JoinColumn(name = "comment_id", referencedColumnName = "id")
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany
-    @JoinColumn(name = "bidaction_id", referencedColumnName = "id")
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<BidAction> bidActions = new ArrayList<>();
 
     //added bidding owner, price(starting and current)
