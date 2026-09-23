@@ -7,24 +7,35 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
 @Table (name = "Bidactions")
 public class BidAction {
     @Id
-    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY) 
+    @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
     @Column
     private double amount;
-    @OneToOne
+    @ManyToOne //userหลายbidได้
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
+    @ManyToOne
+    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    private Bidding bidding;
     @Column
     private Date timestamp;
 
     public BidAction() {
+    }
+
+    public Bidding getBidding() {
+        return this.bidding;
+    }
+
+    public void setBidding(Bidding bidding) {
+        this.bidding = bidding;
     }
 
     public Long getId() {
