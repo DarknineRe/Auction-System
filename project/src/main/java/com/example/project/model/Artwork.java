@@ -1,6 +1,4 @@
 package com.example.project.model;
-import java.util.Date;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -10,22 +8,23 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-@Entity 
+@Entity
 @Table (name = "Artworks")
 public class Artwork {
-    @Id 
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
     private String title;
     @Column
     private String imageUrl;
-    @Column 
+    /*
+    @Column
     private Date creationDate;
-    @Column 
+    @Column
     private double startingPrice;
     @Column
-    private Date endDate;
+    private Date endDate;*/
     @ManyToOne
     @JoinColumn(name = "seller_id")
     private Sellerprofile sellerprofile;
@@ -57,6 +56,7 @@ public class Artwork {
         this.imageUrl = imageUrl;
     }
 
+    /* 
     public Date getCreationDate() {
         return this.creationDate;
     }
@@ -79,7 +79,7 @@ public class Artwork {
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
-    }
+    }*/
 
     public Sellerprofile getSellerprofile() {
         return this.sellerprofile;
