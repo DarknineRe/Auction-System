@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.project.dto.request.CreateBiddingRequest;
+import com.example.project.dto.request.PlaceBidRequest;
 import com.example.project.model.BidAction;
 import com.example.project.model.Bidding;
 import com.example.project.service.BiddingService;
@@ -53,15 +54,12 @@ public class BiddingController {
     @PostMapping("/{biddingId}/bids")
     public ResponseEntity<BidAction> placeBid(
             @PathVariable Long biddingId,
-            @RequestBody PlaceBidRequest request) {
+            @Valid @RequestBody PlaceBidRequest request) {
         BidAction bidAction = biddingService.placeBid(
                 biddingId,
                 request.userId(),
                 request.amount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(bidAction);
-    }
-
-    public record PlaceBidRequest(Long userId, Double amount) {
     }
 }
