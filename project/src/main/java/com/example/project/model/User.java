@@ -30,8 +30,7 @@ public class User {
     public enum Role {
         USER,
         ADMIN
-    };
-
+    }
     public User(){}
     public Long getId() {
         return this.id;
