@@ -12,6 +12,8 @@ import com.example.project.domain.entity.Artwork;
 import com.example.project.domain.entity.BidAction;
 import com.example.project.domain.entity.Bidding;
 import com.example.project.domain.entity.User;
+import com.example.project.exception.BusinessRuleException;
+import com.example.project.exception.ResourceNotFoundException;
 import com.example.project.repository.ArtworkRepository;
 import com.example.project.repository.BiddingRepository;
 import com.example.project.repository.UserRepository;
@@ -35,18 +37,18 @@ public class BiddingServiceImpl implements BiddingService {
     @Transactional
     public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice, LocalDateTime startDate, LocalDateTime endDate) {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
-            throw new IllegalArgumentException("A bidding needs at least one artwork.");
+            throw new BusinessRuleException("A bidding needs at least one artwork.");
         }
 
         List<Artwork> artworks = new ArrayList<>();
         for (Long artworkID : artworkIDs) {
             Artwork artwork = artworkRepository.findById(artworkID)
-                    .orElseThrow(() -> new IllegalArgumentException("Artwork not found: " + artworkID));
+                    .orElseThrow(() -> new ResourceNotFoundException("Artwork", artworkID));
             artworks.add(artwork);
         }
 
         User owner = userRepository.findById(ownerID)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + ownerID));
+                .orElseThrow(() -> new ResourceNotFoundException("User", ownerID));
 
         Bidding bidding = new Bidding();
         bidding.setArtworks(artworks);
@@ -62,7 +64,7 @@ public class BiddingServiceImpl implements BiddingService {
     @Override
     public Bidding getBiddingById(Long biddingID) {
         return biddingRepository.findById(biddingID)
-                .orElseThrow(() -> new IllegalArgumentException("Bidding not found: " + biddingID));
+                .orElseThrow(() -> new ResourceNotFoundException("Bidding", biddingID));
     }
 
     @Override
@@ -75,10 +77,10 @@ public class BiddingServiceImpl implements BiddingService {
     public BidAction placeBid(Long biddingID, Long userID, BigDecimal amount) {
         Bidding bidding = getBiddingById(biddingID);
         User bidder = userRepository.findById(userID)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userID));
+                .orElseThrow(() -> new ResourceNotFoundException("User", userID));
 
         if (LocalDateTime.now().isAfter(bidding.getEndDate())) {
-            throw new IllegalStateException("This bidding has already closed.");
+            throw new BusinessRuleException("This bidding has already closed.");
         }
 
         BigDecimal highestSoFar = bidding.getStartingPrice();
@@ -89,8 +91,8 @@ public class BiddingServiceImpl implements BiddingService {
         }
 
         if (amount.compareTo(highestSoFar) <= 0) {
-            throw new IllegalArgumentException(
-                    "Bid must be higher than the current price of " + highestSoFar);
+            throw new BusinessRuleException(
+                "Bid must be higher than the current price of " + highestSoFar);
         }
 
         BidAction action = new BidAction();
