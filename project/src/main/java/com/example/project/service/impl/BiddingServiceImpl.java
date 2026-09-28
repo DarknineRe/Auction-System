@@ -1,4 +1,4 @@
-package com.example.project.service.implementation;
+package com.example.project.service.impl;
 
 import java.util.ArrayList;
 import java.math.BigDecimal;
@@ -7,10 +7,10 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.example.project.model.Artwork;
-import com.example.project.model.BidAction;
-import com.example.project.model.Bidding;
-import com.example.project.model.User;
+import com.example.project.domain.entity.Artwork;
+import com.example.project.domain.entity.BidAction;
+import com.example.project.domain.entity.Bidding;
+import com.example.project.domain.entity.User;
 import com.example.project.repository.ArtworkRepository;
 import com.example.project.repository.BiddingRepository;
 import com.example.project.repository.UserRepository;

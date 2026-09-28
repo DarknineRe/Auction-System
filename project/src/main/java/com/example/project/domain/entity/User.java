@@ -1,4 +1,5 @@
-package com.example.project.model;
+package com.example.project.domain.entity;
+import com.example.project.domain.enums.Role;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -28,10 +29,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role;
-    public enum Role {
-        USER,
-        ADMIN
-    };
 
     public User(){}
     public Long getId() {

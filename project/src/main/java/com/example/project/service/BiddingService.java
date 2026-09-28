@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-import com.example.project.model.BidAction;
-import com.example.project.model.Bidding;
+import com.example.project.domain.entity.BidAction;
+import com.example.project.domain.entity.Bidding;
 
 //READ: ทำเป็น interface in case if adding mroe serviuce later, might undo ts
 public interface BiddingService {
