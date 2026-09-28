@@ -18,13 +18,7 @@ public class Artwork {
     private String title;
     @Column
     private String imageUrl;
-    /*
-    @Column
-    private Date creationDate;
-    @Column
-    private double startingPrice;
-    @Column
-    private Date endDate;*/
+    
     @ManyToOne
     @JoinColumn(name = "seller_id")
     private Sellerprofile sellerprofile;
@@ -55,31 +49,6 @@ public class Artwork {
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
     }
-
-    /* 
-    public Date getCreationDate() {
-        return this.creationDate;
-    }
-
-    public void setCreationDate(Date creationDate) {
-        this.creationDate = creationDate;
-    }
-
-    public double getStartingPrice() {
-        return this.startingPrice;
-    }
-
-    public void setStartingPrice(double startingPrice) {
-        this.startingPrice = startingPrice;
-    }
-
-    public Date getEndDate() {
-        return this.endDate;
-    }
-
-    public void setEndDate(Date endDate) {
-        this.endDate = endDate;
-    }*/
 
     public Sellerprofile getSellerprofile() {
         return this.sellerprofile;

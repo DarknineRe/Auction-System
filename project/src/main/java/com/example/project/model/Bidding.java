@@ -1,6 +1,7 @@
 package com.example.project.model;
 import java.util.ArrayList;
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -26,8 +27,8 @@ public class Bidding {
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Artwork> artworks = new ArrayList<>();
 
-    @Column
-    private double lastBid;
+    @Column(precision = 12, scale = 2)
+    private BigDecimal lastBid;
 
 
     @OneToMany(cascade = CascadeType.ALL)
@@ -43,9 +44,10 @@ public class Bidding {
     @JoinColumn(name = "user_id")
     private User owner;
 
-    private Double startingPrice; // startingPrince and date HERE instead of artwork
-    private Date startDate;
-    private Date endDate;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal startingPrice; // startingPrice and date HERE instead of artwork
+    private LocalDateTime startDate;
+    private LocalDateTime endDate;
 
     public Bidding() {}
 
@@ -65,11 +67,11 @@ public class Bidding {
         this.artworks = artworks;
     }
 
-    public double getLastBid() {
+    public BigDecimal getLastBid() {
         return this.lastBid;
     }
 
-    public void setLastBid(double lastBid) {
+    public void setLastBid(BigDecimal lastBid) {
         this.lastBid = lastBid;
     }
 
@@ -97,27 +99,27 @@ public class Bidding {
         this.owner = owner;
     }
 
-    public Date getStartDate() {
+    public LocalDateTime getStartDate() {
         return this.startDate;
     }
 
-    public void setStartDate(Date startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
-    public double getStartingPrice() {
+    public BigDecimal getStartingPrice() {
         return this.startingPrice;
     }
 
-    public void setStartingPrice(double startingPrice) {
+    public void setStartingPrice(BigDecimal startingPrice) {
         this.startingPrice = startingPrice;
     }
 
-    public Date getEndDate() {
+    public LocalDateTime getEndDate() {
         return this.endDate;
     }
 
-    public void setEndDate(Date endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 

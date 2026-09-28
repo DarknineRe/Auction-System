@@ -1,7 +1,8 @@
 package com.example.project.service.implementation;
 
 import java.util.ArrayList;
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
-    public Bidding createBidding(List<Long> artworkIDs, Long ownerID, Double startingPrice, Date startDate, Date endDate) {
+    public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice, LocalDateTime startDate, LocalDateTime endDate) {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new IllegalArgumentException("A bidding needs at least one artwork.");
         }
@@ -67,23 +68,23 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
-    public BidAction placeBid(Long biddingID, Long userID, Double amount) {
+    public BidAction placeBid(Long biddingID, Long userID, BigDecimal amount) {
         Bidding bidding = getBiddingById(biddingID);
         User bidder = userRepository.findById(userID)
                 .orElseThrow(() -> new IllegalArgumentException("User not found: " + userID));
 
-        if (new Date().after(bidding.getEndDate())) {
+        if (LocalDateTime.now().isAfter(bidding.getEndDate())) {
             throw new IllegalStateException("This bidding has already closed.");
         }
 
-        double highestSoFar = bidding.getStartingPrice();
+        BigDecimal highestSoFar = bidding.getStartingPrice();
         for (BidAction existing : bidding.getBidActions()) {
-            if (existing.getAmount() > highestSoFar) {
+            if (existing.getAmount().compareTo(highestSoFar) > 0) {
                 highestSoFar = existing.getAmount();
             }
         }
 
-        if (amount <= highestSoFar) {
+        if (amount.compareTo(highestSoFar) <= 0) {
             throw new IllegalArgumentException(
                     "Bid must be higher than the current price of " + highestSoFar);
         }
@@ -92,7 +93,7 @@ public class BiddingServiceImpl implements BiddingService {
         action.setBidding(bidding);
         action.setUser(bidder);
         action.setAmount(amount);
-        action.setTimestamp(new Date());
+        action.setTimestamp(LocalDateTime.now());
 
         bidding.getBidActions().add(action);
         bidding.setLastBid(amount);

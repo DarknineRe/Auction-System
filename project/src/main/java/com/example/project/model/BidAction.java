@@ -1,6 +1,7 @@
 package com.example.project.model;
 
-import java.util.Date;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,8 +17,8 @@ public class BidAction {
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
-    @Column
-    private double amount;
+    @Column(nullable = false, precision = 12, scale = 2)
+    private BigDecimal amount;
     @ManyToOne //userหลายbidได้
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
@@ -25,7 +26,7 @@ public class BidAction {
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private Bidding bidding;
     @Column
-    private Date timestamp;
+    private LocalDateTime timestamp;
 
     public BidAction() {
     }
@@ -46,11 +47,11 @@ public class BidAction {
         this.id = id;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return this.amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
@@ -62,11 +63,11 @@ public class BidAction {
         this.user = user;
     }
 
-    public Date getTimestamp() {
+    public LocalDateTime getTimestamp() {
         return this.timestamp;
     }
 
-    public void setTimestamp(Date timestamp) {
+    public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
 
