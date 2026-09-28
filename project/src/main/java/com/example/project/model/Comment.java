@@ -5,7 +5,7 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 @Entity
@@ -20,8 +20,10 @@ public class Comment {
     private int thumubsup;
     @Column
     private int thumbsdown;
-    @OneToOne 
-    @JoinColumn (name = "user_id", referencedColumnName = "id")
+
+    // 1 user comment ได้มากกว่า 1 comment
+    @ManyToOne
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
 
     public Comment() {

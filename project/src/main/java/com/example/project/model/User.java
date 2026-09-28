@@ -3,6 +3,7 @@ package com.example.project.model;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.EnumType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -22,10 +23,10 @@ public class User {
     private String password;
     @Column
     private String phone;
-    @Column 
+    @Column
     private String address;
-    @Enumerated 
-    @Column 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private Role role;
     public enum Role {
         USER,

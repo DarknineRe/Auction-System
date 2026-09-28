@@ -34,8 +34,8 @@ public class Bidding {
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    // เปลี่ยนเป็น mappedBy (มีสองฝั่งพยายามเป็นเจ้าของความสัมพันธ์)
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BidAction> bidActions = new ArrayList<>();
 
     //added bidding owner, price(starting and current)
