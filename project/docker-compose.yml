@@ -1,0 +1,16 @@
+# ใช้รันDB
+services:
+  db:
+    image: postgres:16
+    container_name: auction-db
+    environment:
+      POSTGRES_DB: auction
+      POSTGRES_USER: auction
+      POSTGRES_PASSWORD: auction
+    ports:
+      - "5432:5432"
+    volumes:
+      - auction-data:/var/lib/postgresql/data
+
+volumes:
+  auction-data:
