@@ -32,3 +32,7 @@ personal branch -> Pull Request -> develop -> release Pull Request -> main
 - ตั้งค่า git config user.name และ user.email ให้ตรงกับบัญชี GitHub ของตนเองก่อนเริ่มงาน
 - ทุกคนต้องมี Commit ที่มีความหมาย ไม่น้อยกว่า 15 commits กระจายตลอดช่วงเวลาทำโปรเจค (ห้าม Commit รวดเดียวก่อนส่ง)
 - การรวมงานต้องผ่าน Pull Request และมี Reviewer อย่างน้อย 1 คน ในทีม
+
+## รายละเอียด commit
+
+[อ่านคำอธิบายแต่ละ commit (Google Docs)](https://docs.google.com/document/d/1wymuX9xozNz1Q0rQpX5x36SFM0SnysQx_YzFbODY9xY/edit?usp=sharing)
