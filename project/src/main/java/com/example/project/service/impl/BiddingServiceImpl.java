@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.project.domain.entity.Artwork;
 import com.example.project.domain.entity.BidAction;
@@ -17,6 +18,7 @@ import com.example.project.repository.UserRepository;
 import com.example.project.service.BiddingService;
 
 @Service
+@Transactional(readOnly = true)
 public class BiddingServiceImpl implements BiddingService {
 
     private final BiddingRepository biddingRepository;
@@ -30,6 +32,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional
     public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice, LocalDateTime startDate, LocalDateTime endDate) {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new IllegalArgumentException("A bidding needs at least one artwork.");
@@ -68,6 +71,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional
     public BidAction placeBid(Long biddingID, Long userID, BigDecimal amount) {
         Bidding bidding = getBiddingById(biddingID);
         User bidder = userRepository.findById(userID)
