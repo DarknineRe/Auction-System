@@ -2,6 +2,7 @@ package com.example.project.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -15,8 +16,8 @@ public class Sellerprofile {
     @Id 
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sellprofileId;
-    @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
     @Column(nullable = false)
     private String bankaccount;

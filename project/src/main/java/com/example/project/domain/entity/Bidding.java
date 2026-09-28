@@ -7,6 +7,7 @@ import java.util.List;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,7 +24,7 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
+    @OneToMany(fetch = FetchType.LAZY)
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Artwork> artworks = new ArrayList<>();
 
@@ -31,17 +32,17 @@ public class Bidding {
     private BigDecimal lastBid;
 
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
     // เปลี่ยนเป็น mappedBy (มีสองฝั่งพยายามเป็นเจ้าของความสัมพันธ์)
-    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<BidAction> bidActions = new ArrayList<>();
 
     //added bidding owner, price(starting and current)
-    @ManyToOne
-    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
     private User owner;
 
     @Column(nullable = false, precision = 12, scale = 2)
