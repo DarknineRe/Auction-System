@@ -22,7 +22,7 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Artwork> artworks = new ArrayList<>();
 

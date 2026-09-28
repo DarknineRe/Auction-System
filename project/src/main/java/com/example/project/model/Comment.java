@@ -11,13 +11,13 @@ import jakarta.persistence.Table;
 @Entity
 @Table (name = "Comments")
 public class Comment {
-    @Id 
+    @Id
     @GeneratedValue (strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
     @Column(nullable = false)
     private String message;
     @Column
-    private int thumubsup;
+    private int thumbsup;
     @Column
     private int thumbsdown;
 
@@ -44,11 +44,11 @@ public class Comment {
     public void setMessage(String message) {
         this.message = message;
     }
-    public int getThumubsup() {
-        return this.thumubsup;
+    public int getThumbsup() {
+        return this.thumbsup;
     }
-    public void setThumubsup(int thumubsup) {
-        this.thumubsup = thumubsup;
+    public void setThumbsup(int thumbsup) {
+        this.thumbsup = thumbsup;
     }
     public int getThumbsdown() {
         return this.thumbsdown;
