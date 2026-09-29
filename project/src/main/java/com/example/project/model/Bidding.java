@@ -34,8 +34,7 @@ public class Bidding {
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Comment> comments = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
     private List<BidAction> bidActions = new ArrayList<>();
 
     //added bidding owner, price(starting and current)
