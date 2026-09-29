@@ -16,7 +16,7 @@ public class Sellerprofile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sellprofileId;
     @OneToOne
-    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false, unique = true)
     private User user;
     @Column(nullable = false)
     private String bankaccount;
