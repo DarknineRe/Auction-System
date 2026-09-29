@@ -2,6 +2,7 @@ package com.example.project.exception;
 
 import java.util.List;
 
+import com.example.project.exception.AuthenticationFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -26,7 +27,12 @@ public class GlobalExceptionHandler {
                 HttpStatus.CONFLICT.value(), "Conflict", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
-
+    @ExceptionHandler(AuthenticationFailedException.class)
+    public ResponseEntity<ErrorResponse> handleAuthFailed(AuthenticationFailedException ex) {
+        ErrorResponse body = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(), "Unauthorized", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
+    }
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
         List<String> details = ex.getBindingResult().getFieldErrors().stream()
