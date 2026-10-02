@@ -1,4 +1,4 @@
-# Actioning System
+# Auction-System
 
 ระบบสำหรับประมูลสินค้า พัฒนาด้วย Spring Boot, PostgreSQL ตาม Layered Architecture
 
@@ -15,7 +15,7 @@
 ## Repository Structure
 
 ```text
-project/   Source code + Configuration
+code/   Source code + Configuration
 test/   การทดสอบทั้งหมด
 doc/    เอกสารทั้งหมดและสไลด์
 img/    ไฟล์มัลติมีเดีย
