@@ -1,0 +1,16 @@
+*,*::before,*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.5;
+}
+
+a{
+  color: var(--navy); font-weight: 600; text-decoration: none;
+}
+a:hover { text-decoration: underline; }
