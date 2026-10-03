@@ -16,7 +16,8 @@
 }
 .btn--primary:hover {
   background: var(--gold-dark);
-}.btn--primary:active {
+}
+.btn--primary:active {
   transform: translateY(1px);
 }
 
