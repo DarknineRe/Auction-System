@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Log in | BidHub</title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="stylesheet" href="/css/pages/login.css">
+</head>
+<body>
+  <main class="login">
+    <section class="login__brand">
+      <a class="login__logo" href="index.html">BidHub</a>
+      <h2>Bid like back in the day.</h2>
+      <p>Join live auctions, track your bids and win at the price you choose.</p>
+    </section>
+
+    <section class="login__panel">
+      <form class="login__form" action="#" method="post">
+        <h1>Welcome back</h1>
+        <p class="login__sub">Log in to continue bidding.</p>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" placeholder="Enter your password" autocomplete="current-password" required>
+        </div>
+
+        <div class="login__row">
+          <label class="check">
+            <input type="checkbox" name="remember"> Remember me
+          </label>
+          <a href="forgot-password.html">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn--primary">Log in</button>
+
+        <p class="alert alert--error" role="alert" hidden>Incorrect email or password.</p>
+
+        <p class="login__footer">
+          New to BidHub? <a href="register.html">Create an account</a>
+        </p>
+      </form>
+    </section>
+  </main>
+</body>
+</html>
