@@ -30,8 +30,7 @@ public class Bidding {
     private double lastBid;
 
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
@@ -77,7 +76,13 @@ public class Bidding {
     }
 
     public void setComments(List<Comment> comments) {
-        this.comments = comments;
+        this.comments = comments == null ? new ArrayList<>() : comments;
+        this.comments.forEach(comment -> comment.setBidding(this));
+    }
+
+    public void addComment(Comment comment) {
+        comments.add(comment);
+        comment.setBidding(this);
     }
 
     public List<BidAction> getBidActions() {
