@@ -1,0 +1,16 @@
+:root {
+    --navy: #14213d;
+    --navy-dark: #0d1629;
+    --gold: #e0a526;
+    --gold-dark: #c78f12;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #d1d5db;
+    --bg: #f4f6fa;
+    --white: #ffffff;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
+    --radius: 8px;
+    --font: "Segoe UI", "Noto Sans Thai", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
