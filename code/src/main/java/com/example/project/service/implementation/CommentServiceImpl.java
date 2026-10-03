@@ -41,7 +41,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = new Comment();
         comment.setMessage(message);
         comment.setUser(user);
-        bidding.getComments().add(comment);
+        bidding.addComment(comment);
         biddingRepository.save(bidding);
 
         return comment;
@@ -50,7 +50,8 @@ public class CommentServiceImpl implements CommentService {
     @Override
     @Transactional(readOnly = true)
     public List<Comment> getCommentsByBiddingId(Long biddingID) {
-        return findBiddingById(biddingID).getComments();
+        findBiddingById(biddingID);
+        return commentRepository.findByBidding_IdOrderByIdAsc(biddingID);
     }
 
     @Override
@@ -70,7 +71,6 @@ public class CommentServiceImpl implements CommentService {
         ensureCommentOwner(comment, userID);
         bidding.getComments().remove(comment);
         biddingRepository.save(bidding);
-        commentRepository.delete(comment);
     }
 
     @Override

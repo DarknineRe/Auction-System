@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.project.dto.request.CreateCommentRequest;
+import com.example.project.dto.request.UpdateCommentRequest;
 import com.example.project.dto.response.CommentResponse;
 import com.example.project.mapper.CommentMapper;
 import com.example.project.model.Comment;
@@ -69,7 +70,7 @@ public class CommentController {
             @PathVariable Long biddingId,
             @PathVariable Long commentId,
             Authentication authentication,
-            @Valid @RequestBody CreateCommentRequest request) {
+            @Valid @RequestBody UpdateCommentRequest request) {
         User user = userService.getCurrentUser(authentication.getName());
         Comment comment = commentService.updateComment(
                 biddingId, commentId, user.getId(), request.message());
