@@ -2,6 +2,7 @@ package com.example.project.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
@@ -23,6 +24,9 @@ public class Comment {
     @ManyToOne
     @JoinColumn (name = "user_id", referencedColumnName = "id")
     private User user;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "bidding_id", referencedColumnName = "id", nullable = false)
+    private Bidding bidding;
 
     public Comment() {
     }
@@ -61,6 +65,14 @@ public class Comment {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Bidding getBidding() {
+        return this.bidding;
+    }
+
+    public void setBidding(Bidding bidding) {
+        this.bidding = bidding;
     }
     
 }
