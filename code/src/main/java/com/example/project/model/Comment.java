@@ -17,7 +17,7 @@ public class Comment {
     @Column(nullable = false)
     private String message;
     @Column
-    private int thumubsup;
+    private int thumbsup;
     @Column
     private int thumbsdown;
     @ManyToOne
@@ -42,11 +42,11 @@ public class Comment {
     public void setMessage(String message) {
         this.message = message;
     }
-    public int getThumubsup() {
-        return this.thumubsup;
+    public int getThumbsup() {
+        return this.thumbsup;
     }
-    public void setThumubsup(int thumubsup) {
-        this.thumubsup = thumubsup;
+    public void setThumbsup(int thumbsup) {
+        this.thumbsup = thumbsup;
     }
     public int getThumbsdown() {
         return this.thumbsdown;
