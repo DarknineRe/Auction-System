@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.model.Artwork;
 import com.example.project.model.Sellerprofile;
@@ -28,7 +30,8 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Transactional
     public Artwork createArtwork(Long sellerUserID, String title, String imageUrl) {
         Sellerprofile seller = sellerprofileRepository.findByUser_Id(sellerUserID)
-                .orElseThrow(() -> new IllegalArgumentException("Seller profile not found for user: " + sellerUserID));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Seller profile not found for user: " + sellerUserID));
 
         Artwork artwork = new Artwork();
         artwork.setTitle(title);
@@ -42,7 +45,8 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Transactional(readOnly = true)
     public Artwork getArtworkById(Long artworkID) {
         return artworkRepository.findById(artworkID)
-                .orElseThrow(() -> new IllegalArgumentException("Artwork not found: " + artworkID));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID));
     }
 
     @Override
@@ -70,7 +74,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Transactional
     public void deleteArtwork(Long artworkID) {
         if (!artworkRepository.existsById(artworkID)) {
-            throw new IllegalArgumentException("Artwork not found: " + artworkID);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID);
         }
         artworkRepository.deleteById(artworkID);
     }
