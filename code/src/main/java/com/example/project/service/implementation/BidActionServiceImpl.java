@@ -32,14 +32,14 @@ public class BidActionServiceImpl implements BidActionService {
     @Transactional(readOnly = true)
     public List<BidAction> getBidsByBidding(Long biddingID) {
         requireBidding(biddingID);
-        return bidActionRepository.findByBidding_IdOrderByAmountDesc(biddingID);
+        return bidActionRepository.findByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID);
     }
 
     @Override
     @Transactional(readOnly = true)
     public BidAction getHighestBid(Long biddingID) {
         requireBidding(biddingID);
-        return bidActionRepository.findTopByBidding_IdOrderByAmountDesc(biddingID)
+        return bidActionRepository.findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "No bids yet for bidding: " + biddingID));
     }
@@ -50,7 +50,7 @@ public class BidActionServiceImpl implements BidActionService {
         if (!userRepository.existsById(userID)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + userID);
         }
-        return bidActionRepository.findByUser_Id(userID);
+        return bidActionRepository.findByUser_IdAndStatus(userID, BidAction.Status.VALID);
     }
 
     private void requireBidding(Long biddingID) {
