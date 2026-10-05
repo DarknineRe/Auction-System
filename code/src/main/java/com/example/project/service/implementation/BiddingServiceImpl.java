@@ -18,6 +18,7 @@ import com.example.project.repository.BidActionRepository;
 import com.example.project.repository.BiddingRepository;
 import com.example.project.repository.UserRepository;
 import com.example.project.service.BiddingService;
+import com.example.project.service.state.BiddingStateResolver;
 
 @Service
 public class BiddingServiceImpl implements BiddingService {
@@ -26,13 +27,16 @@ public class BiddingServiceImpl implements BiddingService {
     private final ArtworkRepository artworkRepository;
     private final UserRepository userRepository;
     private final BidActionRepository bidActionRepository;
+    private final BiddingStateResolver stateResolver;
 
     public BiddingServiceImpl(BiddingRepository biddingRepository, ArtworkRepository artworkRepository,
-            UserRepository userRepository, BidActionRepository bidActionRepository) {
+            UserRepository userRepository, BidActionRepository bidActionRepository,
+            BiddingStateResolver stateResolver) {
         this.biddingRepository = biddingRepository;
         this.artworkRepository = artworkRepository;
         this.userRepository = userRepository;
         this.bidActionRepository = bidActionRepository;
+        this.stateResolver = stateResolver;
     }
 
     @Override
@@ -83,7 +87,10 @@ public class BiddingServiceImpl implements BiddingService {
         User bidder = userRepository.findById(userID)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found: " + userID));
-
+         if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This bidding is " + bidding.getStatus() + " and is not accepting bids.");
+        }
         if (new Date().after(bidding.getEndDate())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already closed.");
         }
