@@ -5,12 +5,14 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.example.project.model.Artwork;
 import com.example.project.model.BidAction;
 import com.example.project.model.Bidding;
 import com.example.project.model.User;
 import com.example.project.repository.ArtworkRepository;
+import com.example.project.repository.BidActionRepository;
 import com.example.project.repository.BiddingRepository;
 import com.example.project.repository.UserRepository;
 import com.example.project.service.BiddingService;
@@ -21,11 +23,14 @@ public class BiddingServiceImpl implements BiddingService {
     private final BiddingRepository biddingRepository;
     private final ArtworkRepository artworkRepository;
     private final UserRepository userRepository;
+    private final BidActionRepository bidActionRepository;
 
-    public BiddingServiceImpl(BiddingRepository biddingRepository, ArtworkRepository artworkRepository, UserRepository userRepository) {
+    public BiddingServiceImpl(BiddingRepository biddingRepository, ArtworkRepository artworkRepository,
+            UserRepository userRepository, BidActionRepository bidActionRepository) {
         this.biddingRepository = biddingRepository;
         this.artworkRepository = artworkRepository;
         this.userRepository = userRepository;
+        this.bidActionRepository = bidActionRepository;
     }
 
     @Override
@@ -67,6 +72,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional
     public BidAction placeBid(Long biddingID, Long userID, Double amount) {
         Bidding bidding = getBiddingById(biddingID);
         User bidder = userRepository.findById(userID)
@@ -94,10 +100,10 @@ public class BiddingServiceImpl implements BiddingService {
         action.setAmount(amount);
         action.setTimestamp(new Date());
 
-        bidding.getBidActions().add(action);
+        BidAction savedAction = bidActionRepository.save(action);
         bidding.setLastBid(amount);
-
         biddingRepository.save(bidding);
-        return action;
+
+        return savedAction;
     }
 }
