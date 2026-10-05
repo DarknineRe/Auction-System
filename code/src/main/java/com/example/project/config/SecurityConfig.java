@@ -45,6 +45,7 @@ public class SecurityConfig {
                         .roles((user.getRole() == null
                                 ? com.example.project.model.User.Role.USER
                                 : user.getRole()).name())
+                                  .disabled(!user.isEnabled())
                         .build())
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
