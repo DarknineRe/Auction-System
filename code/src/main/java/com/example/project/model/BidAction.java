@@ -26,6 +26,24 @@ public class BidAction {
     private Bidding bidding;
     @Column
     private Date timestamp;
+    public enum Status {
+        VALID,
+        VOIDED
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(20) not null default 'VALID'")
+    private Status status = Status.VALID;
+
+    @Column
+    private Date voidedAt;
+
+    @ManyToOne
+    @JoinColumn(name = "voided_by_user_id", referencedColumnName = "id")
+    private User voidedBy;
+
+    @Column(length = 500)
+    private String voidReason;
 
     public BidAction() {
     }
@@ -68,6 +86,37 @@ public class BidAction {
 
     public void setTimestamp(Date timestamp) {
         this.timestamp = timestamp;
+    }
+     public Status getStatus() {
+        return this.status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public Date getVoidedAt() {
+        return this.voidedAt;
+    }
+
+    public void setVoidedAt(Date voidedAt) {
+        this.voidedAt = voidedAt;
+    }
+
+    public User getVoidedBy() {
+        return this.voidedBy;
+    }
+
+    public void setVoidedBy(User voidedBy) {
+        this.voidedBy = voidedBy;
+    }
+
+    public String getVoidReason() {
+        return this.voidReason;
+    }
+
+    public void setVoidReason(String voidReason) {
+        this.voidReason = voidReason;
     }
 
     

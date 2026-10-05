@@ -56,6 +56,8 @@ public class Bidding {
     @Column(nullable = false, columnDefinition = "varchar(20) not null default 'ACTIVE'")
     private Status status = Status.ACTIVE;
 
+    
+    
     public Bidding() {}
 
     public Long getId() {
