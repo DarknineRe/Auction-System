@@ -3,9 +3,13 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import com.example.project.model.Bidding.BiddingStatus;
+
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -13,7 +17,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
-
 @Entity
 @Table (name = "Biddings")
 public class Bidding {
@@ -44,6 +47,16 @@ public class Bidding {
     private Double startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;
     private Date endDate;
+
+     public enum Status {
+        ACTIVE,
+        CLOSED,
+        CANCELLED
+    }
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, columnDefinition = "varchar(20) not null default 'ACTIVE'")
+    private Status status = Status.ACTIVE;
 
     public Bidding() {}
 
@@ -123,6 +136,13 @@ public class Bidding {
 
     public void setEndDate(Date endDate) {
         this.endDate = endDate;
+    }
+    public Status getStatus() {
+        return this.status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
 }
