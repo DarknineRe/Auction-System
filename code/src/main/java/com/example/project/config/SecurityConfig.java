@@ -22,7 +22,9 @@ import com.example.project.repository.UserRepository;
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+            RestAuthenticationEntryPoint authenticationEntryPoint,
+            RestAccessDeniedHandler accessDeniedHandler) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .authorizeHttpRequests(auth -> auth
@@ -30,7 +32,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults())
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler));
 
         return http.build();
     }
