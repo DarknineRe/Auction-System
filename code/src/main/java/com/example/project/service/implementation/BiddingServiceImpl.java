@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.model.Artwork;
 import com.example.project.model.BidAction;
@@ -36,18 +38,20 @@ public class BiddingServiceImpl implements BiddingService {
     @Override
     public Bidding createBidding(List<Long> artworkIDs, Long ownerID, Double startingPrice, Date startDate, Date endDate) {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
-            throw new IllegalArgumentException("A bidding needs at least one artwork.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A bidding needs at least one artwork.");
         }
 
         List<Artwork> artworks = new ArrayList<>();
         for (Long artworkID : artworkIDs) {
             Artwork artwork = artworkRepository.findById(artworkID)
-                    .orElseThrow(() -> new IllegalArgumentException("Artwork not found: " + artworkID));
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID));
             artworks.add(artwork);
         }
 
         User owner = userRepository.findById(ownerID)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + ownerID));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found: " + ownerID));
 
         Bidding bidding = new Bidding();
         bidding.setArtworks(artworks);
@@ -63,7 +67,8 @@ public class BiddingServiceImpl implements BiddingService {
     @Override
     public Bidding getBiddingById(Long biddingID) {
         return biddingRepository.findById(biddingID)
-                .orElseThrow(() -> new IllegalArgumentException("Bidding not found: " + biddingID));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Bidding not found: " + biddingID));
     }
 
     @Override
@@ -76,10 +81,11 @@ public class BiddingServiceImpl implements BiddingService {
     public BidAction placeBid(Long biddingID, Long userID, Double amount) {
         Bidding bidding = getBiddingById(biddingID);
         User bidder = userRepository.findById(userID)
-                .orElseThrow(() -> new IllegalArgumentException("User not found: " + userID));
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "User not found: " + userID));
 
         if (new Date().after(bidding.getEndDate())) {
-            throw new IllegalStateException("This bidding has already closed.");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already closed.");
         }
 
         double highestSoFar = bidding.getStartingPrice();
@@ -90,7 +96,7 @@ public class BiddingServiceImpl implements BiddingService {
         }
 
         if (amount <= highestSoFar) {
-            throw new IllegalArgumentException(
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Bid must be higher than the current price of " + highestSoFar);
         }
 
