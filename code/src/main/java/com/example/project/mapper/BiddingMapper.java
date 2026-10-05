@@ -26,7 +26,9 @@ public class BiddingMapper {
                 bidding.getStartingPrice(),
                 bidding.getLastBid(),
                 bidding.getStartDate(),
-                bidding.getEndDate());
+                bidding.getEndDate(),
+                bidding.getStatus());
+                
     }
 
     public BidActionResponse toResponse(BidAction bidAction) {
