@@ -2,8 +2,8 @@ package com.example.project.model;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -32,6 +32,8 @@ public class User {
         USER,
         ADMIN
     }
+    @Column(nullable = false, columnDefinition = "boolean not null default true")
+    private boolean enabled = true;
     public User(){}
     public Long getId() {
         return this.id;
@@ -83,6 +85,13 @@ public class User {
     }
     public void setAddress(String address) {
         this.address = address;
+    }
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
     }
     
 }
