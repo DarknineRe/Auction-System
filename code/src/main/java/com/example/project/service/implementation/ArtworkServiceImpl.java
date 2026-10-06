@@ -81,7 +81,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     public void deleteArtwork(Long artworkID, Long userID) {
         Artwork artwork = getArtworkById(artworkID);
         ensureArtworkOwner(artwork, userID);
-        ensureNotInActiveBidding(artworkID);
+        ensureNoBiddingHistory(artworkID);
         artworkRepository.delete(artwork);
     }
 
@@ -89,7 +89,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Transactional
     public void deleteArtworkAsAdmin(Long artworkID) {
         Artwork artwork = getArtworkById(artworkID);
-        ensureNotInActiveBidding(artworkID);
+        ensureNoBiddingHistory(artworkID);
         artworkRepository.delete(artwork);
     }
 
@@ -101,10 +101,15 @@ public class ArtworkServiceImpl implements ArtworkService {
         }
     }
 
-    private void ensureNotInActiveBidding(Long artworkID) {
+    // Artworks referenced by any bidding are kept so bidding history stays intact.
+    private void ensureNoBiddingHistory(Long artworkID) {
         if (biddingRepository.existsByArtworks_IdAndStatus(artworkID, Bidding.Status.ACTIVE)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Artwork is part of an active bidding. The bidding must be cancelled or closed first.");
+                    "Artwork is part of an active bidding and cannot be deleted.");
+        }
+        if (biddingRepository.existsByArtworks_Id(artworkID)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Artwork has bidding history and cannot be deleted.");
         }
     }
 }

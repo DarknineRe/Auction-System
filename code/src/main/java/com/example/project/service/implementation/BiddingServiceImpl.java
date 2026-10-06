@@ -2,6 +2,7 @@ package com.example.project.service.implementation;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import org.springframework.http.HttpStatus;
@@ -46,7 +47,7 @@ public class BiddingServiceImpl implements BiddingService {
         }
 
         List<Artwork> artworks = new ArrayList<>();
-        for (Long artworkID : artworkIDs) {
+        for (Long artworkID : new LinkedHashSet<>(artworkIDs)) {
             Artwork artwork = artworkRepository.findById(artworkID)
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID));
@@ -54,6 +55,10 @@ public class BiddingServiceImpl implements BiddingService {
                     || !artwork.getSellerprofile().getUser().getId().equals(ownerID)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                         "Artwork " + artworkID + " does not belong to the bidding owner");
+            }
+            if (biddingRepository.existsByArtworks_IdAndStatus(artworkID, Bidding.Status.ACTIVE)) {
+                throw new ResponseStatusException(HttpStatus.CONFLICT,
+                        "Artwork " + artworkID + " is already part of an active bidding");
             }
             artworks.add(artwork);
         }

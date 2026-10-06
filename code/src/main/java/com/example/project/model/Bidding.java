@@ -12,6 +12,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -23,8 +25,11 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
-    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    // Many-to-many so an artwork keeps its history across biddings (e.g. relisted after a cancellation).
+    @ManyToMany
+    @JoinTable(name = "bidding_artworks",
+            joinColumns = @JoinColumn(name = "bidding_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "artwork_id", referencedColumnName = "id"))
     private List<Artwork> artworks = new ArrayList<>();
 
     @Column

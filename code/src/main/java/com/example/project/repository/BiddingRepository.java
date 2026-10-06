@@ -12,5 +12,6 @@ import com.example.project.model.Bidding;
 public interface BiddingRepository extends JpaRepository<Bidding, Long> {
     List<Bidding> findByArtworks_Id(Long artworkID);
     List<Bidding> findByOwner_Id(Long userID);
+    boolean existsByArtworks_Id(Long artworkID);
     boolean existsByArtworks_IdAndStatus(Long artworkID, Bidding.Status status);
 }
