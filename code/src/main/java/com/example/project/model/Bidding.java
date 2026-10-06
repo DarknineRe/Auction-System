@@ -31,7 +31,7 @@ public class Bidding {
     private double lastBid;
 
 
-    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
@@ -89,13 +89,20 @@ public class Bidding {
     }
 
     public void setComments(List<Comment> comments) {
-        this.comments = comments == null ? new ArrayList<>() : comments;
-        this.comments.forEach(comment -> comment.setBidding(this));
+        // Mutate in place: replacing an orphanRemoval collection breaks Hibernate.
+        this.comments.clear();
+        if (comments != null) {
+            comments.forEach(this::addComment);
+        }
     }
 
     public void addComment(Comment comment) {
         comments.add(comment);
         comment.setBidding(this);
+    }
+
+    public void removeComment(Comment comment) {
+        comments.remove(comment);
     }
 
     public List<BidAction> getBidActions() {

@@ -69,7 +69,7 @@ public class CommentServiceImpl implements CommentService {
         Bidding bidding = findBiddingById(biddingID);
         Comment comment = findCommentInBidding(bidding, commentID);
         ensureCommentOwner(comment, userID);
-        bidding.getComments().remove(comment);
+        bidding.removeComment(comment);
         biddingRepository.save(bidding);
     }
 
