@@ -42,9 +42,9 @@ public class CommentServiceImpl implements CommentService {
         comment.setMessage(message);
         comment.setUser(user);
         bidding.addComment(comment);
-        biddingRepository.save(bidding);
 
-        return comment;
+        // Persist the comment itself: saving the bidding merges it and returns a copy, leaving this one's id null.
+        return commentRepository.save(comment);
     }
 
     @Override
