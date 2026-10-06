@@ -1,7 +1,9 @@
 package com.example.project.config;
 
 import java.util.Locale;
+import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -14,6 +16,9 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 
 import com.example.project.repository.UserRepository;
 
@@ -24,7 +29,9 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http,
             RestAuthenticationEntryPoint authenticationEntryPoint,
-            RestAccessDeniedHandler accessDeniedHandler) throws Exception {
+            RestAccessDeniedHandler accessDeniedHandler,
+            UserDetailsService userDetailsService,
+            @Value("${app.remember-me.key:}") String rememberMeKey) throws Exception {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .authorizeHttpRequests(auth -> auth
@@ -34,8 +41,25 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .httpBasic(Customizer.withDefaults())
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .usernameParameter("email")
+                        .passwordParameter("password")
+                        .defaultSuccessUrl("/swagger-ui.html")
+                        .failureUrl("/login?error")
+                        .permitAll())
+                .rememberMe(remember -> remember
+                        .rememberMeParameter("remember")
+                        .userDetailsService(userDetailsService)
+                        // Without a configured key, tokens stop working after a restart.
+                        .key(rememberMeKey.isBlank() ? UUID.randomUUID().toString() : rememberMeKey))
+                .logout(logout -> logout.logoutSuccessUrl("/login?logout"))
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(authenticationEntryPoint)
+                        // API clients get a JSON 401; browser pages are redirected to the login form.
+                        .defaultAuthenticationEntryPointFor(authenticationEntryPoint,
+                                PathPatternRequestMatcher.withDefaults().matcher("/api/**"))
+                        .defaultAuthenticationEntryPointFor(new LoginUrlAuthenticationEntryPoint("/login"),
+                                AnyRequestMatcher.INSTANCE)
                         .accessDeniedHandler(accessDeniedHandler));
 
         return http.build();
