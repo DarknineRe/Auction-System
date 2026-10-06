@@ -44,6 +44,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional
     public Bidding createBidding(List<Long> artworkIDs, Long ownerID, Double startingPrice, Date startDate, Date endDate) {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A bidding needs at least one artwork.");
@@ -87,6 +88,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Bidding getBiddingById(Long biddingID) {
         return biddingRepository.findById(biddingID)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -94,6 +96,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Bidding> getAllBiddings() {
         return biddingRepository.findAll();
     }
