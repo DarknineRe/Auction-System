@@ -101,6 +101,9 @@ public class BiddingServiceImpl implements BiddingService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This bidding is " + bidding.getStatus() + " and is not accepting bids.");
         }
+        if (bidding.getStartDate() != null && new Date().before(bidding.getStartDate())) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has not started yet.");
+        }
         if (new Date().after(bidding.getEndDate())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already closed.");
         }
