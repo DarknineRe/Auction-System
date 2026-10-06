@@ -45,6 +45,12 @@ public class BiddingServiceImpl implements BiddingService {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A bidding needs at least one artwork.");
         }
+        if (!endDate.after(startDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after the start date.");
+        }
+        if (!endDate.after(new Date())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be in the future.");
+        }
 
         List<Artwork> artworks = new ArrayList<>();
         for (Long artworkID : new LinkedHashSet<>(artworkIDs)) {
