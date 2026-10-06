@@ -92,16 +92,20 @@ public class CommentController {
     @PostMapping("/{commentId}/like")
     public ResponseEntity<CommentResponse> likeComment(
             @PathVariable Long biddingId,
-            @PathVariable Long commentId) {
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        User user = userService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(commentMapper.toResponse(
-                commentService.likeComment(biddingId, commentId)));
+                commentService.likeComment(biddingId, commentId, user.getId())));
     }
 
     @PostMapping("/{commentId}/dislike")
     public ResponseEntity<CommentResponse> dislikeComment(
             @PathVariable Long biddingId,
-            @PathVariable Long commentId) {
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        User user = userService.getCurrentUser(authentication.getName());
         return ResponseEntity.ok(commentMapper.toResponse(
-                commentService.dislikeComment(biddingId, commentId)));
+                commentService.dislikeComment(biddingId, commentId, user.getId())));
     }
 }

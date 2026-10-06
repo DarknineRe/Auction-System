@@ -13,7 +13,7 @@ public interface CommentService {
 
     void deleteComment(Long biddingID, Long commentID, Long userID);
 
-    Comment likeComment(Long biddingID, Long commentID);
+    Comment likeComment(Long biddingID, Long commentID, Long userID);
 
-    Comment dislikeComment(Long biddingID, Long commentID);
+    Comment dislikeComment(Long biddingID, Long commentID, Long userID);
 }
