@@ -50,6 +50,11 @@ public class BiddingServiceImpl implements BiddingService {
             Artwork artwork = artworkRepository.findById(artworkID)
                     .orElseThrow(() -> new ResponseStatusException(
                             HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID));
+            if (artwork.getSellerprofile() == null || artwork.getSellerprofile().getUser() == null
+                    || !artwork.getSellerprofile().getUser().getId().equals(ownerID)) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                        "Artwork " + artworkID + " does not belong to the bidding owner");
+            }
             artworks.add(artwork);
         }
 

@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.model.Artwork;
+import com.example.project.model.Bidding;
 import com.example.project.model.Sellerprofile;
 import com.example.project.repository.ArtworkRepository;
+import com.example.project.repository.BiddingRepository;
 import com.example.project.repository.SellerprofileRepository;
 import com.example.project.service.ArtworkService;
 
@@ -20,10 +22,13 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     private final ArtworkRepository artworkRepository;
     private final SellerprofileRepository sellerprofileRepository;
+    private final BiddingRepository biddingRepository;
 
-    public ArtworkServiceImpl(ArtworkRepository artworkRepository, SellerprofileRepository sellerprofileRepository) {
+    public ArtworkServiceImpl(ArtworkRepository artworkRepository, SellerprofileRepository sellerprofileRepository,
+            BiddingRepository biddingRepository) {
         this.artworkRepository = artworkRepository;
         this.sellerprofileRepository = sellerprofileRepository;
+        this.biddingRepository = biddingRepository;
     }
 
     @Override
@@ -63,8 +68,9 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     @Transactional
-    public Artwork updateArtwork(Long artworkID, String title, String imageUrl) {
+    public Artwork updateArtwork(Long artworkID, Long userID, String title, String imageUrl) {
         Artwork artwork = getArtworkById(artworkID);
+        ensureArtworkOwner(artwork, userID);
         artwork.setTitle(title);
         artwork.setImageUrl(imageUrl);
         return artworkRepository.save(artwork);
@@ -72,10 +78,33 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     @Transactional
-    public void deleteArtwork(Long artworkID) {
-        if (!artworkRepository.existsById(artworkID)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID);
+    public void deleteArtwork(Long artworkID, Long userID) {
+        Artwork artwork = getArtworkById(artworkID);
+        ensureArtworkOwner(artwork, userID);
+        ensureNotInActiveBidding(artworkID);
+        artworkRepository.delete(artwork);
+    }
+
+    @Override
+    @Transactional
+    public void deleteArtworkAsAdmin(Long artworkID) {
+        Artwork artwork = getArtworkById(artworkID);
+        ensureNotInActiveBidding(artworkID);
+        artworkRepository.delete(artwork);
+    }
+
+    private void ensureArtworkOwner(Artwork artwork, Long userID) {
+        Sellerprofile seller = artwork.getSellerprofile();
+        if (seller == null || seller.getUser() == null || userID == null
+                || !seller.getUser().getId().equals(userID)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the artwork's seller can modify it");
         }
-        artworkRepository.deleteById(artworkID);
+    }
+
+    private void ensureNotInActiveBidding(Long artworkID) {
+        if (biddingRepository.existsByArtworks_IdAndStatus(artworkID, Bidding.Status.ACTIVE)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Artwork is part of an active bidding. The bidding must be cancelled or closed first.");
+        }
     }
 }

@@ -81,15 +81,21 @@ public class ArtworkController {
     @PutMapping("/{artworkId}")
     public ResponseEntity<ArtworkResponse> updateArtwork(
             @PathVariable Long artworkId,
+            Authentication authentication,
             @Valid @RequestBody UpdateArtworkRequest request) {
-        Artwork artwork = artworkService.updateArtwork(artworkId, request.title(), request.imageUrl());
+        User seller = userService.getCurrentUser(authentication.getName());
+        Artwork artwork = artworkService.updateArtwork(
+                artworkId, seller.getId(), request.title(), request.imageUrl());
 
         return ResponseEntity.ok(artworkMapper.toResponse(artwork));
     }
 
     @DeleteMapping("/{artworkId}")
-    public ResponseEntity<Void> deleteArtwork(@PathVariable Long artworkId) {
-        artworkService.deleteArtwork(artworkId);
+    public ResponseEntity<Void> deleteArtwork(
+            @PathVariable Long artworkId,
+            Authentication authentication) {
+        User seller = userService.getCurrentUser(authentication.getName());
+        artworkService.deleteArtwork(artworkId, seller.getId());
 
         return ResponseEntity.noContent().build();
     }
