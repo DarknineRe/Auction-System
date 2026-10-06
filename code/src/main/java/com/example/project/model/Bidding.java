@@ -47,6 +47,10 @@ public class Bidding {
     @JoinColumn(name = "user_id")
     private User owner;
 
+    @ManyToOne
+    @JoinColumn(name = "winner_user_id")
+    private User winner;
+
     private Double startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;
     private Date endDate;
@@ -124,6 +128,14 @@ public class Bidding {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public User getWinner() {
+        return this.winner;
+    }
+
+    public void setWinner(User winner) {
+        this.winner = winner;
     }
 
     public Date getStartDate() {

@@ -8,6 +8,7 @@ import org.springframework.web.server.ResponseStatusException;
 import com.example.project.model.Bidding;
 import com.example.project.repository.BiddingRepository;
 import com.example.project.service.AdminBiddingService;
+import com.example.project.service.BiddingClosingService;
 import com.example.project.service.state.BiddingStateResolver;
 
 @Service
@@ -15,10 +16,13 @@ public class AdminBiddingServiceImpl implements AdminBiddingService {
 
     private final BiddingRepository biddingRepository;
     private final BiddingStateResolver stateResolver;
+    private final BiddingClosingService biddingClosingService;
 
-    public AdminBiddingServiceImpl(BiddingRepository biddingRepository, BiddingStateResolver stateResolver) {
+    public AdminBiddingServiceImpl(BiddingRepository biddingRepository, BiddingStateResolver stateResolver,
+            BiddingClosingService biddingClosingService) {
         this.biddingRepository = biddingRepository;
         this.stateResolver = stateResolver;
+        this.biddingClosingService = biddingClosingService;
     }
 
     @Override
@@ -30,10 +34,16 @@ public class AdminBiddingServiceImpl implements AdminBiddingService {
     @Override
     @Transactional
     public Bidding closeBidding(Long biddingId) {
-        return changeStatus(biddingId, Bidding.Status.CLOSED);
+        return biddingClosingService.close(findTransitionable(biddingId, Bidding.Status.CLOSED));
     }
 
     private Bidding changeStatus(Long biddingId, Bidding.Status target) {
+        Bidding bidding = findTransitionable(biddingId, target);
+        bidding.setStatus(target);
+        return biddingRepository.save(bidding);
+    }
+
+    private Bidding findTransitionable(Long biddingId, Bidding.Status target) {
         Bidding bidding = biddingRepository.findById(biddingId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Bidding not found: " + biddingId));
@@ -42,8 +52,6 @@ public class AdminBiddingServiceImpl implements AdminBiddingService {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Cannot change bidding from " + bidding.getStatus() + " to " + target);
         }
-
-        bidding.setStatus(target);
-        return biddingRepository.save(bidding);
+        return bidding;
     }
 }
