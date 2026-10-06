@@ -103,6 +103,9 @@ public class BiddingServiceImpl implements BiddingService {
         User bidder = userRepository.findById(userID)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found: " + userID));
+        if (bidding.getOwner() != null && bidding.getOwner().getId().equals(bidder.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot bid on your own bidding.");
+        }
         if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This bidding is " + bidding.getStatus() + " and is not accepting bids.");
