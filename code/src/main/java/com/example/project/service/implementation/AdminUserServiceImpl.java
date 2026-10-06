@@ -64,16 +64,6 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional
-    public User changeRole(String actorEmail, Long userId, User.Role newRole) {
-        User target = findUserById(userId);
-        rejectSelfChange(actorEmail, target);
-
-        target.setRole(newRole);
-        return userRepository.save(target);
-    }
-
-    @Override
-    @Transactional
     public User setEnabled(String actorEmail, Long userId, boolean enabled) {
         User target = findUserById(userId);
         rejectSelfChange(actorEmail, target);

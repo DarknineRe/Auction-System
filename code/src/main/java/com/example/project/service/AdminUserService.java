@@ -12,7 +12,5 @@ public interface AdminUserService {
 
     User getUserById(Long userId);
 
-    User changeRole(String actorEmail, Long userId, User.Role newRole);
-
     User setEnabled(String actorEmail, Long userId, boolean enabled);
 }
