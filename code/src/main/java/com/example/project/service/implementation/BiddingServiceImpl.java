@@ -87,7 +87,7 @@ public class BiddingServiceImpl implements BiddingService {
         User bidder = userRepository.findById(userID)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found: " + userID));
-         if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
+        if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This bidding is " + bidding.getStatus() + " and is not accepting bids.");
         }
@@ -95,12 +95,10 @@ public class BiddingServiceImpl implements BiddingService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already closed.");
         }
 
-        double highestSoFar = bidding.getStartingPrice();
-        for (BidAction existing : bidding.getBidActions()) {
-            if (existing.getAmount() > highestSoFar) {
-                highestSoFar = existing.getAmount();
-            }
-        }
+        double highestSoFar = bidActionRepository
+                .findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID)
+                .map(BidAction::getAmount)
+                .orElse(bidding.getStartingPrice());
 
         if (amount <= highestSoFar) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
