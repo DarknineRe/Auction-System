@@ -5,6 +5,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,7 +20,9 @@ import com.example.project.dto.response.BiddingResponse;
 import com.example.project.mapper.BiddingMapper;
 import com.example.project.model.BidAction;
 import com.example.project.model.Bidding;
+import com.example.project.model.User;
 import com.example.project.service.BiddingService;
+import com.example.project.service.UserService;
 
 import jakarta.validation.Valid;
 
@@ -28,18 +31,23 @@ import jakarta.validation.Valid;
 public class BiddingController {
 
     private final BiddingService biddingService;
+    private final UserService userService;
     private final BiddingMapper biddingMapper;
 
-    public BiddingController(BiddingService biddingService, BiddingMapper biddingMapper) {
+    public BiddingController(BiddingService biddingService, UserService userService, BiddingMapper biddingMapper) {
         this.biddingService = biddingService;
+        this.userService = userService;
         this.biddingMapper = biddingMapper;
     }
 
     @PostMapping
-    public ResponseEntity<BiddingResponse> createBidding(@Valid @RequestBody CreateBiddingRequest request) {
+    public ResponseEntity<BiddingResponse> createBidding(
+            Authentication authentication,
+            @Valid @RequestBody CreateBiddingRequest request) {
+        User owner = userService.getCurrentUser(authentication.getName());
         Bidding bidding = biddingService.createBidding(
                 request.artworkIds(),
-                request.ownerId(),
+                owner.getId(),
                 request.startingPrice(),
                 request.startDate(),
                 request.endDate());
@@ -62,10 +70,12 @@ public class BiddingController {
     @PostMapping("/{biddingId}/bids")
     public ResponseEntity<BidActionResponse> placeBid(
             @PathVariable Long biddingId,
+            Authentication authentication,
             @Valid @RequestBody PlaceBidRequest request) {
+        User bidder = userService.getCurrentUser(authentication.getName());
         BidAction bidAction = biddingService.placeBid(
                 biddingId,
-                request.userId(),
+                bidder.getId(),
                 request.amount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(biddingMapper.toResponse(bidAction));

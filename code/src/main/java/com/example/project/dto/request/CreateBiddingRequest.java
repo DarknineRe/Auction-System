@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Positive;
 
 public record CreateBiddingRequest(
         @NotEmpty List<@NotNull @Positive Long> artworkIds,
-        @NotNull @Positive Long ownerId,
         @NotNull @Positive Double startingPrice,
         @NotNull Date startDate,
         @NotNull Date endDate) {
