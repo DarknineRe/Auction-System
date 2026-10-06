@@ -18,6 +18,7 @@ import com.example.project.model.User;
 import com.example.project.repository.ArtworkRepository;
 import com.example.project.repository.BidActionRepository;
 import com.example.project.repository.BiddingRepository;
+import com.example.project.repository.SellerprofileRepository;
 import com.example.project.repository.UserRepository;
 import com.example.project.service.BiddingService;
 import com.example.project.service.state.BiddingStateResolver;
@@ -32,15 +33,17 @@ public class BiddingServiceImpl implements BiddingService {
     private final UserRepository userRepository;
     private final BidActionRepository bidActionRepository;
     private final BiddingStateResolver stateResolver;
+    private final SellerprofileRepository sellerprofileRepository;
 
     public BiddingServiceImpl(BiddingRepository biddingRepository, ArtworkRepository artworkRepository,
             UserRepository userRepository, BidActionRepository bidActionRepository,
-            BiddingStateResolver stateResolver) {
+            BiddingStateResolver stateResolver, SellerprofileRepository sellerprofileRepository) {
         this.biddingRepository = biddingRepository;
         this.artworkRepository = artworkRepository;
         this.userRepository = userRepository;
         this.bidActionRepository = bidActionRepository;
         this.stateResolver = stateResolver;
+        this.sellerprofileRepository = sellerprofileRepository;
     }
 
     @Override
@@ -54,6 +57,10 @@ public class BiddingServiceImpl implements BiddingService {
         }
         if (!endDate.after(new Date())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be in the future.");
+        }
+        if (!sellerprofileRepository.existsByUser_Id(ownerID)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "A seller profile is required to open a bidding.");
         }
 
         List<Artwork> artworks = new ArrayList<>();

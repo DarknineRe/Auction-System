@@ -52,6 +52,11 @@ public class Bidding {
     @JoinColumn(name = "winner_user_id")
     private User winner;
 
+    // Score (1-5) the winner gave the seller for this bidding; null until rated.
+    @Column
+    private Integer sellerRating;
+
+    @Column(nullable = false)
     private Double startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;
     private Date endDate;
@@ -139,6 +144,14 @@ public class Bidding {
         this.winner = winner;
     }
 
+    public Integer getSellerRating() {
+        return this.sellerRating;
+    }
+
+    public void setSellerRating(Integer sellerRating) {
+        this.sellerRating = sellerRating;
+    }
+
     public Date getStartDate() {
         return this.startDate;
     }
@@ -147,11 +160,11 @@ public class Bidding {
         this.startDate = startDate;
     }
 
-    public double getStartingPrice() {
+    public Double getStartingPrice() {
         return this.startingPrice;
     }
 
-    public void setStartingPrice(double startingPrice) {
+    public void setStartingPrice(Double startingPrice) {
         this.startingPrice = startingPrice;
     }
 

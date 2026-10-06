@@ -7,8 +7,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.project.model.Bidding;
 import com.example.project.model.Sellerprofile;
 import com.example.project.model.User;
+import com.example.project.repository.BiddingRepository;
 import com.example.project.repository.SellerprofileRepository;
 import com.example.project.repository.UserRepository;
 import com.example.project.service.SellerprofileService;
@@ -18,12 +20,15 @@ public class SellerprofileServiceImpl implements SellerprofileService {
 
     private final SellerprofileRepository sellerprofileRepository;
     private final UserRepository userRepository;
+    private final BiddingRepository biddingRepository;
 
     public SellerprofileServiceImpl(
             SellerprofileRepository sellerprofileRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            BiddingRepository biddingRepository) {
         this.sellerprofileRepository = sellerprofileRepository;
         this.userRepository = userRepository;
+        this.biddingRepository = biddingRepository;
     }
 
     @Override
@@ -56,6 +61,29 @@ public class SellerprofileServiceImpl implements SellerprofileService {
         Sellerprofile sellerprofile = findSellerProfileByUserId(user.getId());
         sellerprofile.setBankaccount(bankaccount.trim());
         return sellerprofileRepository.save(sellerprofile);
+    }
+
+    @Override
+    @Transactional
+    public Sellerprofile rateSeller(Long biddingID, Long userID, int score) {
+        Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bidding not found"));
+        if (bidding.getStatus() != Bidding.Status.CLOSED || bidding.getWinner() == null
+                || !bidding.getWinner().getId().equals(userID)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "Only the winner of a closed bidding can rate its seller");
+        }
+        if (bidding.getSellerRating() != null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already been rated");
+        }
+
+        bidding.setSellerRating(score);
+        biddingRepository.saveAndFlush(bidding);
+
+        Long sellerUserId = bidding.getOwner().getId();
+        Sellerprofile seller = findSellerProfileByUserId(sellerUserId);
+        seller.setRating(biddingRepository.averageSellerRatingByOwnerId(sellerUserId));
+        return sellerprofileRepository.save(seller);
     }
 
     private User findUserByEmail(String email) {

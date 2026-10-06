@@ -28,4 +28,7 @@ public interface BiddingRepository extends JpaRepository<Bidding, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Bidding> findByStatusAndEndDateBefore(Bidding.Status status, Date now);
     boolean existsByArtworks_IdAndStatus(Long artworkID, Bidding.Status status);
+
+    @Query("select avg(b.sellerRating) from Bidding b where b.owner.id = :ownerId and b.sellerRating is not null")
+    Double averageSellerRatingByOwnerId(@Param("ownerId") Long ownerId);
 }

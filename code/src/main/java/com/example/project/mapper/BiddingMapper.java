@@ -29,7 +29,8 @@ public class BiddingMapper {
                 bidding.getStartDate(),
                 bidding.getEndDate(),
                 bidding.getStatus(),
-                winnerId);
+                winnerId,
+                bidding.getSellerRating());
                 
     }
 

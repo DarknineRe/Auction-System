@@ -15,13 +15,17 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.example.project.dto.request.CreateBiddingRequest;
 import com.example.project.dto.request.PlaceBidRequest;
+import com.example.project.dto.request.RateSellerRequest;
 import com.example.project.dto.response.BidActionResponse;
 import com.example.project.dto.response.BiddingResponse;
+import com.example.project.dto.response.SellerprofileResponse;
 import com.example.project.mapper.BiddingMapper;
+import com.example.project.mapper.SellerprofileMapper;
 import com.example.project.model.BidAction;
 import com.example.project.model.Bidding;
 import com.example.project.model.User;
 import com.example.project.service.BiddingService;
+import com.example.project.service.SellerprofileService;
 import com.example.project.service.UserService;
 
 import jakarta.validation.Valid;
@@ -33,11 +37,16 @@ public class BiddingController {
     private final BiddingService biddingService;
     private final UserService userService;
     private final BiddingMapper biddingMapper;
+    private final SellerprofileService sellerprofileService;
+    private final SellerprofileMapper sellerprofileMapper;
 
-    public BiddingController(BiddingService biddingService, UserService userService, BiddingMapper biddingMapper) {
+    public BiddingController(BiddingService biddingService, UserService userService, BiddingMapper biddingMapper,
+            SellerprofileService sellerprofileService, SellerprofileMapper sellerprofileMapper) {
         this.biddingService = biddingService;
         this.userService = userService;
         this.biddingMapper = biddingMapper;
+        this.sellerprofileService = sellerprofileService;
+        this.sellerprofileMapper = sellerprofileMapper;
     }
 
     @PostMapping
@@ -79,5 +88,15 @@ public class BiddingController {
                 request.amount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(biddingMapper.toResponse(bidAction));
+    }
+
+    @PostMapping("/{biddingId}/seller-rating")
+    public ResponseEntity<SellerprofileResponse> rateSeller(
+            @PathVariable Long biddingId,
+            Authentication authentication,
+            @Valid @RequestBody RateSellerRequest request) {
+        User user = userService.getCurrentUser(authentication.getName());
+        return ResponseEntity.ok(sellerprofileMapper.toResponse(
+                sellerprofileService.rateSeller(biddingId, user.getId(), request.score())));
     }
 }
