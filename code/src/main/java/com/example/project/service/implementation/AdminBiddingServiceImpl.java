@@ -44,7 +44,7 @@ public class AdminBiddingServiceImpl implements AdminBiddingService {
     }
 
     private Bidding findTransitionable(Long biddingId, Bidding.Status target) {
-        Bidding bidding = biddingRepository.findById(biddingId)
+        Bidding bidding = biddingRepository.findByIdForUpdate(biddingId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Bidding not found: " + biddingId));
 

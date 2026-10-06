@@ -102,7 +102,9 @@ public class BiddingServiceImpl implements BiddingService {
     @Override
     @Transactional
     public BidAction placeBid(Long biddingID, Long userID, Double amount) {
-        Bidding bidding = getBiddingById(biddingID);
+        Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Bidding not found: " + biddingID));
         User bidder = userRepository.findById(userID)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found: " + userID));
