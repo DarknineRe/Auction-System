@@ -1,8 +1,9 @@
 package com.example.project.controller.api;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.project.dto.request.CreateBiddingRequest;
@@ -65,10 +67,13 @@ public class BiddingController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BiddingResponse>> getAllBiddings() {
-        return ResponseEntity.ok(biddingService.getAllBiddings().stream()
-                .map(biddingMapper::toResponse)
-                .collect(Collectors.toList()));
+    public ResponseEntity<PagedModel<BiddingResponse>> getBiddings(
+            @RequestParam(required = false) Bidding.Status status,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        Page<BiddingResponse> page = biddingService.getBiddings(status, pageable)
+                .map(biddingMapper::toResponse);
+
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     @GetMapping("/{biddingId}")

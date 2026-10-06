@@ -4,6 +4,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -19,6 +21,7 @@ import jakarta.persistence.LockModeType;
 public interface BiddingRepository extends JpaRepository<Bidding, Long> {
     List<Bidding> findByArtworks_Id(Long artworkID);
     List<Bidding> findByOwner_Id(Long userID);
+    Page<Bidding> findByStatus(Bidding.Status status, Pageable pageable);
     boolean existsByArtworks_Id(Long artworkID);
     // Row lock (SELECT ... FOR UPDATE) so bids, voids and status changes on one bidding run one at a time.
     @Lock(LockModeType.PESSIMISTIC_WRITE)

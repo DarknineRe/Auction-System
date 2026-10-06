@@ -5,6 +5,11 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -27,6 +32,8 @@ import com.example.project.service.state.BiddingStateResolver;
 public class BiddingServiceImpl implements BiddingService {
 
     private static final double MIN_BID_INCREMENT = 1.0;
+    private static final Set<String> SORTABLE_FIELDS =
+            Set.of("id", "startDate", "endDate", "startingPrice", "lastBid", "status");
 
     private final BiddingRepository biddingRepository;
     private final ArtworkRepository artworkRepository;
@@ -104,8 +111,20 @@ public class BiddingServiceImpl implements BiddingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<Bidding> getAllBiddings() {
-        return biddingRepository.findAll();
+    public Page<Bidding> getBiddings(Bidding.Status status, Pageable pageable) {
+        validateSort(pageable);
+        return status == null
+                ? biddingRepository.findAll(pageable)
+                : biddingRepository.findByStatus(status, pageable);
+    }
+
+    private void validateSort(Pageable pageable) {
+        for (Sort.Order order : pageable.getSort()) {
+            if (!SORTABLE_FIELDS.contains(order.getProperty())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Cannot sort by: " + order.getProperty());
+            }
+        }
     }
 
     @Override

@@ -3,6 +3,9 @@ package com.example.project.service;
 import java.util.Date;
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.example.project.model.BidAction;
 import com.example.project.model.Bidding;
 
@@ -12,7 +15,7 @@ public interface BiddingService {
 
     Bidding getBiddingById(Long biddingID);
 
-    List<Bidding> getAllBiddings();
+    Page<Bidding> getBiddings(Bidding.Status status, Pageable pageable);
 
     BidAction placeBid(Long biddingID, Long userID, Double amount);
 }
