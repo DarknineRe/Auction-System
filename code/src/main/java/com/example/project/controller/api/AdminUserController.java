@@ -15,7 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.example.project.dto.request.UpdateUserRoleRequest;
 import com.example.project.dto.request.UpdateUserStatusRequest;
 import com.example.project.dto.response.AdminUserResponse;
 import com.example.project.mapper.AdminUserMapper;
@@ -52,15 +51,6 @@ public class AdminUserController {
         return ResponseEntity.ok(adminUserMapper.toResponse(adminUserService.getUserById(userId)));
     }
 
-    @PatchMapping("/{userId}/role")
-    public ResponseEntity<AdminUserResponse> changeRole(
-            Authentication authentication,
-            @PathVariable Long userId,
-            @Valid @RequestBody UpdateUserRoleRequest request) {
-        User user = adminUserService.changeRole(authentication.getName(), userId, request.role());
-
-        return ResponseEntity.ok(adminUserMapper.toResponse(user));
-    }
 
     @PatchMapping("/{userId}/status")
     public ResponseEntity<AdminUserResponse> setStatus(
