@@ -80,7 +80,6 @@ public class BiddingServiceImpl implements BiddingService {
         bidding.setArtworks(artworks);
         bidding.setOwner(owner);
         bidding.setStartingPrice(startingPrice);
-        bidding.setLastBid(startingPrice);
         bidding.setStartDate(startDate);
         bidding.setEndDate(endDate);
 

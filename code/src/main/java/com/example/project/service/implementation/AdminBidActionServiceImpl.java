@@ -77,11 +77,11 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
         bid.setVoidReason(reason.trim());
         BidAction saved = bidActionRepository.saveAndFlush(bid);
 
-        double currentPrice = bidActionRepository
+        Double highestValidBid = bidActionRepository
                 .findTopByBidding_IdAndStatusOrderByAmountDesc(bidding.getId(), BidAction.Status.VALID)
                 .map(BidAction::getAmount)
-                .orElse(bidding.getStartingPrice());
-        bidding.setLastBid(currentPrice);
+                .orElse(null);
+        bidding.setLastBid(highestValidBid);
         biddingRepository.save(bidding);
 
         return saved;

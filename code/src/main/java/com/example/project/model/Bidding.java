@@ -32,8 +32,9 @@ public class Bidding {
             inverseJoinColumns = @JoinColumn(name = "artwork_id", referencedColumnName = "id"))
     private List<Artwork> artworks = new ArrayList<>();
 
+    // Highest valid bid amount; null until the first bid is placed.
     @Column
-    private double lastBid;
+    private Double lastBid;
 
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -85,11 +86,11 @@ public class Bidding {
         this.artworks = artworks;
     }
 
-    public double getLastBid() {
+    public Double getLastBid() {
         return this.lastBid;
     }
 
-    public void setLastBid(double lastBid) {
+    public void setLastBid(Double lastBid) {
         this.lastBid = lastBid;
     }
 
