@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -23,6 +24,8 @@ import com.example.project.service.state.BiddingStateResolver;
 
 @Service
 public class BiddingServiceImpl implements BiddingService {
+
+    private static final double MIN_BID_INCREMENT = 1.0;
 
     private final BiddingRepository biddingRepository;
     private final ArtworkRepository artworkRepository;
@@ -117,14 +120,15 @@ public class BiddingServiceImpl implements BiddingService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already closed.");
         }
 
-        double highestSoFar = bidActionRepository
-                .findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID)
-                .map(BidAction::getAmount)
-                .orElse(bidding.getStartingPrice());
+        Optional<BidAction> highestBid = bidActionRepository
+                .findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID);
 
-        if (amount <= highestSoFar) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "Bid must be higher than the current price of " + highestSoFar);
+        // The first bid may match the starting price; later bids must raise the highest bid by MIN_BID_INCREMENT.
+        double minimumBid = highestBid
+                .map(bid -> bid.getAmount() + MIN_BID_INCREMENT)
+                .orElse(bidding.getStartingPrice());
+        if (amount < minimumBid) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Bid must be at least " + minimumBid);
         }
 
         BidAction action = new BidAction();
