@@ -11,6 +11,10 @@ import com.example.project.model.BidAction;
 @Repository
 public interface BidActionRepository extends JpaRepository<BidAction, Long> {
     List<BidAction> findByBidding_IdOrderByAmountDesc(Long biddingID);
-    Optional<BidAction> findTopByBidding_IdOrderByAmountDesc(Long biddingID);
-    List<BidAction> findByUser_Id(Long userID);
+
+    List<BidAction> findByBidding_IdAndStatusOrderByAmountDesc(Long biddingID, BidAction.Status status);
+
+    Optional<BidAction> findTopByBidding_IdAndStatusOrderByAmountDesc(Long biddingID, BidAction.Status status);
+
+    List<BidAction> findByUser_IdAndStatus(Long userID, BidAction.Status status);
 }
