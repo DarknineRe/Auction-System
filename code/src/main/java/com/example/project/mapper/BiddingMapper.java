@@ -18,6 +18,7 @@ public class BiddingMapper {
                 .map(artwork -> artwork.getId())
                 .collect(Collectors.toList());
         Long ownerId = bidding.getOwner() == null ? null : bidding.getOwner().getId();
+        Long winnerId = bidding.getWinner() == null ? null : bidding.getWinner().getId();
 
         return new BiddingResponse(
                 bidding.getId(),
@@ -27,7 +28,9 @@ public class BiddingMapper {
                 bidding.getLastBid(),
                 bidding.getStartDate(),
                 bidding.getEndDate(),
-                bidding.getStatus());
+                bidding.getStatus(),
+                winnerId,
+                bidding.getSellerRating());
                 
     }
 

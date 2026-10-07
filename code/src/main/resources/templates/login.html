@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,7 +16,7 @@
     </section>
 
     <section class="login__panel">
-      <form class="login__form" action="#" method="post">
+      <form class="login__form" th:action="@{/login}" method="post">
         <h1>Welcome back</h1>
         <p class="login__sub">Log in to continue bidding.</p>
 
@@ -39,7 +39,8 @@
 
         <button type="submit" class="btn btn--primary">Log in</button>
 
-        <p class="alert alert--error" role="alert" hidden>Incorrect email or password.</p>
+        <p class="alert alert--error" role="alert" th:if="${param.error}">Incorrect email or password.</p>
+        <p class="alert" role="status" th:if="${param.logout}">You have been logged out.</p>
 
         <p class="login__footer">
           New to BidHub? <a href="register.html">Create an account</a>

@@ -1,6 +1,7 @@
 package com.example.project.service.implementation;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -9,8 +10,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.model.Bidding;
 import com.example.project.model.Comment;
+import com.example.project.model.CommentReaction;
 import com.example.project.model.User;
 import com.example.project.repository.BiddingRepository;
+import com.example.project.repository.CommentReactionRepository;
 import com.example.project.repository.CommentRepository;
 import com.example.project.repository.UserRepository;
 import com.example.project.service.CommentService;
@@ -21,14 +24,17 @@ public class CommentServiceImpl implements CommentService {
     private final BiddingRepository biddingRepository;
     private final CommentRepository commentRepository;
     private final UserRepository userRepository;
+    private final CommentReactionRepository commentReactionRepository;
 
     public CommentServiceImpl(
             BiddingRepository biddingRepository,
             CommentRepository commentRepository,
-            UserRepository userRepository) {
+            UserRepository userRepository,
+            CommentReactionRepository commentReactionRepository) {
         this.biddingRepository = biddingRepository;
         this.commentRepository = commentRepository;
         this.userRepository = userRepository;
+        this.commentReactionRepository = commentReactionRepository;
     }
 
     @Override
@@ -45,7 +51,8 @@ public class CommentServiceImpl implements CommentService {
         commentRepository.saveAndFlush(comment);
         biddingRepository.saveAndFlush(bidding);
 
-        return comment;
+        // Persist the comment itself: saving the bidding merges it and returns a copy, leaving this one's id null.
+        return commentRepository.save(comment);
     }
 
     @Override
@@ -77,17 +84,42 @@ public class CommentServiceImpl implements CommentService {
 
     @Override
     @Transactional
-    public Comment likeComment(Long biddingID, Long commentID) {
-        Comment comment = findCommentInBidding(biddingID, commentID);
-        comment.setThumbsup(comment.getThumbsup() + 1);
-        return commentRepository.save(comment);
+    public Comment likeComment(Long biddingID, Long commentID, Long userID) {
+        return react(biddingID, commentID, userID, CommentReaction.Type.LIKE);
     }
 
     @Override
     @Transactional
-    public Comment dislikeComment(Long biddingID, Long commentID) {
+    public Comment dislikeComment(Long biddingID, Long commentID, Long userID) {
+        return react(biddingID, commentID, userID, CommentReaction.Type.DISLIKE);
+    }
+
+    // One reaction per user: the same type again removes it, the other type switches it.
+    private Comment react(Long biddingID, Long commentID, Long userID, CommentReaction.Type type) {
         Comment comment = findCommentInBidding(biddingID, commentID);
-        comment.setThumbsdown(comment.getThumbsdown() + 1);
+        if (comment.getUser() != null && comment.getUser().getId().equals(userID)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot react to your own comment");
+        }
+
+        Optional<CommentReaction> existing = commentReactionRepository.findByComment_IdAndUser_Id(commentID, userID);
+        if (existing.isEmpty()) {
+            User user = userRepository.findById(userID)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+            CommentReaction reaction = new CommentReaction();
+            reaction.setComment(comment);
+            reaction.setUser(user);
+            reaction.setType(type);
+            commentReactionRepository.save(reaction);
+        } else if (existing.get().getType() == type) {
+            commentReactionRepository.delete(existing.get());
+        } else {
+            existing.get().setType(type);
+        }
+        commentReactionRepository.flush();
+
+        // Recount from the reactions table so the totals cannot drift.
+        comment.setThumbsup((int) commentReactionRepository.countByComment_IdAndType(commentID, CommentReaction.Type.LIKE));
+        comment.setThumbsdown((int) commentReactionRepository.countByComment_IdAndType(commentID, CommentReaction.Type.DISLIKE));
         return commentRepository.save(comment);
     }
 

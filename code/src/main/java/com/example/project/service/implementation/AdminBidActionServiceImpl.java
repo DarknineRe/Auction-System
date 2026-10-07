@@ -49,6 +49,13 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
     @Override
     @Transactional
     public BidAction voidBid(String actorEmail, Long bidId, String reason) {
+        // Lock the bidding before loading the bid, so both are read fresh under the lock.
+        Long biddingId = bidActionRepository.findBiddingIdById(bidId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Bid not found: " + bidId));
+        Bidding bidding = biddingRepository.findByIdForUpdate(biddingId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Bidding not found: " + biddingId));
         BidAction bid = bidActionRepository.findById(bidId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Bid not found: " + bidId));
@@ -56,8 +63,6 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
         if (bid.getStatus() == BidAction.Status.VOIDED) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Bid is already voided: " + bidId);
         }
-
-        Bidding bidding = bid.getBidding();
         if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "Bids can only be voided while the bidding is ACTIVE, but it is " + bidding.getStatus());
@@ -76,8 +81,8 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
         BigDecimal currentPrice = bidActionRepository
                 .findTopByBidding_IdAndStatusOrderByAmountDesc(bidding.getId(), BidAction.Status.VALID)
                 .map(BidAction::getAmount)
-                .orElse(bidding.getStartingPrice());
-        bidding.setLastBid(currentPrice);
+                .orElse(null);
+        bidding.setLastBid(highestValidBid);
         biddingRepository.save(bidding);
 
         return saved;

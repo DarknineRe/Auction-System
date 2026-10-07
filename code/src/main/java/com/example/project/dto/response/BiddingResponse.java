@@ -14,5 +14,7 @@ public record BiddingResponse(
         BigDecimal lastBid,
         Date startDate,
         Date endDate,
-        Bidding.Status status) {
+        Bidding.Status status,
+        Long winnerId,
+        Integer sellerRating) {
 }

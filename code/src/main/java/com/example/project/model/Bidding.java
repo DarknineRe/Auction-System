@@ -14,6 +14,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -25,15 +27,18 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
-    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    // Many-to-many so an artwork keeps its history across biddings (e.g. relisted after a cancellation).
+    @ManyToMany
+    @JoinTable(name = "bidding_artworks",
+            joinColumns = @JoinColumn(name = "bidding_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "artwork_id", referencedColumnName = "id"))
     private List<Artwork> artworks = new ArrayList<>();
 
     @Column(precision = 19, scale = 4)
     private BigDecimal lastBid;
 
 
-    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
@@ -92,13 +97,20 @@ public class Bidding {
     }
 
     public void setComments(List<Comment> comments) {
-        this.comments = comments == null ? new ArrayList<>() : comments;
-        this.comments.forEach(comment -> comment.setBidding(this));
+        // Mutate in place: replacing an orphanRemoval collection breaks Hibernate.
+        this.comments.clear();
+        if (comments != null) {
+            comments.forEach(this::addComment);
+        }
     }
 
     public void addComment(Comment comment) {
         comments.add(comment);
         comment.setBidding(this);
+    }
+
+    public void removeComment(Comment comment) {
+        comments.remove(comment);
     }
 
     public List<BidAction> getBidActions() {
@@ -115,6 +127,22 @@ public class Bidding {
 
     public void setOwner(User owner) {
         this.owner = owner;
+    }
+
+    public User getWinner() {
+        return this.winner;
+    }
+
+    public void setWinner(User winner) {
+        this.winner = winner;
+    }
+
+    public Integer getSellerRating() {
+        return this.sellerRating;
+    }
+
+    public void setSellerRating(Integer sellerRating) {
+        this.sellerRating = sellerRating;
     }
 
     public Date getStartDate() {

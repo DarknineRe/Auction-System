@@ -9,6 +9,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,7 +25,9 @@ import com.example.project.dto.request.UpdateArtworkRequest;
 import com.example.project.dto.response.ArtworkResponse;
 import com.example.project.mapper.ArtworkMapper;
 import com.example.project.model.Artwork;
+import com.example.project.model.User;
 import com.example.project.service.ArtworkService;
+import com.example.project.service.UserService;
 
 import jakarta.validation.Valid;
 
@@ -33,17 +36,22 @@ import jakarta.validation.Valid;
 public class ArtworkController {
 
     private final ArtworkService artworkService;
+    private final UserService userService;
     private final ArtworkMapper artworkMapper;
 
-    public ArtworkController(ArtworkService artworkService, ArtworkMapper artworkMapper) {
+    public ArtworkController(ArtworkService artworkService, UserService userService, ArtworkMapper artworkMapper) {
         this.artworkService = artworkService;
+        this.userService = userService;
         this.artworkMapper = artworkMapper;
     }
 
     @PostMapping
-    public ResponseEntity<ArtworkResponse> createArtwork(@Valid @RequestBody CreateArtworkRequest request) {
+    public ResponseEntity<ArtworkResponse> createArtwork(
+            Authentication authentication,
+            @Valid @RequestBody CreateArtworkRequest request) {
+        User seller = userService.getCurrentUser(authentication.getName());
         Artwork artwork = artworkService.createArtwork(
-                request.sellerUserId(),
+                seller.getId(),
                 request.title(),
                 request.imageUrl());
 
@@ -76,14 +84,19 @@ public class ArtworkController {
             @PathVariable Long artworkId,
             Authentication authentication,
             @Valid @RequestBody UpdateArtworkRequest request) {
-        Artwork artwork = artworkService.updateArtwork(artworkId, authentication.getName(), request.title(), request.imageUrl());
+        User seller = userService.getCurrentUser(authentication.getName());
+        Artwork artwork = artworkService.updateArtwork(
+                artworkId, seller.getId(), request.title(), request.imageUrl());
 
         return ResponseEntity.ok(artworkMapper.toResponse(artwork));
     }
 
     @DeleteMapping("/{artworkId}")
-    public ResponseEntity<Void> deleteArtwork(@PathVariable Long artworkId) {
-        artworkService.deleteArtwork(artworkId);
+    public ResponseEntity<Void> deleteArtwork(
+            @PathVariable Long artworkId,
+            Authentication authentication) {
+        User seller = userService.getCurrentUser(authentication.getName());
+        artworkService.deleteArtwork(artworkId, seller.getId());
 
         return ResponseEntity.noContent().build();
     }

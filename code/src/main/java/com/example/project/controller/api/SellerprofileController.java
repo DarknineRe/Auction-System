@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.project.dto.request.SellerprofileRequest;
+import com.example.project.dto.response.PublicSellerprofileResponse;
 import com.example.project.dto.response.SellerprofileResponse;
 import com.example.project.mapper.SellerprofileMapper;
 import com.example.project.model.Sellerprofile;
@@ -58,5 +60,17 @@ public class SellerprofileController {
                 request.bankaccount());
 
         return ResponseEntity.ok(sellerprofileMapper.toResponse(sellerprofile));
+    }
+    // ดู Sellerprofile สาธารณะ (ชื่อ คะแนน ยอดขาย) โดยไม่เปิดเผยเลขบัญชี
+    @GetMapping("/{sellerProfileId}")
+    public ResponseEntity<PublicSellerprofileResponse> getSellerProfile(@PathVariable Long sellerProfileId) {
+        return ResponseEntity.ok(sellerprofileMapper.toPublicResponse(
+                sellerprofileService.getSellerProfileById(sellerProfileId)));
+    }
+    // ดู Sellerprofile สาธารณะจาก user ID เช่น ownerId ของ bidding
+    @GetMapping("/users/{userId}")
+    public ResponseEntity<PublicSellerprofileResponse> getSellerProfileByUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(sellerprofileMapper.toPublicResponse(
+                sellerprofileService.getSellerProfileByUserId(userId)));
     }
 }

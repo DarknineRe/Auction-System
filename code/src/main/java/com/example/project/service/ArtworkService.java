@@ -18,5 +18,7 @@ public interface ArtworkService {
 
     Artwork updateArtwork(Long artworkID, String actorEmail, String title, String imageUrl);
 
-    void deleteArtwork(Long artworkID);
+    void deleteArtwork(Long artworkID, Long userID);
+
+    void deleteArtworkAsAdmin(Long artworkID);
 }
