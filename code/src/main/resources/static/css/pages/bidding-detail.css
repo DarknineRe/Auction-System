@@ -76,17 +76,21 @@
 .info__items { margin: 16px 0 0; padding-left: 20px; font-size: 0.95rem; }
 
 /* Bid history */
-.history {
+.history,
+.comments {
   margin-top: 32px;
   padding: 24px;
   background: var(--white);
   border: 1px solid var(--border);
   border-radius: 12px;
 }
-.history[hidden] { display: none; }
+.history[hidden],
+.comments[hidden] { display: none; }
 
-.history h2 { margin: 0 0 12px; font-size: 1.15rem; color: var(--navy); }
-.history__count { font-weight: 400; color: var(--muted); }
+.history h2,
+.comments h2 { margin: 0 0 12px; font-size: 1.15rem; color: var(--navy); }
+.history__count,
+.comments__count { font-weight: 400; color: var(--muted); }
 .history__empty { margin: 0; padding: 16px 0; color: var(--muted); }
 
 .history__list {
@@ -114,9 +118,38 @@
 .history__amount { display: flex; align-items: center; gap: 12px; }
 .history__price { font-weight: 800; color: var(--navy); }
 
+/* Comments */
+.comments__form .field { margin-bottom: 12px; }
+.comments__form .btn { width: auto; padding: 10px 24px; }
+.comments__msg { margin: 12px 0 0; }
+.comments__empty { margin: 16px 0 0; color: var(--muted); }
+
+.comments__list { margin: 20px 0 0; padding: 0; list-style: none; }
+
+.comment { padding: 14px 0; border-top: 1px solid var(--border); }
+.comment__head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.comment__author { font-weight: 600; }
+.comment__text { margin: 0 0 8px; white-space: pre-wrap; overflow-wrap: anywhere; }
+
+.comment__actions { display: flex; gap: 8px; }
+.comment__btn {
+  padding: 4px 12px;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--muted);
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.comment__btn:hover { color: var(--navy); border-color: var(--navy); }
+.comment__btn--danger:hover { color: var(--danger); border-color: var(--danger); }
+.comment__btn:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.5); outline-offset: 2px; }
+
 @media (max-width: 800px) {
   .detail { padding: 20px 16px 48px; }
   .detail__layout { grid-template-columns: 1fr; gap: 20px; }
   .info__price { font-size: 1.8rem; }
-  .history { padding: 16px; }
+  .history,
+  .comments { padding: 16px; }
 }

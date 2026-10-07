@@ -55,6 +55,23 @@
       <p class="history__empty" id="history-empty" hidden></p>
       <ol class="history__list" id="history-list"></ol>
     </section>
+
+    <section class="comments" id="comments" aria-labelledby="comments-title" hidden>
+      <h2 id="comments-title">Comments <span class="comments__count" id="comments-count"></span></h2>
+
+      <form class="comments__form" id="comment-form" novalidate>
+        <div class="field">
+          <textarea id="comment-text" rows="3" maxlength="2000" required
+                    aria-label="Write a comment"
+                    placeholder="Ask the seller a question or share your thoughts..."></textarea>
+        </div>
+        <button type="submit" class="btn btn--primary" id="comment-btn">Post comment</button>
+      </form>
+      <p class="alert comments__msg" id="comment-msg" role="alert" hidden></p>
+
+      <p class="comments__empty" id="comments-empty" hidden></p>
+      <ul class="comments__list" id="comments-list"></ul>
+    </section>
   </main>
 
   <script>
@@ -310,6 +327,124 @@
       });
     }
 
+    // ---- Comments: /api/v1/biddings/{id}/comments ----
+    function showCommentMessage(text, type) {
+      const msg = $('comment-msg');
+      msg.textContent = text;
+      msg.className = 'alert alert--' + type + ' comments__msg';
+      msg.hidden = false;
+    }
+
+    // Shared by post / like / dislike / delete. Returns the Response, or null if it already handled the problem.
+    async function commentRequest(path, options) {
+      $('comment-msg').hidden = true;
+      try {
+        const res = await fetch('/api/v1/biddings/' + current.id + '/comments' + path, options);
+        if (res.status === 401) { window.location.href = '/login'; return null; }
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          const detail = data.details && data.details.length ? ' ' + data.details.join(', ') : '';
+          showCommentMessage((data.message || 'Something went wrong.') + detail, 'error');
+          return null;
+        }
+        return res;
+      } catch (e) {
+        showCommentMessage('Cannot reach the server. Please try again.', 'error');
+        return null;
+      }
+    }
+
+    function buildComment(c) {
+      const isMe = me && c.userId === me.id;
+      const li = el('li', 'comment');
+
+      const head = el('div', 'comment__head');
+      head.appendChild(el('span', 'comment__author', isMe ? 'You' : 'User #' + c.userId));
+      if (c.userId === current.ownerId) head.appendChild(el('span', 'badge badge--info', 'Seller'));
+      li.appendChild(head);
+
+      li.appendChild(el('p', 'comment__text', c.message));
+
+      const actions = el('div', 'comment__actions');
+      const up = el('button', 'comment__btn', '\uD83D\uDC4D ' + c.thumbsup);
+      const down = el('button', 'comment__btn', '\uD83D\uDC4E ' + c.thumbsdown);
+      up.type = down.type = 'button';
+      up.setAttribute('aria-label', 'Like, ' + c.thumbsup + ' likes');
+      down.setAttribute('aria-label', 'Dislike, ' + c.thumbsdown + ' dislikes');
+
+      async function react(kind) {
+        const res = await commentRequest('/' + c.id + '/' + kind, { method: 'POST' });
+        if (!res) return;
+        const fresh = await res.json();
+        up.textContent = '\uD83D\uDC4D ' + fresh.thumbsup;
+        down.textContent = '\uD83D\uDC4E ' + fresh.thumbsdown;
+        up.setAttribute('aria-label', 'Like, ' + fresh.thumbsup + ' likes');
+        down.setAttribute('aria-label', 'Dislike, ' + fresh.thumbsdown + ' dislikes');
+      }
+      up.addEventListener('click', () => react('like'));
+      down.addEventListener('click', () => react('dislike'));
+      actions.append(up, down);
+
+      if (isMe) {
+        const del = el('button', 'comment__btn comment__btn--danger', 'Delete');
+        del.type = 'button';
+        del.addEventListener('click', async () => {
+          if (!confirm('Delete this comment?')) return;
+          const res = await commentRequest('/' + c.id, { method: 'DELETE' });
+          if (res) loadComments();
+        });
+        actions.appendChild(del);
+      }
+
+      li.appendChild(actions);
+      return li;
+    }
+
+    async function loadComments() {
+      const list = $('comments-list');
+      const empty = $('comments-empty');
+      const comments = await getJson('/api/v1/biddings/' + current.id + '/comments');
+
+      list.replaceChildren();
+      empty.hidden = true;
+      $('comments-count').textContent = '';
+
+      if (comments === null) {
+        empty.textContent = 'Could not load comments.';
+        empty.hidden = false;
+        return;
+      }
+      if (comments.length === 0) {
+        empty.textContent = 'No comments yet. Start the conversation!';
+        empty.hidden = false;
+        return;
+      }
+
+      $('comments-count').textContent = '(' + comments.length + ')';
+      [...comments].sort((a, b) => b.id - a.id).forEach(c => list.appendChild(buildComment(c)));
+    }
+
+    $('comment-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const input = $('comment-text');
+      const message = input.value.trim();
+      if (!message) { showCommentMessage('Write something before posting.', 'error'); return; }
+
+      const btn = $('comment-btn');
+      btn.disabled = true;
+      btn.textContent = 'Posting...';
+
+      const res = await commentRequest('', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: message })
+      });
+      if (res) { input.value = ''; await loadComments(); }
+
+      btn.disabled = false;
+      btn.textContent = 'Post comment';
+    });
+
     async function load() {
       showState('loading', 'Loading auction...');
       try {
@@ -331,6 +466,8 @@
         $('history').hidden = false;
         setupBidding();
         loadHistory();
+        $('comments').hidden = false;
+        loadComments();
       } catch (e) {
         showState('error', 'Could not load this auction', 'Please refresh the page and try again.');
       }
