@@ -20,5 +20,5 @@ public interface BiddingService {
     
     Page<Bidding> getAllBiddings(Pageable pageable);
 
-    BidAction placeBid(Long biddingID, Long userID, BigDecimal amount);
+    BidAction placeBid(Long biddingID, String actorEmail, BigDecimal amount);
 }
