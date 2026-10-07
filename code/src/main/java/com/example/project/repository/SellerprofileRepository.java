@@ -1,5 +1,6 @@
 package com.example.project.repository;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -22,5 +23,5 @@ public interface SellerprofileRepository extends JpaRepository<Sellerprofile, Lo
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("update Sellerprofile s set s.rating = :rating where s.sellprofileId = :id")
-    int updateRating(@Param("id") Long sellerProfileId, @Param("rating") double rating);
+    int updateRating(@Param("id") Long sellerProfileId, @Param("rating") BigDecimal rating);
 }

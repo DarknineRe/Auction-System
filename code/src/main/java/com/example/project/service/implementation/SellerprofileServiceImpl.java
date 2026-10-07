@@ -1,5 +1,6 @@
 package com.example.project.service.implementation;
 
+import java.math.BigDecimal;
 import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
@@ -107,8 +108,9 @@ public class SellerprofileServiceImpl implements SellerprofileService {
 
         Long sellerUserId = bidding.getOwner().getId();
         Sellerprofile seller = findSellerProfileByUserId(sellerUserId);
+        Double average = biddingRepository.averageSellerRatingByOwnerId(sellerUserId);
         sellerprofileRepository.updateRating(seller.getSellprofileId(),
-                biddingRepository.averageSellerRatingByOwnerId(sellerUserId));
+            average == null ? BigDecimal.ZERO : BigDecimal.valueOf(average));
         // The update query clears the persistence context, so read the profile again.
         return findSellerProfileByUserId(sellerUserId);
     }
