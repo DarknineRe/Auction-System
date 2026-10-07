@@ -1,9 +1,11 @@
 package com.example.project.service.implementation;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import com.example.project.service.ArtworkService;
 
 @Service
 public class ArtworkServiceImpl implements ArtworkService {
+
+    private static final Set<String> SORTABLE_FIELDS = Set.of("id", "title", "imageUrl", "sellerprofile.id", "sellerprofile.user.id", "sellerprofile.user.name");
 
     private final ArtworkRepository artworkRepository;
     private final SellerprofileRepository sellerprofileRepository;
@@ -52,6 +56,7 @@ public class ArtworkServiceImpl implements ArtworkService {
     @Override
     @Transactional(readOnly = true)
     public Page<Artwork> getAllArtworks(Pageable pageable) {
+        validateSort(pageable);
         return artworkRepository.findAll(pageable);
     }
 
@@ -77,5 +82,14 @@ public class ArtworkServiceImpl implements ArtworkService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID);
         }
         artworkRepository.deleteById(artworkID);
+    }
+
+    private void validateSort(Pageable pageable) {
+        for (Sort.Order order : pageable.getSort()) {
+            if (!SORTABLE_FIELDS.contains(order.getProperty())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Cannot sort by: " + order.getProperty());
+            }
+        }
     }
 }
