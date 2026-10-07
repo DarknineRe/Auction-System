@@ -64,6 +64,19 @@ public class SellerprofileServiceImpl implements SellerprofileService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Sellerprofile getSellerProfileById(Long sellerProfileID) {
+        return sellerprofileRepository.findById(sellerProfileID)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller profile not found"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Sellerprofile getSellerProfileByUserId(Long userID) {
+        return findSellerProfileByUserId(userID);
+    }
+
+    @Override
     @Transactional
     public Sellerprofile rateSeller(Long biddingID, Long userID, int score) {
         Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
