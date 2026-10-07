@@ -84,7 +84,7 @@ public class ArtworkServiceImpl implements ArtworkService {
         artworkRepository.deleteById(artworkID);
     }
 
-    private void validateSort(Pageable pageable) {
+    private void validateSort(Pageable pageable) { // throw status500 if bad sort
         for (Sort.Order order : pageable.getSort()) {
             if (!SORTABLE_FIELDS.contains(order.getProperty())) {
                 throw new ResponseStatusException(
