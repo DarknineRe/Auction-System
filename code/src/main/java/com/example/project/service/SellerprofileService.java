@@ -8,4 +8,6 @@ public interface SellerprofileService {
     Sellerprofile getCurrentSellerProfile(String email);
 
     Sellerprofile updateCurrentSellerProfile(String email, String bankaccount);
+
+    Sellerprofile rateSeller(Long biddingID, Long userID, int score);
 }

@@ -16,7 +16,9 @@ public interface ArtworkService {
 
     List<Artwork> getArtworksBySeller(Long sellerUserID);
 
-    Artwork updateArtwork(Long artworkID, String title, String imageUrl);
+    Artwork updateArtwork(Long artworkID, Long userID, String title, String imageUrl);
 
-    void deleteArtwork(Long artworkID);
+    void deleteArtwork(Long artworkID, Long userID);
+
+    void deleteArtworkAsAdmin(Long artworkID);
 }

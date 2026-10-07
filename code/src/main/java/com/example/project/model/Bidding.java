@@ -12,6 +12,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
@@ -23,15 +25,19 @@ public class Bidding {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @OneToMany
-    @JoinColumn(name = "bidding_id", referencedColumnName = "id")
+    // Many-to-many so an artwork keeps its history across biddings (e.g. relisted after a cancellation).
+    @ManyToMany
+    @JoinTable(name = "bidding_artworks",
+            joinColumns = @JoinColumn(name = "bidding_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "artwork_id", referencedColumnName = "id"))
     private List<Artwork> artworks = new ArrayList<>();
 
+    // Highest valid bid amount; null until the first bid is placed.
     @Column
-    private double lastBid;
+    private Double lastBid;
 
 
-    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Comment> comments = new ArrayList<>();
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
@@ -42,6 +48,15 @@ public class Bidding {
     @JoinColumn(name = "user_id")
     private User owner;
 
+    @ManyToOne
+    @JoinColumn(name = "winner_user_id")
+    private User winner;
+
+    // Score (1-5) the winner gave the seller for this bidding; null until rated.
+    @Column
+    private Integer sellerRating;
+
+    @Column(nullable = false)
     private Double startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;
     private Date endDate;
@@ -76,11 +91,11 @@ public class Bidding {
         this.artworks = artworks;
     }
 
-    public double getLastBid() {
+    public Double getLastBid() {
         return this.lastBid;
     }
 
-    public void setLastBid(double lastBid) {
+    public void setLastBid(Double lastBid) {
         this.lastBid = lastBid;
     }
 
@@ -89,13 +104,20 @@ public class Bidding {
     }
 
     public void setComments(List<Comment> comments) {
-        this.comments = comments == null ? new ArrayList<>() : comments;
-        this.comments.forEach(comment -> comment.setBidding(this));
+        // Mutate in place: replacing an orphanRemoval collection breaks Hibernate.
+        this.comments.clear();
+        if (comments != null) {
+            comments.forEach(this::addComment);
+        }
     }
 
     public void addComment(Comment comment) {
         comments.add(comment);
         comment.setBidding(this);
+    }
+
+    public void removeComment(Comment comment) {
+        comments.remove(comment);
     }
 
     public List<BidAction> getBidActions() {
@@ -114,6 +136,22 @@ public class Bidding {
         this.owner = owner;
     }
 
+    public User getWinner() {
+        return this.winner;
+    }
+
+    public void setWinner(User winner) {
+        this.winner = winner;
+    }
+
+    public Integer getSellerRating() {
+        return this.sellerRating;
+    }
+
+    public void setSellerRating(Integer sellerRating) {
+        this.sellerRating = sellerRating;
+    }
+
     public Date getStartDate() {
         return this.startDate;
     }
@@ -122,11 +160,11 @@ public class Bidding {
         this.startDate = startDate;
     }
 
-    public double getStartingPrice() {
+    public Double getStartingPrice() {
         return this.startingPrice;
     }
 
-    public void setStartingPrice(double startingPrice) {
+    public void setStartingPrice(Double startingPrice) {
         this.startingPrice = startingPrice;
     }
 
