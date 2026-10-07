@@ -49,6 +49,12 @@
         <ul class="info__items" id="items" hidden></ul>
       </section>
     </div>
+
+    <section class="history" id="history" aria-labelledby="history-title" hidden>
+      <h2 id="history-title">Bid history <span class="history__count" id="history-count"></span></h2>
+      <p class="history__empty" id="history-empty" hidden></p>
+      <ol class="history__list" id="history-list"></ol>
+    </section>
   </main>
 
   <script>
@@ -246,6 +252,7 @@
           const fresh = await getJson('/api/v1/biddings/' + current.id);
           if (fresh) { current = fresh; updatePrice(fresh); }
           await setupBidding();
+          loadHistory();
           return;
         }
 
@@ -260,6 +267,48 @@
         btn.textContent = 'Place bid';
       }
     });
+
+    // GET /api/v1/biddings/{id}/bids -> [BidActionResponse { id, userId, amount, timestamp }]
+    async function loadHistory() {
+      const list = $('history-list');
+      const empty = $('history-empty');
+      const bids = await getJson('/api/v1/biddings/' + current.id + '/bids');
+
+      list.replaceChildren();
+      empty.hidden = true;
+
+      if (bids === null) {
+        empty.textContent = 'Could not load the bid history.';
+        empty.hidden = false;
+        $('history-count').textContent = '';
+        return;
+      }
+      if (bids.length === 0) {
+        empty.textContent = 'No bids yet. Be the first to bid!';
+        empty.hidden = false;
+        $('history-count').textContent = '';
+        return;
+      }
+
+      $('history-count').textContent = '(' + bids.length + ')';
+      const highestAmount = Math.max(...bids.map(b => b.amount));
+      const newestFirst = [...bids].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+      newestFirst.forEach(bid => {
+        const row = el('li', 'history__row');
+        const who = el('div', 'history__who');
+        const isMe = me && bid.userId === me.id;
+        who.appendChild(el('span', 'history__name', isMe ? 'You' : 'User #' + bid.userId));
+        who.appendChild(el('span', 'history__time', fmtDate(bid.timestamp)));
+
+        const amount = el('div', 'history__amount');
+        if (bid.amount === highestAmount) amount.appendChild(el('span', 'badge badge--success', 'Highest'));
+        amount.appendChild(el('span', 'history__price', baht.format(bid.amount)));
+
+        row.append(who, amount);
+        list.appendChild(row);
+      });
+    }
 
     async function load() {
       showState('loading', 'Loading auction...');
@@ -279,7 +328,9 @@
         render(bidding, artworks);
         $('state').hidden = true;
         $('layout').hidden = false;
+        $('history').hidden = false;
         setupBidding();
+        loadHistory();
       } catch (e) {
         showState('error', 'Could not load this auction', 'Please refresh the page and try again.');
       }
