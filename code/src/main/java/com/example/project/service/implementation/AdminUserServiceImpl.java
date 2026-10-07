@@ -33,19 +33,21 @@ public class AdminUserServiceImpl implements AdminUserService {
     @Transactional
     public boolean createAdminIfAbsent(String name, String email, String rawPassword) {
         String normalizedEmail = email.trim().toLowerCase(Locale.ROOT);
-        if (userRepository.existsByEmail(normalizedEmail)) {
-            return false;
+        var existingUser = userRepository.findByEmail(normalizedEmail);
+        
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+            if (user.getRole() == User.Role.ADMIN) {
+                return false; // Already an admin
+            }
+            // Upgrade existing user to admin
+            user.setRole(User.Role.ADMIN);
+            user.setEnabled(true);
+            user.setPassword(passwordEncoder.encode(rawPassword));
+            user.setName(name.trim());
+            userRepository.save(user);
+            return true;}
         }
-
-        User admin = new User();
-        admin.setName(name.trim());
-        admin.setEmail(normalizedEmail);
-        admin.setPassword(passwordEncoder.encode(rawPassword));
-        admin.setRole(User.Role.ADMIN);
-        admin.setEnabled(true);
-        userRepository.save(admin);
-        return true;
-    }
 
     @Override
     @Transactional(readOnly = true)
