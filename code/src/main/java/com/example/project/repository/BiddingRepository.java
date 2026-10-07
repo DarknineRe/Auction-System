@@ -20,7 +20,9 @@ import jakarta.persistence.LockModeType;
 @Repository
 public interface BiddingRepository extends JpaRepository<Bidding, Long> {
     List<Bidding> findByArtworks_Id(Long artworkID);
-    List<Bidding> findByOwner_Id(Long userID);
+    Page<Bidding> findByOwner_Id(Long userID, Pageable pageable);
+    Page<Bidding> findByOwner_IdAndStatus(Long userID, Bidding.Status status, Pageable pageable);
+    Page<Bidding> findByWinner_Id(Long userID, Pageable pageable);
     Page<Bidding> findByStatus(Bidding.Status status, Pageable pageable);
     boolean existsByArtworks_Id(Long artworkID);
     // Row lock (SELECT ... FOR UPDATE) so bids, voids and status changes on one bidding run one at a time.

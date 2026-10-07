@@ -10,6 +10,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -18,9 +19,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.example.project.dto.request.CreateBiddingRequest;
 import com.example.project.dto.request.PlaceBidRequest;
 import com.example.project.dto.request.RateSellerRequest;
+import com.example.project.dto.request.UpdateBiddingRequest;
 import com.example.project.dto.response.BidActionResponse;
 import com.example.project.dto.response.BiddingResponse;
-import com.example.project.dto.response.SellerprofileResponse;
+import com.example.project.dto.response.PublicSellerprofileResponse;
 import com.example.project.mapper.BiddingMapper;
 import com.example.project.mapper.SellerprofileMapper;
 import com.example.project.model.BidAction;
@@ -76,9 +78,56 @@ public class BiddingController {
         return ResponseEntity.ok(new PagedModel<>(page));
     }
 
+    @GetMapping("/mine")
+    public ResponseEntity<PagedModel<BiddingResponse>> getMyBiddings(
+            Authentication authentication,
+            @RequestParam(required = false) Bidding.Status status,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        User owner = userService.getCurrentUser(authentication.getName());
+        Page<BiddingResponse> page = biddingService.getBiddingsByOwner(owner.getId(), status, pageable)
+                .map(biddingMapper::toResponse);
+
+        return ResponseEntity.ok(new PagedModel<>(page));
+    }
+
+    @GetMapping("/won")
+    public ResponseEntity<PagedModel<BiddingResponse>> getWonBiddings(
+            Authentication authentication,
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        User winner = userService.getCurrentUser(authentication.getName());
+        Page<BiddingResponse> page = biddingService.getBiddingsWonBy(winner.getId(), pageable)
+                .map(biddingMapper::toResponse);
+
+        return ResponseEntity.ok(new PagedModel<>(page));
+    }
+
     @GetMapping("/{biddingId}")
     public ResponseEntity<BiddingResponse> getBiddingById(@PathVariable Long biddingId) {
         return ResponseEntity.ok(biddingMapper.toResponse(biddingService.getBiddingById(biddingId)));
+    }
+
+    @PutMapping("/{biddingId}")
+    public ResponseEntity<BiddingResponse> updateBidding(
+            @PathVariable Long biddingId,
+            Authentication authentication,
+            @Valid @RequestBody UpdateBiddingRequest request) {
+        User owner = userService.getCurrentUser(authentication.getName());
+        Bidding bidding = biddingService.updateBidding(
+                biddingId,
+                owner.getId(),
+                request.startingPrice(),
+                request.startDate(),
+                request.endDate());
+
+        return ResponseEntity.ok(biddingMapper.toResponse(bidding));
+    }
+
+    @PostMapping("/{biddingId}/cancel")
+    public ResponseEntity<BiddingResponse> cancelBidding(
+            @PathVariable Long biddingId,
+            Authentication authentication) {
+        User owner = userService.getCurrentUser(authentication.getName());
+        return ResponseEntity.ok(biddingMapper.toResponse(biddingService.cancelBidding(biddingId, owner.getId())));
     }
 
     @PostMapping("/{biddingId}/bids")
@@ -96,12 +145,12 @@ public class BiddingController {
     }
 
     @PostMapping("/{biddingId}/seller-rating")
-    public ResponseEntity<SellerprofileResponse> rateSeller(
+    public ResponseEntity<PublicSellerprofileResponse> rateSeller(
             @PathVariable Long biddingId,
             Authentication authentication,
             @Valid @RequestBody RateSellerRequest request) {
         User user = userService.getCurrentUser(authentication.getName());
-        return ResponseEntity.ok(sellerprofileMapper.toResponse(
+        return ResponseEntity.ok(sellerprofileMapper.toPublicResponse(
                 sellerprofileService.rateSeller(biddingId, user.getId(), request.score())));
     }
 }

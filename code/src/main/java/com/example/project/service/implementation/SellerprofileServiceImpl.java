@@ -8,9 +8,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.model.Bidding;
+import com.example.project.model.Payment;
 import com.example.project.model.Sellerprofile;
 import com.example.project.model.User;
 import com.example.project.repository.BiddingRepository;
+import com.example.project.repository.PaymentRepository;
 import com.example.project.repository.SellerprofileRepository;
 import com.example.project.repository.UserRepository;
 import com.example.project.service.SellerprofileService;
@@ -21,14 +23,17 @@ public class SellerprofileServiceImpl implements SellerprofileService {
     private final SellerprofileRepository sellerprofileRepository;
     private final UserRepository userRepository;
     private final BiddingRepository biddingRepository;
+    private final PaymentRepository paymentRepository;
 
     public SellerprofileServiceImpl(
             SellerprofileRepository sellerprofileRepository,
             UserRepository userRepository,
-            BiddingRepository biddingRepository) {
+            BiddingRepository biddingRepository,
+            PaymentRepository paymentRepository) {
         this.sellerprofileRepository = sellerprofileRepository;
         this.userRepository = userRepository;
         this.biddingRepository = biddingRepository;
+        this.paymentRepository = paymentRepository;
     }
 
     @Override
@@ -64,6 +69,19 @@ public class SellerprofileServiceImpl implements SellerprofileService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public Sellerprofile getSellerProfileById(Long sellerProfileID) {
+        return sellerprofileRepository.findById(sellerProfileID)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Seller profile not found"));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Sellerprofile getSellerProfileByUserId(Long userID) {
+        return findSellerProfileByUserId(userID);
+    }
+
+    @Override
     @Transactional
     public Sellerprofile rateSeller(Long biddingID, Long userID, int score) {
         Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
@@ -72,6 +90,13 @@ public class SellerprofileServiceImpl implements SellerprofileService {
                 || !bidding.getWinner().getId().equals(userID)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "Only the winner of a closed bidding can rate its seller");
+        }
+        boolean completed = paymentRepository.findByBidding_Id(biddingID)
+                .map(payment -> payment.getStatus() == Payment.Status.COMPLETED)
+                .orElse(false);
+        if (!completed) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "The seller can only be rated after the payment is completed");
         }
         if (bidding.getSellerRating() != null) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "This bidding has already been rated");
@@ -82,8 +107,10 @@ public class SellerprofileServiceImpl implements SellerprofileService {
 
         Long sellerUserId = bidding.getOwner().getId();
         Sellerprofile seller = findSellerProfileByUserId(sellerUserId);
-        seller.setRating(biddingRepository.averageSellerRatingByOwnerId(sellerUserId));
-        return sellerprofileRepository.save(seller);
+        sellerprofileRepository.updateRating(seller.getSellprofileId(),
+                biddingRepository.averageSellerRatingByOwnerId(sellerUserId));
+        // The update query clears the persistence context, so read the profile again.
+        return findSellerProfileByUserId(sellerUserId);
     }
 
     private User findUserByEmail(String email) {

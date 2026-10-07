@@ -59,12 +59,7 @@ public class BiddingServiceImpl implements BiddingService {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A bidding needs at least one artwork.");
         }
-        if (!endDate.after(startDate)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after the start date.");
-        }
-        if (!endDate.after(new Date())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be in the future.");
-        }
+        validateDates(startDate, endDate);
         if (!sellerprofileRepository.existsByUser_Id(ownerID)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "A seller profile is required to open a bidding.");
@@ -116,6 +111,76 @@ public class BiddingServiceImpl implements BiddingService {
         return status == null
                 ? biddingRepository.findAll(pageable)
                 : biddingRepository.findByStatus(status, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Bidding> getBiddingsByOwner(Long ownerID, Bidding.Status status, Pageable pageable) {
+        validateSort(pageable);
+        return status == null
+                ? biddingRepository.findByOwner_Id(ownerID, pageable)
+                : biddingRepository.findByOwner_IdAndStatus(ownerID, status, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Bidding> getBiddingsWonBy(Long winnerID, Pageable pageable) {
+        validateSort(pageable);
+        return biddingRepository.findByWinner_Id(winnerID, pageable);
+    }
+
+    @Override
+    @Transactional
+    public Bidding updateBidding(Long biddingID, Long ownerID, Double startingPrice, Date startDate, Date endDate) {
+        validateDates(startDate, endDate);
+        Bidding bidding = findOwnBiddingWithoutBids(biddingID, ownerID, "edited");
+
+        bidding.setStartingPrice(startingPrice);
+        bidding.setStartDate(startDate);
+        bidding.setEndDate(endDate);
+        return biddingRepository.save(bidding);
+    }
+
+    @Override
+    @Transactional
+    public Bidding cancelBidding(Long biddingID, Long ownerID) {
+        Bidding bidding = findOwnBiddingWithoutBids(biddingID, ownerID, "cancelled");
+        if (!stateResolver.resolve(bidding.getStatus()).canMoveTo(Bidding.Status.CANCELLED)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Cannot change bidding from " + bidding.getStatus() + " to " + Bidding.Status.CANCELLED);
+        }
+
+        bidding.setStatus(Bidding.Status.CANCELLED);
+        return biddingRepository.save(bidding);
+    }
+
+    // Owners may only change an ACTIVE bidding nobody has bid on yet, so existing bidders are never affected.
+    private Bidding findOwnBiddingWithoutBids(Long biddingID, Long ownerID, String action) {
+        Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Bidding not found: " + biddingID));
+        if (bidding.getOwner() == null || !bidding.getOwner().getId().equals(ownerID)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the bidding owner can modify it.");
+        }
+        if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "This bidding is " + bidding.getStatus() + " and can no longer be " + action + ".");
+        }
+        if (bidActionRepository.findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID)
+                .isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "A bidding that already has bids cannot be " + action + ".");
+        }
+        return bidding;
+    }
+
+    private void validateDates(Date startDate, Date endDate) {
+        if (!endDate.after(startDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after the start date.");
+        }
+        if (!endDate.after(new Date())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be in the future.");
+        }
     }
 
     private void validateSort(Pageable pageable) {
