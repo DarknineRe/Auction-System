@@ -41,3 +41,10 @@
   background: var(--danger-bg);
   border: 1px solid var(--danger-border);
 }
+.alert--success {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+.field__hint { margin: 4px 0 0; font-size: 0.8rem; color: var(--muted); }
