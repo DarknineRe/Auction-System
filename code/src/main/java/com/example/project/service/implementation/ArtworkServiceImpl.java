@@ -20,7 +20,7 @@ import com.example.project.service.ArtworkService;
 @Service
 public class ArtworkServiceImpl implements ArtworkService {
 
-    private static final Set<String> SORTABLE_FIELDS = Set.of("id", "title", "imageUrl", "sellerprofile.id", "sellerprofile.user.id", "sellerprofile.user.name");
+    private static final Set<String> SORTABLE_FIELDS = Set.of("id", "title", "imageUrl", "sellerprofile.sellprofileId", "sellerprofile.user.id", "sellerprofile.user.name");
 
     private final ArtworkRepository artworkRepository;
     private final SellerprofileRepository sellerprofileRepository;
@@ -68,8 +68,13 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     @Transactional
-    public Artwork updateArtwork(Long artworkID, String title, String imageUrl) {
+    public Artwork updateArtwork(Long artworkID, String actorEmail, String title, String imageUrl) {
         Artwork artwork = getArtworkById(artworkID);
+        if (artwork.getSellerprofile() == null
+                || artwork.getSellerprofile().getUser() == null
+                || !artwork.getSellerprofile().getUser().getEmail().equalsIgnoreCase(actorEmail.trim())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the artwork owner can update it");
+        }
         artwork.setTitle(title);
         artwork.setImageUrl(imageUrl);
         return artworkRepository.save(artwork);
