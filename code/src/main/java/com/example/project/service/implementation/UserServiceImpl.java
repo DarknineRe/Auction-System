@@ -26,6 +26,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public User registerUser(String name, String email, String password, String phone, String address) {
+        if (password.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must not exceed 72 bytes");
+        }
         String normalizedEmail = normalizeEmail(email);
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email is already registered");
@@ -61,6 +64,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public void changePassword(String email, String currentPassword, String newPassword) {
+        if (newPassword.getBytes(java.nio.charset.StandardCharsets.UTF_8).length > 72) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Password must not exceed 72 bytes");
+        }
         User user = findUserByEmail(email);
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Current password is incorrect");

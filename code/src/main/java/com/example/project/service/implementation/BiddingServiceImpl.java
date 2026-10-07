@@ -126,11 +126,12 @@ public class BiddingServiceImpl implements BiddingService {
 
     @Override
     @Transactional
-    public BidAction placeBid(Long biddingID, Long userID, BigDecimal amount) {
+    public BidAction placeBid(Long biddingID, String actorEmail, BigDecimal amount) {
         Bidding bidding = getBiddingById(biddingID);
-        User bidder = userRepository.findById(userID)
+        User bidder = userRepository.findByEmail(actorEmail.trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found: " + userID));
+                        HttpStatus.NOT_FOUND, "User not found"));
+        Long userID = bidder.getId();
         
         // Prevent bidding on your own auction
         if (bidding.getOwner().getId().equals(userID)) {
