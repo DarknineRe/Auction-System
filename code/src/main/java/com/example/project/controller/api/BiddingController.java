@@ -3,6 +3,10 @@ package com.example.project.controller.api;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -48,10 +52,12 @@ public class BiddingController {
     }
 
     @GetMapping
-    public ResponseEntity<List<BiddingResponse>> getAllBiddings() {
-        return ResponseEntity.ok(biddingService.getAllBiddings().stream()
-                .map(biddingMapper::toResponse)
-                .collect(Collectors.toList()));
+    public ResponseEntity<PagedModel<BiddingResponse>> getAllBiddings(
+            @PageableDefault(size = 10, sort = "id") Pageable pageable) {
+        Page<BiddingResponse> page = biddingService.getAllBiddings(pageable)
+                .map(biddingMapper::toResponse);
+
+        return ResponseEntity.ok(new PagedModel<>(page));
     }
 
     @GetMapping("/{biddingId}")
