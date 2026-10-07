@@ -1,4 +1,6 @@
 package com.example.project.model;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -27,8 +29,8 @@ public class Bidding {
     @JoinColumn(name = "bidding_id", referencedColumnName = "id")
     private List<Artwork> artworks = new ArrayList<>();
 
-    @Column
-    private double lastBid;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal lastBid;
 
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL)
@@ -42,7 +44,8 @@ public class Bidding {
     @JoinColumn(name = "user_id")
     private User owner;
 
-    private Double startingPrice; // startingPrince and date HERE instead of artwork
+    @Column(precision = 19, scale = 4)
+    private BigDecimal startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;
     private Date endDate;
 
@@ -76,11 +79,11 @@ public class Bidding {
         this.artworks = artworks;
     }
 
-    public double getLastBid() {
+    public BigDecimal getLastBid() {
         return this.lastBid;
     }
 
-    public void setLastBid(double lastBid) {
+    public void setLastBid(BigDecimal lastBid) {
         this.lastBid = lastBid;
     }
 
@@ -122,11 +125,11 @@ public class Bidding {
         this.startDate = startDate;
     }
 
-    public double getStartingPrice() {
+    public BigDecimal getStartingPrice() {
         return this.startingPrice;
     }
 
-    public void setStartingPrice(double startingPrice) {
+    public void setStartingPrice(BigDecimal startingPrice) {
         this.startingPrice = startingPrice;
     }
 
