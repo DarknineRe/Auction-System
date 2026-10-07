@@ -73,11 +73,11 @@ public class ArtworkServiceImpl implements ArtworkService {
 
     @Override
     @Transactional
-    public Artwork updateArtwork(Long artworkID, String actorEmail, String title, String imageUrl) {
+    public Artwork updateArtwork(Long artworkID, Long sellerUserID, String title, String imageUrl) {
         Artwork artwork = getArtworkById(artworkID);
         if (artwork.getSellerprofile() == null
                 || artwork.getSellerprofile().getUser() == null
-                || !artwork.getSellerprofile().getUser().getEmail().equalsIgnoreCase(actorEmail.trim())) {
+                || !artwork.getSellerprofile().getUser().getId().equals(sellerUserID)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the artwork owner can update it");
         }
         artwork.setTitle(title);

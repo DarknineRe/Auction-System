@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import com.example.project.service.state.BiddingStateResolver;
 @Service
 public class BiddingServiceImpl implements BiddingService {
 
+    private static final BigDecimal MIN_BID_INCREMENT = new BigDecimal("1.00");
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "startingPrice", "lastBid", "startDate", "endDate", "status", "owner.id", "owner.name", "owner.email");
 
     private final BiddingRepository biddingRepository;
@@ -141,7 +143,7 @@ public class BiddingServiceImpl implements BiddingService {
 
     @Override
     @Transactional
-    public Bidding updateBidding(Long biddingID, Long ownerID, Double startingPrice, Date startDate, Date endDate) {
+    public Bidding updateBidding(Long biddingID, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate) {
         validateDates(startDate, endDate);
         Bidding bidding = findOwnBiddingWithoutBids(biddingID, ownerID, "edited");
 
@@ -203,25 +205,11 @@ public class BiddingServiceImpl implements BiddingService {
     }
     
     @Override
-    @Transactional(readOnly = true)
-    public Page<Bidding> getAllBiddings(Pageable pageable) {
-        validateSort(pageable);
-        return biddingRepository.findAll(pageable);
-    }
-
-    private void validateSort(Pageable pageable) {
-        for (Sort.Order order : pageable.getSort()) {
-            if (!SORTABLE_FIELDS.contains(order.getProperty())) {
-                throw new ResponseStatusException(
-                        HttpStatus.BAD_REQUEST, "Cannot sort by: " + order.getProperty());
-            }
-        }
-    }
-
-    @Override
     @Transactional
     public BidAction placeBid(Long biddingID, String actorEmail, BigDecimal amount) {
-        Bidding bidding = getBiddingById(biddingID);
+        Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Bidding not found: " + biddingID));
         User bidder = userRepository.findByEmail(actorEmail.trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User not found"));
@@ -246,20 +234,16 @@ public class BiddingServiceImpl implements BiddingService {
         Optional<BidAction> highestBid = bidActionRepository
                 .findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID);
 
-        // The first bid may match the starting price; later bids must raise the highest bid by MIN_BID_INCREMENT.
-        double minimumBid = highestBid
-                .map(bid -> bid.getAmount() + MIN_BID_INCREMENT)
-                .orElse(bidding.getStartingPrice());
-        if (amount < minimumBid) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Bid must be at least " + minimumBid);
+        if (highestBid.map(bid -> bid.getUser().getId().equals(userID)).orElse(false)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already the highest bidder.");
         }
 
-        // Prevent self-bidding (bidding against your own previous bid)
-        BidAction highestBid = bidActionRepository
-                .findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID)
-                .orElse(null);
-        if (highestBid != null && highestBid.getUser().getId().equals(userID)) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already the highest bidder.");
+        // The first bid may match the starting price; later bids must raise the highest bid by MIN_BID_INCREMENT.
+        BigDecimal minimumBid = highestBid
+            .map(bid -> bid.getAmount().add(MIN_BID_INCREMENT))
+                .orElse(bidding.getStartingPrice());
+        if (amount.compareTo(minimumBid) < 0) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Bid must be at least " + minimumBid);
         }
 
         BidAction action = new BidAction();
