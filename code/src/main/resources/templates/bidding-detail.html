@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auction | BidHub</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/bidding-detail.css}">
+</head>
+<body>
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <main class="detail">
+    <a class="detail__back" th:href="@{/}">&larr; All auctions</a>
+
+    <div class="state" id="state" role="status"></div>
+
+    <div class="detail__layout" id="layout" hidden>
+      <section class="gallery" aria-label="Item photos">
+        <div class="gallery__main" id="gallery-main"></div>
+        <div class="gallery__thumbs" id="gallery-thumbs"></div>
+      </section>
+
+      <section class="info" aria-label="Auction details">
+        <span class="badge" id="status-badge"></span>
+        <h1 id="title"></h1>
+
+        <p class="info__label" id="price-label"></p>
+        <p class="info__price" id="price"></p>
+
+        <form class="bid" id="bid-form" novalidate hidden>
+          <div class="field">
+            <label for="bid-amount">Your bid (THB)</label>
+            <input type="number" id="bid-amount" inputmode="decimal" min="0" step="any" required>
+            <p class="field__hint" id="bid-hint"></p>
+          </div>
+          <button type="submit" class="btn btn--primary" id="bid-btn">Place bid</button>
+        </form>
+        <p class="bid__note" id="bid-note" hidden></p>
+        <p class="alert bid__msg" id="bid-msg" role="alert" hidden></p>
+
+        <dl class="info__facts">
+          <div class="info__row"><dt>Starting price</dt><dd id="starting-price"></dd></div>
+          <div class="info__row"><dt>Started</dt><dd id="start-date"></dd></div>
+          <div class="info__row"><dt>Ends</dt><dd id="end-date"></dd></div>
+          <div class="info__row"><dt>Seller</dt><dd id="seller"></dd></div>
+        </dl>
+
+        <ul class="info__items" id="items" hidden></ul>
+      </section>
+    </div>
+  </main>
+
+  <script>
+    // GET /api/v1/biddings/{id} -> BiddingResponse; item details from GET /api/v1/artworks/{id}
+    const biddingId = location.pathname.split('/').filter(Boolean).pop();
+    const baht = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
+    const fmtDate = d => new Date(d).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+    const $ = id => document.getElementById(id);
+
+    const STATUS = {
+      ACTIVE:    { label: 'Active',    cls: 'badge--success' },
+      CLOSED:    { label: 'Closed',    cls: 'badge--neutral' },
+      CANCELLED: { label: 'Cancelled', cls: 'badge--danger' }
+    };
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;   // textContent keeps user data safe from XSS
+      return node;
+    }
+
+    function showState(type, title, text) {
+      const state = $('state');
+      state.className = 'state' + (type === 'error' ? ' state--error' : '');
+      state.replaceChildren();
+      if (type === 'loading') state.appendChild(el('div', 'spinner'));
+      state.appendChild(el('p', 'state__title', title));
+      if (text) state.appendChild(el('p', 'state__text', text));
+      state.hidden = false;
+    }
+
+    async function loadArtwork(id) {
+      try {
+        const res = await fetch('/api/v1/artworks/' + id);
+        return res.ok ? await res.json() : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function renderGallery(artworks) {
+      const main = $('gallery-main');
+      const thumbs = $('gallery-thumbs');
+
+      function select(index) {
+        main.replaceChildren();
+        const art = artworks[index];
+        if (art && art.imageUrl) {
+          const img = document.createElement('img');
+          img.src = art.imageUrl;
+          img.alt = art.title || 'Auction item';
+          main.appendChild(img);
+        }
+        [...thumbs.children].forEach((t, i) => t.setAttribute('aria-current', String(i === index)));
+      }
+
+      if (artworks.length > 1) {
+        artworks.forEach((art, i) => {
+          const btn = el('button', 'gallery__thumb');
+          btn.type = 'button';
+          btn.setAttribute('aria-label', 'Show ' + (art ? art.title : 'item ' + (i + 1)));
+          if (art && art.imageUrl) {
+            const img = document.createElement('img');
+            img.src = art.imageUrl;
+            img.alt = '';
+            btn.appendChild(img);
+          }
+          btn.addEventListener('click', () => select(i));
+          thumbs.appendChild(btn);
+        });
+      }
+      select(0);
+    }
+
+    function render(b, artworks) {
+      const status = STATUS[b.status] || { label: b.status, cls: 'badge--neutral' };
+      $('status-badge').textContent = status.label;
+      $('status-badge').className = 'badge ' + status.cls;
+
+      const first = artworks[0];
+      const title = first ? first.title : 'Auction #' + b.id;
+      $('title').textContent = artworks.length > 1 ? title + ' + ' + (artworks.length - 1) + ' more' : title;
+      document.title = title + ' | BidHub';
+
+      updatePrice(b);
+      $('starting-price').textContent = baht.format(b.startingPrice);
+      $('start-date').textContent = fmtDate(b.startDate);
+      $('end-date').textContent = fmtDate(b.endDate);
+      $('seller').textContent = 'Seller #' + b.ownerId;
+
+      if (artworks.length > 1) {
+        const list = $('items');
+        artworks.forEach((a, i) => list.appendChild(el('li', '', a ? a.title : 'Item ' + (i + 1))));
+        list.hidden = false;
+      }
+
+      renderGallery(artworks);
+    }
+
+    let current = null;   // latest BiddingResponse
+    let me = null;        // GET /api/v1/users/me (needed: PlaceBidRequest requires userId)
+
+    async function getJson(url) {
+      try {
+        const res = await fetch(url);
+        return res.ok ? await res.json() : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function updatePrice(b) {
+      const hasBid = b.lastBid != null;
+      $('price-label').textContent = hasBid ? 'Current bid' : 'Starting price';
+      $('price').textContent = baht.format(hasBid ? b.lastBid : b.startingPrice);
+    }
+
+    function showNote(text) {
+      $('bid-form').hidden = true;
+      $('bid-note').textContent = text;
+      $('bid-note').hidden = false;
+    }
+
+    function showBidMessage(text, type) {
+      const msg = $('bid-msg');
+      msg.textContent = text;
+      msg.className = 'alert alert--' + type + ' bid__msg';
+      msg.hidden = false;
+    }
+
+    // Decide whether the bid form is shown, using the same rules the backend enforces
+    async function setupBidding() {
+      const b = current;
+      $('bid-form').hidden = true;
+      $('bid-note').hidden = true;
+
+      if (b.status !== 'ACTIVE' || new Date() > new Date(b.endDate)) {
+        showNote('This auction is not accepting bids.');
+        return;
+      }
+      if (new Date() < new Date(b.startDate)) {
+        showNote('This auction has not started yet.');
+        return;
+      }
+      if (!me) {
+        showNote('Could not load your account. Refresh the page to try again.');
+        return;
+      }
+      if (me.id === b.ownerId) {
+        showNote('This is your auction, so you cannot bid on it.');
+        return;
+      }
+
+      // 404 here simply means "no bids yet"
+      const highest = await getJson('/api/v1/biddings/' + b.id + '/bids/highest');
+      if (highest && highest.userId === me.id) {
+        showNote('You are currently the highest bidder.');
+        return;
+      }
+
+      $('bid-hint').textContent = highest
+        ? 'Your bid must be higher than the current bid.'
+        : 'The first bid must be at least the starting price (' + baht.format(b.startingPrice) + ').';
+      $('bid-form').hidden = false;
+    }
+
+    $('bid-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      $('bid-msg').hidden = true;
+
+      const input = $('bid-amount');
+      const amount = parseFloat(input.value);
+      if (!Number.isFinite(amount) || amount <= 0) {
+        showBidMessage('Enter a valid amount.', 'error');
+        return;
+      }
+
+      const btn = $('bid-btn');
+      btn.disabled = true;
+      btn.textContent = 'Placing bid...';
+
+      try {
+        const res = await fetch('/api/v1/biddings/' + current.id + '/bids', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ userId: me.id, amount: amount })
+        });
+
+        if (res.status === 401) { window.location.href = '/login'; return; }
+
+        if (res.status === 201) {
+          showBidMessage('Bid placed: ' + baht.format(amount), 'success');
+          input.value = '';
+          const fresh = await getJson('/api/v1/biddings/' + current.id);
+          if (fresh) { current = fresh; updatePrice(fresh); }
+          await setupBidding();
+          return;
+        }
+
+        // Backend error format: { message, details: [...] }, e.g. 409 "Bid must be at least ..."
+        const data = await res.json().catch(() => ({}));
+        const detail = data.details && data.details.length ? ' ' + data.details.join(', ') : '';
+        showBidMessage((data.message || 'Could not place your bid.') + detail, 'error');
+      } catch (err) {
+        showBidMessage('Cannot reach the server. Please try again.', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Place bid';
+      }
+    });
+
+    async function load() {
+      showState('loading', 'Loading auction...');
+      try {
+        const res = await fetch('/api/v1/biddings/' + encodeURIComponent(biddingId));
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        if (res.status === 404) { showState('empty', 'Auction not found', 'It may have been removed.'); return; }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+
+        const bidding = await res.json();
+        const [artworks, user] = await Promise.all([
+          Promise.all(bidding.artworkIds.map(loadArtwork)),
+          getJson('/api/v1/users/me')
+        ]);
+        current = bidding;
+        me = user;
+        render(bidding, artworks);
+        $('state').hidden = true;
+        $('layout').hidden = false;
+        setupBidding();
+      } catch (e) {
+        showState('error', 'Could not load this auction', 'Please refresh the page and try again.');
+      }
+    }
+
+    load();
+  </script>
+</body>
+</html>

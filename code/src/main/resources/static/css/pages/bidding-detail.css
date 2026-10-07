@@ -54,6 +54,20 @@
 .info__label { margin: 0; font-size: 0.85rem; color: var(--muted); }
 .info__price { margin: 0 0 20px; font-size: 2.2rem; font-weight: 800; color: var(--navy); }
 
+/* Bid form */
+.bid { margin: 0 0 20px; }
+.bid .field { margin-bottom: 12px; }
+.bid__note {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  font-size: 0.9rem;
+  color: #1e40af;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: var(--radius);
+}
+.bid__msg { margin: 0 0 20px; }
+
 .info__facts { margin: 0; padding-top: 16px; border-top: 1px solid var(--border); }
 .info__row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; font-size: 0.95rem; }
 .info__row dt { color: var(--muted); }
