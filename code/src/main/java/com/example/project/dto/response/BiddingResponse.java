@@ -1,5 +1,6 @@
 package com.example.project.dto.response;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -9,8 +10,8 @@ public record BiddingResponse(
         Long id,
         List<Long> artworkIds,
         Long ownerId,
-        Double startingPrice,
-        Double lastBid,
+        BigDecimal startingPrice,
+        BigDecimal lastBid,
         Date startDate,
         Date endDate,
         Bidding.Status status) {
