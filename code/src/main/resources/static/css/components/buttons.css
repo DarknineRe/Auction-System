@@ -1,0 +1,27 @@
+.btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  font: inherit;
+  font-weight: 700;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.btn--primary {
+  color: var(--navy-dark);
+  background: var(--gold);
+}
+.btn--primary:hover {
+  background: var(--gold-dark);
+}
+.btn--primary:active {
+  transform: translateY(1px);
+}
+
+.btn:focus {
+  outline: 3px solid rgba(224, 165, 38, 0.5);
+  outline-offset: 2px;
+}
