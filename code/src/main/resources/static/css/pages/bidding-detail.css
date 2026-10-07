@@ -1,0 +1,68 @@
+/* Auction detail page only */
+.detail {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.detail__back { display: inline-block; margin-bottom: 20px; font-size: 0.9rem; }
+
+.detail__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 32px;
+  align-items: start;
+}
+.detail__layout[hidden] { display: none; }
+
+/* Gallery */
+.gallery__main {
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: #e5e7eb;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.gallery__main img { display: block; width: 100%; height: 100%; object-fit: cover; }
+
+.gallery__thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+.gallery__thumb {
+  width: 72px;
+  height: 72px;
+  padding: 0;
+  overflow: hidden;
+  background: #e5e7eb;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.gallery__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gallery__thumb[aria-current="true"] { border-color: var(--gold); }
+.gallery__thumb:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.6); outline-offset: 2px; }
+
+/* Info panel */
+.info {
+  padding: 24px;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.info h1 { margin: 8px 0 20px; font-size: 1.6rem; line-height: 1.25; color: var(--navy); }
+
+.info__label { margin: 0; font-size: 0.85rem; color: var(--muted); }
+.info__price { margin: 0 0 20px; font-size: 2.2rem; font-weight: 800; color: var(--navy); }
+
+.info__facts { margin: 0; padding-top: 16px; border-top: 1px solid var(--border); }
+.info__row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; font-size: 0.95rem; }
+.info__row dt { color: var(--muted); }
+.info__row dd { margin: 0; font-weight: 600; text-align: right; }
+
+.info__items { margin: 16px 0 0; padding-left: 20px; font-size: 0.95rem; }
+
+@media (max-width: 800px) {
+  .detail { padding: 20px 16px 48px; }
+  .detail__layout { grid-template-columns: 1fr; gap: 20px; }
+  .info__price { font-size: 1.8rem; }
+}
