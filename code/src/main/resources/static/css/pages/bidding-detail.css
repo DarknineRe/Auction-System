@@ -68,6 +68,15 @@
 }
 .bid__msg { margin: 0 0 20px; }
 
+.info__countdown {
+  margin: -8px 0 20px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums; /* digits keep the same width so the text does not jitter */
+  color: var(--navy);
+}
+.info__countdown.is-urgent { color: var(--danger); }
+.info__countdown.is-over { color: var(--muted); }
+
 .info__facts { margin: 0; padding-top: 16px; border-top: 1px solid var(--border); }
 .info__row { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; font-size: 0.95rem; }
 .info__row dt { color: var(--muted); }
