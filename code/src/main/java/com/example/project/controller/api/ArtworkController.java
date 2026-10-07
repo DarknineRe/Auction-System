@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.example.project.dto.request.CreateArtworkRequest;
 import com.example.project.dto.request.UpdateArtworkRequest;
@@ -73,8 +74,9 @@ public class ArtworkController {
     @PutMapping("/{artworkId}")
     public ResponseEntity<ArtworkResponse> updateArtwork(
             @PathVariable Long artworkId,
+            Authentication authentication,
             @Valid @RequestBody UpdateArtworkRequest request) {
-        Artwork artwork = artworkService.updateArtwork(artworkId, request.title(), request.imageUrl());
+        Artwork artwork = artworkService.updateArtwork(artworkId, authentication.getName(), request.title(), request.imageUrl());
 
         return ResponseEntity.ok(artworkMapper.toResponse(artwork));
     }

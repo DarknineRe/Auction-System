@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.example.project.dto.request.CreateBiddingRequest;
 import com.example.project.dto.request.PlaceBidRequest;
@@ -68,10 +69,11 @@ public class BiddingController {
     @PostMapping("/{biddingId}/bids")
     public ResponseEntity<BidActionResponse> placeBid(
             @PathVariable Long biddingId,
+            Authentication authentication,
             @Valid @RequestBody PlaceBidRequest request) {
         BidAction bidAction = biddingService.placeBid(
                 biddingId,
-                request.userId(),
+                authentication.getName(),
                 request.amount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(biddingMapper.toResponse(bidAction));
