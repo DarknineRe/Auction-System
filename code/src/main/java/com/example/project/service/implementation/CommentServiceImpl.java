@@ -42,7 +42,8 @@ public class CommentServiceImpl implements CommentService {
         comment.setMessage(message);
         comment.setUser(user);
         bidding.addComment(comment);
-        biddingRepository.save(bidding);
+        commentRepository.saveAndFlush(comment);
+        biddingRepository.saveAndFlush(bidding);
 
         return comment;
     }
@@ -70,6 +71,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = findCommentInBidding(bidding, commentID);
         ensureCommentOwner(comment, userID);
         bidding.getComments().remove(comment);
+        commentRepository.delete(comment);
         biddingRepository.save(bidding);
     }
 
