@@ -35,7 +35,7 @@ public class BidAction {
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20) not null default 'VALID'")
+    @Column(nullable = false)
     private Status status = Status.VALID;
 
     @Column

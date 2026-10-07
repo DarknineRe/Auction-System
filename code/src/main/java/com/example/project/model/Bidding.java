@@ -56,7 +56,7 @@ public class Bidding {
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20) not null default 'ACTIVE'")
+    @Column(nullable = false)
     private Status status = Status.ACTIVE;
 
     
