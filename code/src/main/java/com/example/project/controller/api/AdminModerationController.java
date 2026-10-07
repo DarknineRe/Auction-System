@@ -11,7 +11,7 @@ import com.example.project.service.AdminModerationService;
 
 @RestController
 @RequestMapping("/api/v1/admin")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class AdminModerationController {
 
     private final AdminModerationService adminModerationService;

@@ -48,6 +48,8 @@ public class CommentServiceImpl implements CommentService {
         comment.setMessage(message);
         comment.setUser(user);
         bidding.addComment(comment);
+        commentRepository.saveAndFlush(comment);
+        biddingRepository.saveAndFlush(bidding);
 
         // Persist the comment itself: saving the bidding merges it and returns a copy, leaving this one's id null.
         return commentRepository.save(comment);
@@ -75,7 +77,8 @@ public class CommentServiceImpl implements CommentService {
         Bidding bidding = findBiddingById(biddingID);
         Comment comment = findCommentInBidding(bidding, commentID);
         ensureCommentOwner(comment, userID);
-        bidding.removeComment(comment);
+        bidding.getComments().remove(comment);
+        commentRepository.delete(comment);
         biddingRepository.save(bidding);
     }
 

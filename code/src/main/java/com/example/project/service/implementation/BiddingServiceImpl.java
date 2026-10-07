@@ -1,16 +1,15 @@
 package com.example.project.service.implementation;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,9 +30,7 @@ import com.example.project.service.state.BiddingStateResolver;
 @Service
 public class BiddingServiceImpl implements BiddingService {
 
-    private static final double MIN_BID_INCREMENT = 1.0;
-    private static final Set<String> SORTABLE_FIELDS =
-            Set.of("id", "startDate", "endDate", "startingPrice", "lastBid", "status");
+    private static final Set<String> SORTABLE_FIELDS = Set.of("id", "startingPrice", "lastBid", "startDate", "endDate", "status", "owner.id", "owner.name", "owner.email");
 
     private final BiddingRepository biddingRepository;
     private final ArtworkRepository artworkRepository;
@@ -54,8 +51,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
-    @Transactional
-    public Bidding createBidding(List<Long> artworkIDs, Long ownerID, Double startingPrice, Date startDate, Date endDate) {
+    public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate) {
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A bidding needs at least one artwork.");
         }
@@ -63,6 +59,20 @@ public class BiddingServiceImpl implements BiddingService {
         if (!sellerprofileRepository.existsByUser_Id(ownerID)) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                     "A seller profile is required to open a bidding.");
+        }
+
+        // Validate dates
+        Date now = new Date();
+        if (startDate.before(now)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Start date cannot be in the past.");
+        }
+        if (endDate.before(startDate)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "End date must be after start date.");
+        }
+
+        // Check for duplicate artworks in the request
+        if (new java.util.HashSet<>(artworkIDs).size() != artworkIDs.size()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate artwork IDs in request.");
         }
 
         List<Artwork> artworks = new ArrayList<>();
@@ -191,19 +201,37 @@ public class BiddingServiceImpl implements BiddingService {
             }
         }
     }
+    
+    @Override
+    @Transactional(readOnly = true)
+    public Page<Bidding> getAllBiddings(Pageable pageable) {
+        validateSort(pageable);
+        return biddingRepository.findAll(pageable);
+    }
+
+    private void validateSort(Pageable pageable) {
+        for (Sort.Order order : pageable.getSort()) {
+            if (!SORTABLE_FIELDS.contains(order.getProperty())) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST, "Cannot sort by: " + order.getProperty());
+            }
+        }
+    }
 
     @Override
     @Transactional
-    public BidAction placeBid(Long biddingID, Long userID, Double amount) {
-        Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
+    public BidAction placeBid(Long biddingID, String actorEmail, BigDecimal amount) {
+        Bidding bidding = getBiddingById(biddingID);
+        User bidder = userRepository.findByEmail(actorEmail.trim().toLowerCase(java.util.Locale.ROOT))
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Bidding not found: " + biddingID));
-        User bidder = userRepository.findById(userID)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found: " + userID));
-        if (bidding.getOwner() != null && bidding.getOwner().getId().equals(bidder.getId())) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot bid on your own bidding.");
+                        HttpStatus.NOT_FOUND, "User not found"));
+        Long userID = bidder.getId();
+        
+        // Prevent bidding on your own auction
+        if (bidding.getOwner().getId().equals(userID)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot bid on your own auction.");
         }
+
         if (!stateResolver.resolve(bidding.getStatus()).acceptsBids()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "This bidding is " + bidding.getStatus() + " and is not accepting bids.");
@@ -224,6 +252,14 @@ public class BiddingServiceImpl implements BiddingService {
                 .orElse(bidding.getStartingPrice());
         if (amount < minimumBid) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Bid must be at least " + minimumBid);
+        }
+
+        // Prevent self-bidding (bidding against your own previous bid)
+        BidAction highestBid = bidActionRepository
+                .findTopByBidding_IdAndStatusOrderByAmountDesc(biddingID, BidAction.Status.VALID)
+                .orElse(null);
+        if (highestBid != null && highestBid.getUser().getId().equals(userID)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already the highest bidder.");
         }
 
         BidAction action = new BidAction();

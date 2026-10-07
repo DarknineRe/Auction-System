@@ -13,7 +13,7 @@ import com.example.project.service.AdminBiddingService;
 
 @RestController
 @RequestMapping("/api/v1/admin/biddings")
-@PreAuthorize("hasRole('ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
 public class AdminBiddingController {
 
     private final AdminBiddingService adminBiddingService;

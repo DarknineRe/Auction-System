@@ -1,5 +1,6 @@
 package com.example.project.service.implementation;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -77,7 +78,7 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
         bid.setVoidReason(reason.trim());
         BidAction saved = bidActionRepository.saveAndFlush(bid);
 
-        Double highestValidBid = bidActionRepository
+        BigDecimal currentPrice = bidActionRepository
                 .findTopByBidding_IdAndStatusOrderByAmountDesc(bidding.getId(), BidAction.Status.VALID)
                 .map(BidAction::getAmount)
                 .orElse(null);

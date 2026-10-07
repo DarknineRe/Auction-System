@@ -7,6 +7,7 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
 
+import com.example.project.model.User;
 import com.example.project.service.AdminUserService;
 
 @Component
@@ -33,7 +34,7 @@ public class AdminInitializer implements ApplicationRunner {
             return;
         }
 
-        boolean created = adminUserService.createAdminIfAbsent("Administrator", adminEmail, adminPassword);
-        log.info(created ? "Default admin account created" : "Default admin account already exists");
+        boolean created = adminUserService.createAdminIfAbsent("Super Administrator", adminEmail, adminPassword);
+        log.info(created ? "Default super admin account created" : "Default super admin account already exists");
     }
 }

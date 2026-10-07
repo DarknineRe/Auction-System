@@ -1,5 +1,8 @@
 package com.example.project.controller.api;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -15,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
 
 import com.example.project.dto.request.CreateBiddingRequest;
 import com.example.project.dto.request.PlaceBidRequest;
@@ -138,7 +142,7 @@ public class BiddingController {
         User bidder = userService.getCurrentUser(authentication.getName());
         BidAction bidAction = biddingService.placeBid(
                 biddingId,
-                bidder.getId(),
+                authentication.getName(),
                 request.amount());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(biddingMapper.toResponse(bidAction));

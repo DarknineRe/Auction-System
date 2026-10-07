@@ -1,4 +1,6 @@
 package com.example.project.model;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -32,9 +34,8 @@ public class Bidding {
             inverseJoinColumns = @JoinColumn(name = "artwork_id", referencedColumnName = "id"))
     private List<Artwork> artworks = new ArrayList<>();
 
-    // Highest valid bid amount; null until the first bid is placed.
-    @Column
-    private Double lastBid;
+    @Column(precision = 19, scale = 4)
+    private BigDecimal lastBid;
 
 
     @OneToMany(mappedBy = "bidding", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -48,16 +49,8 @@ public class Bidding {
     @JoinColumn(name = "user_id")
     private User owner;
 
-    @ManyToOne
-    @JoinColumn(name = "winner_user_id")
-    private User winner;
-
-    // Score (1-5) the winner gave the seller for this bidding; null until rated.
-    @Column
-    private Integer sellerRating;
-
-    @Column(nullable = false)
-    private Double startingPrice; // startingPrince and date HERE instead of artwork
+    @Column(precision = 19, scale = 4)
+    private BigDecimal startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;
     private Date endDate;
 
@@ -68,7 +61,7 @@ public class Bidding {
     }
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "varchar(20) not null default 'ACTIVE'")
+    @Column(nullable = false)
     private Status status = Status.ACTIVE;
 
     
@@ -91,11 +84,11 @@ public class Bidding {
         this.artworks = artworks;
     }
 
-    public Double getLastBid() {
+    public BigDecimal getLastBid() {
         return this.lastBid;
     }
 
-    public void setLastBid(Double lastBid) {
+    public void setLastBid(BigDecimal lastBid) {
         this.lastBid = lastBid;
     }
 
@@ -160,11 +153,11 @@ public class Bidding {
         this.startDate = startDate;
     }
 
-    public Double getStartingPrice() {
+    public BigDecimal getStartingPrice() {
         return this.startingPrice;
     }
 
-    public void setStartingPrice(Double startingPrice) {
+    public void setStartingPrice(BigDecimal startingPrice) {
         this.startingPrice = startingPrice;
     }
 

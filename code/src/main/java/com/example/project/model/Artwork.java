@@ -16,7 +16,7 @@ public class Artwork {
     private Long id;
     @Column(nullable = false)
     private String title;
-    @Column
+    @Column(length = 2048)
     private String imageUrl;
     /*
     @Column

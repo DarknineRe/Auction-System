@@ -1,5 +1,7 @@
 package com.example.project.model;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -20,8 +22,8 @@ public class Sellerprofile {
     private User user;
     @Column(nullable = false)
     private String bankaccount;
-    @Column 
-    private double rating;
+    @Column(precision = 3, scale = 2)
+    private BigDecimal rating;
     @Column 
     private int salecount;
 
@@ -53,11 +55,11 @@ public class Sellerprofile {
         this.bankaccount = bankaccount;
     }
 
-    public double getRating() {
+    public BigDecimal getRating() {
         return this.rating;
     }
 
-    public void setRating(double rating) {
+    public void setRating(BigDecimal rating) {
         this.rating = rating;
     }
 
