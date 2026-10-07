@@ -30,7 +30,8 @@ public class User {
     private Role role;
     public enum Role {
         USER,
-        ADMIN
+        ADMIN,
+        SUPER_ADMIN
     }
     @Column(nullable = false, columnDefinition = "boolean not null default true")
     private boolean enabled = true;

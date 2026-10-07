@@ -37,17 +37,27 @@ public class AdminUserServiceImpl implements AdminUserService {
         
         if (existingUser.isPresent()) {
             User user = existingUser.get();
-            if (user.getRole() == User.Role.ADMIN) {
-                return false; // Already an admin
+            if (user.getRole() == User.Role.SUPER_ADMIN) {
+                return false; // Already a super admin
             }
-            // Upgrade existing user to admin
-            user.setRole(User.Role.ADMIN);
+            // Upgrade existing user to super admin
+            user.setRole(User.Role.SUPER_ADMIN);
             user.setEnabled(true);
             user.setPassword(passwordEncoder.encode(rawPassword));
             user.setName(name.trim());
             userRepository.save(user);
-            return true;}
+            return true;
         }
+
+        User admin = new User();
+        admin.setName(name.trim());
+        admin.setEmail(normalizedEmail);
+        admin.setPassword(passwordEncoder.encode(rawPassword));
+        admin.setRole(User.Role.SUPER_ADMIN);
+        admin.setEnabled(true);
+        userRepository.save(admin);
+        return true;
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -69,6 +79,21 @@ public class AdminUserServiceImpl implements AdminUserService {
     public User setEnabled(String actorEmail, Long userId, boolean enabled) {
         User target = findUserById(userId);
         rejectSelfChange(actorEmail, target);
+        
+        // Prevent non-super admins from disabling other admins/super admins
+        if (target.getRole() == User.Role.SUPER_ADMIN) {
+            // Only super admins can modify super admins
+            var actor = userRepository.findByEmail(actorEmail.trim().toLowerCase(Locale.ROOT)).orElse(null);
+            if (actor == null || actor.getRole() != User.Role.SUPER_ADMIN) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only super admin can modify super admin");
+            }
+        } else if (target.getRole() == User.Role.ADMIN) {
+            // Super admins can modify regular admins
+            var actor = userRepository.findByEmail(actorEmail.trim().toLowerCase(Locale.ROOT)).orElse(null);
+            if (actor == null || actor.getRole() != User.Role.SUPER_ADMIN) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only super admin can modify admin");
+            }
+        }
 
         target.setEnabled(enabled);
         return userRepository.save(target);
