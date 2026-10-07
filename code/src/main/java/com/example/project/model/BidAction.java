@@ -1,5 +1,6 @@
 package com.example.project.model;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -18,8 +19,8 @@ public class BidAction {
     @Id
     @GeneratedValue(strategy = jakarta.persistence.GenerationType.IDENTITY)
     private Long id;
-    @Column
-    private double amount;
+    @Column(precision = 19, scale = 4, nullable = false)
+    private BigDecimal amount;
     @ManyToOne //userหลายbidได้
     @JoinColumn(name = "user_id", referencedColumnName = "id")
     private User user;
@@ -66,11 +67,11 @@ public class BidAction {
         this.id = id;
     }
 
-    public double getAmount() {
+    public BigDecimal getAmount() {
         return this.amount;
     }
 
-    public void setAmount(double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 
