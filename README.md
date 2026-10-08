@@ -35,15 +35,65 @@
 
 ##  Installation & Setup
 
-```bash
-git clone https://github.com/DarknineRe/Auction-System.git
-```
+1. **Clone repository:**
+   ```bash
+   git clone https://github.com/DarknineRe/Auction-System.git
+   cd Auction-System/code
+   ```
+
+2. **เตรียมฐานข้อมูล PostgreSQL:**
+   สร้างฐานข้อมูลชื่อ `auction_system` บนเครื่อง local หรือใช้บริการคลาวด์ เช่น Neon:
+   ```sql
+   CREATE DATABASE auction_system;
+   ```
+
+3. **กำหนดค่า Environment Variables:**
+   ตั้งค่าการเชื่อมต่อฐานข้อมูลและคีย์ความปลอดภัยก่อนรันระบบ:
+
+   **Linux / macOS (Bash / Zsh):**
+   ```bash
+   export DB_URL="jdbc:postgresql://localhost:5432/auction_system"
+   export DB_USERNAME="postgres"
+   export DB_PASSWORD="your_password"
+   export REMEMBER_ME_KEY="supersecretremembermekey12345"
+
+   # (Optional) บัญชีผู้ดูแลระบบเริ่มต้น
+   export ADMIN_EMAIL="admin@example.com"
+   export ADMIN_PASSWORD="adminpassword123"
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:DB_URL="jdbc:postgresql://localhost:5432/auction_system"
+   $env:DB_USERNAME="postgres"
+   $env:DB_PASSWORD="your_password"
+   $env:REMEMBER_ME_KEY="supersecretremembermekey12345"
+   $env:ADMIN_EMAIL="admin@example.com"
+   $env:ADMIN_PASSWORD="adminpassword123"
+   ```
 
 ##  How to Run
 
-```bash
-mvn spring-boot:run
-```
+1. **Quick Start (รันแบบรวดเร็วด้วยคำสั่งเดียว):**
+   เข้าไปที่โฟลเดอร์ `code` แล้ว copy คำสั่งด้านล่างไปวางใน Terminal ได้เลย (ระบบจะเซ็ตตัวแปรที่จำเป็นและสร้าง Admin อัตโนมัติ):
+
+   **Linux / macOS:**
+   ```bash
+   DB_URL=jdbc:postgresql://localhost:5432/auction_system DB_USERNAME=postgres DB_PASSWORD= REMEMBER_ME_KEY=devkey123 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=admin12345 ./mvnw spring-boot:run
+   ```
+
+   **Windows (PowerShell):**
+   ```powershell
+   $env:DB_URL="jdbc:postgresql://localhost:5432/auction_system"; $env:DB_USERNAME="postgres"; $env:DB_PASSWORD=""; $env:REMEMBER_ME_KEY="devkey123"; $env:ADMIN_EMAIL="admin@example.com"; $env:ADMIN_PASSWORD="admin12345"; .\mvnw.cmd spring-boot:run
+   ```
+
+2. **เข้าใช้งานผ่าน Browser (Thymeleaf Web UI):**
+   เมื่อระบบเริ่มทำงานเรียบร้อยแล้ว สามารถเปิดเบราว์เซอร์เพื่อเข้าใช้งานหน้าเว็บต่าง ๆ ได้ดังนี้:
+   - 🏠 **หน้าแรก / รายการประมูล (Home):** [http://localhost:8080/](http://localhost:8080/)
+   - 🔑 **เข้าสู่ระบบ (Log in):** [http://localhost:8080/login](http://localhost:8080/login)
+   - 📝 **สมัครสมาชิก (Sign up):** [http://localhost:8080/register](http://localhost:8080/register)
+   - 🏷️ **รายละเอียดการประมูล (Auction Detail):** `http://localhost:8080/biddings/{id}`
+   - 📖 **API Documentation (Swagger UI):** [http://localhost:8080/swagger-ui.html](http://localhost:8080/swagger-ui.html)
 
 ##  API Documentation
 ##  How to Run Tests
