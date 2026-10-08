@@ -35,7 +35,8 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/login", "/css/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/login", "/register", "/biddings/**", "/css/**", "/favicon.ico").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/biddings/**", "/api/v1/artworks/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
