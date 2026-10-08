@@ -43,6 +43,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(bids)}">You have not placed any bids yet.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${bidsPage}, '/my-bids', 'page', null)}"></div>
     </section>
     <section th:if="${page == 'my-bids'}" class="workspace__panel">
       <h2>Auctions you won</h2>
@@ -58,6 +59,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(wonBiddings)}">No won auctions yet.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${wonBiddingsPage}, '/my-bids', 'wonPage', null)}"></div>
       <a class="btn btn--secondary" th:href="@{/purchases}">View purchases</a>
     </section>
 
@@ -82,6 +84,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(biddings)}">You have not created any auctions yet.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/my-auctions', 'page', null)}"></div>
     </section>
 
     <form th:if="${page == 'new-auction'}" class="workspace__form workspace__panel" th:action="@{/auctions}" method="post">
@@ -124,6 +127,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(payments)}">No payment records found.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, ${page == 'purchases' ? '/purchases' : (page == 'sales' ? '/sales' : '/admin/payments')}, 'page', null)}"></div>
     </section>
 
     <section th:if="${page == 'payment-detail'}" class="workspace__panel">
@@ -211,6 +215,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(users)}">No users found.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/admin/users', 'page', null)}"></div>
     </section>
 
     <section th:if="${page == 'admin-auctions'}">
@@ -228,6 +233,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(biddings)}">No auctions found.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/admin/auctions', 'page', null)}"></div>
     </section>
 
     <section th:if="${page == 'admin-payments'}">
@@ -244,6 +250,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(payments)}">No payment records found.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/admin/payments', 'page', null)}"></div>
     </section>
 
     <section th:if="${page == 'admin-moderation'}" class="workspace__panel">
@@ -274,6 +281,7 @@
         </table>
       </div>
       <p class="workspace__empty" th:if="${bids != null and #lists.isEmpty(bids)}">No bids found for this auction.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/admin/bids', 'page', ${biddingId})}"></div>
     </section>
 
     <nav class="workspace__toolbar">

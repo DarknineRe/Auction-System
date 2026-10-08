@@ -11,7 +11,7 @@
   <main class="workspace workspace--error">
     <h1 th:text="${status ?: 500}">Error</h1>
     <p th:text="${message ?: 'Something went wrong. Please try again.'}">Something went wrong.</p>
-    <a class="btn btn--primary" th:href="@{/}">Return to auctions</a>
+    <a class="btn btn--primary" th:href="${returnPath ?: '/'}">Return to the previous page</a>
   </main>
 </body>
 </html>

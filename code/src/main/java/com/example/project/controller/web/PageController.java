@@ -7,11 +7,13 @@ import java.util.Date;
 import java.util.List;
 
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -30,6 +32,7 @@ import com.example.project.dto.request.UpdateBiddingRequest;
 import com.example.project.dto.request.UpdateUserStatusRequest;
 import com.example.project.dto.request.VoidBidRequest;
 import com.example.project.model.Bidding;
+import com.example.project.model.BidAction;
 import com.example.project.model.Payment;
 import com.example.project.model.Sellerprofile;
 import com.example.project.model.User;
@@ -45,6 +48,7 @@ import com.example.project.service.PaymentService;
 import com.example.project.service.SellerprofileService;
 import com.example.project.service.UserService;
 import com.example.project.service.AuctionListingService;
+import com.example.project.service.CommentService;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
@@ -56,8 +60,9 @@ import jakarta.validation.constraints.Size;
 @Validated
 public class PageController {
 
-    private static final int PAGE_SIZE = 50;
+    private static final int PAGE_SIZE = 15;
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "id");
+    private static final Sort AUCTIONS_ENDING_FIRST = Sort.by(Sort.Direction.ASC, "endDate");
 
     private final UserService userService;
     private final ArtworkService artworkService;
@@ -71,6 +76,7 @@ public class PageController {
     private final AdminModerationService adminModerationService;
     private final AdminBidActionService adminBidActionService;
     private final AuctionListingService auctionListingService;
+    private final CommentService commentService;
     private final Validator validator;
 
     public PageController(
@@ -86,6 +92,7 @@ public class PageController {
             AdminModerationService adminModerationService,
             AdminBidActionService adminBidActionService,
             AuctionListingService auctionListingService,
+            CommentService commentService,
             Validator validator) {
         this.userService = userService;
         this.artworkService = artworkService;
@@ -99,11 +106,16 @@ public class PageController {
         this.adminModerationService = adminModerationService;
         this.adminBidActionService = adminBidActionService;
         this.auctionListingService = auctionListingService;
+        this.commentService = commentService;
         this.validator = validator;
     }
 
     @GetMapping({ "/", "/home" })
-    public String home() {
+    public String home(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<Bidding> biddings = biddingService.getBiddings(
+                Bidding.Status.ACTIVE, PageRequest.of(Math.max(0, page), 12, AUCTIONS_ENDING_FIRST));
+        model.addAttribute("biddings", biddings);
+        model.addAttribute("now", new Date());
         return "home";
     }
 
@@ -117,30 +129,164 @@ public class PageController {
         return "register";
     }
 
+    @PostMapping("/register")
+    public String registerUser(
+            @RequestParam @NotBlank @Size(max = 255) String name,
+            @RequestParam @NotBlank @Size(max = 320) String email,
+            @RequestParam @NotBlank @Size(min = 8, max = 72) String password,
+            @RequestParam @NotBlank String confirmPassword,
+            @RequestParam(required = false) @Size(max = 100) String phone,
+            @RequestParam(required = false) @Size(max = 1000) String address) {
+        if (!password.equals(confirmPassword)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
+        }
+        userService.registerUser(name, email, password, phone, address);
+        return "redirect:/login?registered";
+    }
+
     @GetMapping("/profile")
-    public String profile() {
+    public String profile(Authentication authentication, Model model) {
+        model.addAttribute("user", currentUser(authentication));
         return "profile";
     }
 
+    @PostMapping("/profile")
+    public String updateProfile(
+            Authentication authentication,
+            @RequestParam @NotBlank @Size(max = 255) String name,
+            @RequestParam(required = false) @Size(max = 100) String phone,
+            @RequestParam(required = false) @Size(max = 1000) String address) {
+        userService.updateCurrentUser(authentication.getName(), name, phone, address);
+        return "redirect:/profile?profileUpdated";
+    }
+
+    @PostMapping("/profile/password")
+    public String changePassword(
+            Authentication authentication,
+            @RequestParam @NotBlank String currentPassword,
+            @RequestParam @NotBlank @Size(min = 8, max = 72) String newPassword,
+            @RequestParam @NotBlank String confirmPassword) {
+        if (!newPassword.equals(confirmPassword)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The new passwords do not match");
+        }
+        userService.changePassword(authentication.getName(), currentPassword, newPassword);
+        return "redirect:/profile?passwordUpdated";
+    }
+
     @GetMapping("/biddings/{biddingId}")
-    public String biddingDetail(@PathVariable Long biddingId) {
+    public String biddingDetail(
+            @PathVariable Long biddingId,
+            Authentication authentication,
+            Model model) {
+        Bidding bidding = biddingService.getBiddingById(biddingId);
+        model.addAttribute("bidding", bidding);
+        model.addAttribute("now", new Date());
+        model.addAttribute("artworks", bidding.getArtworks());
+        model.addAttribute("bids", bidActionService.getBidsByBidding(biddingId));
+        model.addAttribute("comments", commentService.getCommentsByBiddingId(biddingId));
+        model.addAttribute("currentUser", isAuthenticated(authentication)
+                ? userService.getCurrentUser(authentication.getName())
+                : null);
         return "bidding-detail";
     }
 
-    @GetMapping("/my-bids")
-    public String myBids(Authentication authentication, Model model) {
+    @PostMapping("/biddings/{biddingId}/bids")
+    public String placeBid(
+            @PathVariable Long biddingId,
+            Authentication authentication,
+            @RequestParam @Positive BigDecimal amount) {
+        biddingService.placeBid(biddingId, authentication.getName(), amount);
+        return "redirect:/biddings/" + biddingId + "?bidPlaced";
+    }
+
+    @PostMapping("/biddings/{biddingId}/comments")
+    public String createComment(
+            @PathVariable Long biddingId,
+            Authentication authentication,
+            @RequestParam @NotBlank @Size(max = 2000) String message) {
         User user = currentUser(authentication);
-        model.addAttribute("bids", bidActionService.getBidsByUser(user.getId()));
-        model.addAttribute("wonBiddings", biddingService
-                .getBiddingsWonBy(user.getId(), PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+        commentService.createComment(biddingId, user.getId(), message.trim());
+        return "redirect:/biddings/" + biddingId + "?commentPosted";
+    }
+
+    @PostMapping("/biddings/{biddingId}/comments/{commentId}/like")
+    public String likeComment(
+            @PathVariable Long biddingId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        User user = currentUser(authentication);
+        commentService.likeComment(biddingId, commentId, user.getId());
+        return "redirect:/biddings/" + biddingId + "#comments";
+    }
+
+    @PostMapping("/biddings/{biddingId}/comments/{commentId}/dislike")
+    public String dislikeComment(
+            @PathVariable Long biddingId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        User user = currentUser(authentication);
+        commentService.dislikeComment(biddingId, commentId, user.getId());
+        return "redirect:/biddings/" + biddingId + "#comments";
+    }
+
+    @PostMapping("/biddings/{biddingId}/comments/{commentId}")
+    public String updateComment(
+            @PathVariable Long biddingId,
+            @PathVariable Long commentId,
+            Authentication authentication,
+            @RequestParam @NotBlank @Size(max = 2000) String message) {
+        User user = currentUser(authentication);
+        commentService.updateComment(biddingId, commentId, user.getId(), message.trim());
+        return "redirect:/biddings/" + biddingId + "#comments";
+    }
+
+    @PostMapping("/biddings/{biddingId}/comments/{commentId}/delete")
+    public String deleteComment(
+            @PathVariable Long biddingId,
+            @PathVariable Long commentId,
+            Authentication authentication) {
+        User user = currentUser(authentication);
+        commentService.deleteComment(biddingId, commentId, user.getId());
+        return "redirect:/biddings/" + biddingId + "#comments";
+    }
+
+    @PostMapping("/biddings/{biddingId}/seller-rating")
+    public String rateSeller(
+            @PathVariable Long biddingId,
+            Authentication authentication,
+            @RequestParam @Positive Integer score) {
+        User user = currentUser(authentication);
+        sellerprofileService.rateSeller(biddingId, user.getId(), score);
+        return "redirect:/biddings/" + biddingId + "?ratingSubmitted";
+    }
+    @GetMapping("/my-bids")
+    public String myBids(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") int wonPage,
+            Model model) {
+        User user = currentUser(authentication);
+        Page<BidAction> bids = bidActionService.getBidsByUser(
+                user.getId(), PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        Page<Bidding> wonBiddings = biddingService.getBiddingsWonBy(
+                user.getId(), PageRequest.of(Math.max(0, wonPage), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("bids", bids.getContent());
+        model.addAttribute("bidsPage", bids);
+        model.addAttribute("wonBiddings", wonBiddings.getContent());
+        model.addAttribute("wonBiddingsPage", wonBiddings);
         return workspace(model, "my-bids", "My bids");
     }
 
     @GetMapping("/my-auctions")
-    public String myAuctions(Authentication authentication, Model model) {
+    public String myAuctions(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            Model model) {
         User user = currentUser(authentication);
-        model.addAttribute("biddings", biddingService
-                .getBiddingsByOwner(user.getId(), null, PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+        Page<Bidding> biddings = biddingService.getBiddingsByOwner(
+                user.getId(), null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("biddings", biddings.getContent());
+        model.addAttribute("tablePage", biddings);
         return workspace(model, "my-auctions", "My auctions");
     }
 
@@ -161,7 +307,7 @@ public class PageController {
         Bidding bidding = auctionListingService.createListing(
                 owner.getId(), title.trim(), imageUrl, startingPrice,
                 toDate(startDate), toDate(endDate));
-        return "redirect:/biddings/" + bidding.getId();
+        return "redirect:/biddings/" + bidding.getId() + "?success";
     }
 
     @GetMapping("/auctions/{biddingId}/edit")
@@ -189,29 +335,39 @@ public class PageController {
         validate(new UpdateBiddingRequest(startingPrice, toDate(startDate), toDate(endDate)));
         biddingService.updateBidding(
                 biddingId, owner.getId(), startingPrice, toDate(startDate), toDate(endDate));
-        return "redirect:/my-auctions";
+        return "redirect:/my-auctions?success";
     }
 
     @PostMapping("/auctions/{biddingId}/cancel")
     public String cancelAuction(@PathVariable Long biddingId, Authentication authentication) {
         User owner = currentUser(authentication);
         biddingService.cancelBidding(biddingId, owner.getId());
-        return "redirect:/my-auctions";
+        return "redirect:/my-auctions?success";
     }
 
     @GetMapping("/purchases")
-    public String purchases(Authentication authentication, Model model) {
+    public String purchases(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            Model model) {
         User user = currentUser(authentication);
-        model.addAttribute("payments", paymentService
-                .getPurchases(user.getId(), null, PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+        Page<Payment> payments = paymentService.getPurchases(
+                user.getId(), null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("payments", payments.getContent());
+        model.addAttribute("tablePage", payments);
         return workspace(model, "purchases", "My purchases");
     }
 
     @GetMapping("/sales")
-    public String sales(Authentication authentication, Model model) {
+    public String sales(
+            Authentication authentication,
+            @RequestParam(defaultValue = "0") int page,
+            Model model) {
         User user = currentUser(authentication);
-        model.addAttribute("payments", paymentService
-                .getSales(user.getId(), null, PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+        Page<Payment> payments = paymentService.getSales(
+                user.getId(), null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("payments", payments.getContent());
+        model.addAttribute("tablePage", payments);
         return workspace(model, "sales", "My sales");
     }
 
@@ -234,14 +390,14 @@ public class PageController {
         validate(new SubmitPaymentSlipRequest(slipUrl));
         User buyer = currentUser(authentication);
         paymentService.submitSlip(paymentId, buyer.getId(), slipUrl.trim());
-        return "redirect:/payments/" + paymentId;
+        return "redirect:/payments/" + paymentId + "?success";
     }
 
     @PostMapping("/payments/{paymentId}/confirm")
     public String confirmPayment(@PathVariable Long paymentId, Authentication authentication) {
         User seller = currentUser(authentication);
         paymentService.confirmPayment(paymentId, seller.getId());
-        return "redirect:/payments/" + paymentId;
+        return "redirect:/payments/" + paymentId + "?success";
     }
 
     @PostMapping("/payments/{paymentId}/reject")
@@ -252,7 +408,7 @@ public class PageController {
         validate(new RejectPaymentRequest(reason));
         User seller = currentUser(authentication);
         paymentService.rejectPayment(paymentId, seller.getId(), reason.trim());
-        return "redirect:/payments/" + paymentId;
+        return "redirect:/payments/" + paymentId + "?success";
     }
 
     @PostMapping("/payments/{paymentId}/ship")
@@ -267,7 +423,7 @@ public class PageController {
         validate(new ShipPaymentRequest(carrier, trackingNumber, trackingUrl, shippingNote));
         paymentService.ship(paymentId, seller.getId(), carrier.trim(), trackingNumber.trim(),
                 trackingUrl.trim(), shippingNote);
-        return "redirect:/payments/" + paymentId;
+        return "redirect:/payments/" + paymentId + "?success";
     }
 
     @GetMapping("/seller/settings")
@@ -287,7 +443,7 @@ public class PageController {
         } else {
             sellerprofileService.updateCurrentSellerProfile(authentication.getName(), bankaccount.trim());
         }
-        return "redirect:/seller/settings";
+        return "redirect:/seller/settings?success";
     }
 
     @GetMapping("/sellers/{userId}")
@@ -307,9 +463,11 @@ public class PageController {
 
     @GetMapping("/admin/users")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String adminUsers(Model model) {
-        model.addAttribute("users", adminUserService
-                .getUsers(null, PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+    public String adminUsers(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<User> users = adminUserService.getUsers(
+                null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("users", users.getContent());
+        model.addAttribute("tablePage", users);
         return workspace(model, "admin-users", "Manage users");
     }
 
@@ -321,14 +479,16 @@ public class PageController {
             @RequestParam boolean enabled) {
         validate(new UpdateUserStatusRequest(enabled));
         adminUserService.setEnabled(authentication.getName(), userId, enabled);
-        return "redirect:/admin/users";
+        return "redirect:/admin/users?success";
     }
 
     @GetMapping("/admin/auctions")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String adminAuctions(Model model) {
-        model.addAttribute("biddings", biddingService
-                .getBiddings(null, PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+    public String adminAuctions(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<Bidding> biddings = biddingService.getBiddings(
+                null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("biddings", biddings.getContent());
+        model.addAttribute("tablePage", biddings);
         return workspace(model, "admin-auctions", "Manage auctions");
     }
 
@@ -336,21 +496,23 @@ public class PageController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String closeAuction(@PathVariable Long biddingId) {
         adminBiddingService.closeBidding(biddingId);
-        return "redirect:/admin/auctions";
+        return "redirect:/admin/auctions?success";
     }
 
     @PostMapping("/admin/auctions/{biddingId}/cancel")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminCancelAuction(@PathVariable Long biddingId) {
         adminBiddingService.cancelBidding(biddingId);
-        return "redirect:/admin/auctions";
+        return "redirect:/admin/auctions?success";
     }
 
     @GetMapping("/admin/payments")
     @PreAuthorize("hasRole('ADMIN')")
-    public String adminPayments(Model model) {
-        model.addAttribute("payments", adminPaymentService
-                .getPayments(null, PageRequest.of(0, PAGE_SIZE, NEWEST_FIRST)).getContent());
+    public String adminPayments(@RequestParam(defaultValue = "0") int page, Model model) {
+        Page<Payment> payments = adminPaymentService.getPayments(
+                null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+        model.addAttribute("payments", payments.getContent());
+        model.addAttribute("tablePage", payments);
         return workspace(model, "admin-payments", "Manage payments");
     }
 
@@ -361,7 +523,7 @@ public class PageController {
             @RequestParam @NotBlank @Size(max = 500) String reason) {
         validate(new CancelPaymentRequest(reason));
         adminPaymentService.cancelPayment(paymentId, reason.trim());
-        return "redirect:/admin/payments";
+        return "redirect:/admin/payments?success";
     }
 
     @GetMapping("/admin/moderation")
@@ -382,15 +544,21 @@ public class PageController {
         } else {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported content type");
         }
-        return "redirect:/admin/moderation";
+        return "redirect:/admin/moderation?success";
     }
 
     @GetMapping("/admin/bids")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String adminBids(@RequestParam(required = false) Long biddingId, Model model) {
+    public String adminBids(
+            @RequestParam(required = false) Long biddingId,
+            @RequestParam(defaultValue = "0") int page,
+            Model model) {
         model.addAttribute("biddingId", biddingId);
         if (biddingId != null) {
-            model.addAttribute("bids", adminBidActionService.getAllBids(biddingId));
+            Page<BidAction> bids = adminBidActionService.getAllBids(
+                    biddingId, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
+            model.addAttribute("bids", bids.getContent());
+            model.addAttribute("tablePage", bids);
         }
         return workspace(model, "admin-bids", "Review bids");
     }
@@ -404,11 +572,17 @@ public class PageController {
             @RequestParam Long biddingId) {
         validate(new VoidBidRequest(reason));
         adminBidActionService.voidBid(authentication.getName(), bidId, reason.trim());
-        return "redirect:/admin/bids?biddingId=" + biddingId;
+        return "redirect:/admin/bids?biddingId=" + biddingId + "&success";
     }
 
     private User currentUser(Authentication authentication) {
         return userService.getCurrentUser(authentication.getName());
+    }
+
+    private boolean isAuthenticated(Authentication authentication) {
+        return authentication != null
+                && authentication.isAuthenticated()
+                && !(authentication instanceof AnonymousAuthenticationToken);
     }
 
     private Sellerprofile getSellerProfileOrNull(String email) {
