@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Error | BidHub</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/workspace.css}">
+</head>
+<body>
+  <main class="workspace workspace--error">
+    <h1 th:text="${status ?: 500}">Error</h1>
+    <p th:text="${message ?: 'Something went wrong. Please try again.'}">Something went wrong.</p>
+    <a class="btn btn--primary" th:href="${returnPath ?: '/'}">Return to the previous page</a>
+  </main>
+</body>
+</html>

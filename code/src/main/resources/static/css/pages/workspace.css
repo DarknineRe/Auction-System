@@ -1,0 +1,345 @@
+.workspace {
+  width: min(1160px, calc(100% - 3rem));
+  margin: 0 auto;
+  padding: 3rem 0 5rem;
+}
+
+.workspace__header {
+  position: relative;
+  margin-bottom: 2rem;
+  padding: 0 0 1.25rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.workspace__header::before {
+  display: block;
+  width: 3rem;
+  height: 4px;
+  margin-bottom: 1rem;
+  background: var(--gold);
+  border-radius: 999px;
+  content: "";
+}
+
+.workspace__header h1 {
+  margin: 0;
+  color: var(--navy);
+  font-size: clamp(1.8rem, 4vw, 2.5rem);
+  line-height: 1.15;
+}
+
+.workspace__header p {
+  margin: .6rem 0 0;
+  color: var(--muted);
+}
+
+.workspace__toolbar,
+.workspace__actions,
+.workspace__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem;
+  margin: 1.25rem 0;
+}
+
+.workspace__card,
+.workspace__panel {
+  min-width: 0;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--white);
+  box-shadow: 0 4px 16px rgb(20 33 61 / 5%);
+}
+
+.workspace__card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .75rem;
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+
+.workspace__card:hover {
+  transform: translateY(-2px);
+  border-color: var(--gold);
+  box-shadow: 0 10px 24px rgb(20 33 61 / 9%);
+}
+
+.workspace__card h2,
+.workspace__panel h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.15rem;
+}
+
+.workspace__card p,
+.workspace__panel p {
+  color: var(--muted);
+}
+
+.workspace__card .btn {
+  margin-top: auto;
+}
+
+.workspace__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 1rem;
+}
+
+.workspace__form {
+  display: grid;
+  gap: 1rem;
+  max-width: 720px;
+}
+
+.workspace__form label {
+  display: grid;
+  gap: .4rem;
+  color: var(--navy);
+  font-size: .92rem;
+  font-weight: 650;
+}
+
+.workspace__form input,
+.workspace__form select,
+.workspace__form textarea,
+.workspace__filters input,
+.workspace__filters select {
+  width: 100%;
+  min-height: 44px;
+  padding: .7rem .8rem;
+  color: var(--text);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+.workspace__form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.workspace__inline-form {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: .5rem;
+  margin: .2rem;
+}
+
+.workspace__inline-form label {
+  display: grid;
+  gap: .25rem;
+  color: var(--muted);
+  font-size: .8rem;
+  font-weight: 600;
+}
+
+.workspace__inline-form input {
+  min-height: 36px;
+  padding: .45rem .6rem;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font: inherit;
+}
+
+.workspace__inline-form input:focus {
+  outline: 3px solid rgb(224 165 38 / 25%);
+  border-color: var(--gold-dark);
+}
+
+.workspace__form input:focus,
+.workspace__form select:focus,
+.workspace__form textarea:focus,
+.workspace__filters input:focus,
+.workspace__filters select:focus {
+  outline: 3px solid rgb(224 165 38 / 25%);
+  border-color: var(--gold-dark);
+}
+
+.workspace .btn {
+  display: inline-flex;
+  width: auto;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: .65rem 1rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+.workspace .btn--primary {
+  color: var(--navy-dark);
+}
+
+.workspace .btn--secondary {
+  color: var(--navy);
+  background: #eef1f6;
+}
+
+.workspace .btn--secondary:hover {
+  background: #dfe5ee;
+}
+
+.workspace__inline-form .btn {
+  min-height: 36px;
+  padding: .45rem .7rem;
+}
+
+.workspace button:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+}
+
+.workspace__table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--white);
+}
+
+.workspace__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .92rem;
+}
+
+.workspace__table th,
+.workspace__table td {
+  padding: .85rem 1rem;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid #e9ecf1;
+}
+
+.workspace__table th {
+  color: var(--navy);
+  background: #f5f7fa;
+  font-size: .78rem;
+  font-weight: 750;
+  letter-spacing: .045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.workspace__table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.workspace__table tbody tr:hover {
+  background: #fbfcfe;
+}
+
+.workspace__table td .btn {
+  min-height: 34px;
+  margin: .15rem;
+  padding: .4rem .65rem;
+  font-size: .82rem;
+}
+
+.workspace__table a,
+.workspace__link {
+  color: var(--navy);
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--gold-dark);
+  text-underline-offset: 3px;
+}
+
+.workspace__empty {
+  padding: 1.25rem;
+  color: var(--muted);
+  text-align: center;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: #fafbfc;
+}
+
+.workspace__panel dl {
+  display: grid;
+  grid-template-columns: minmax(150px, .6fr) minmax(0, 1.4fr);
+  gap: .65rem 1rem;
+  margin: 0;
+}
+
+.workspace__panel dt {
+  color: var(--muted);
+  font-weight: 650;
+}
+
+.workspace__panel dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.workspace__panel img,
+.workspace__card img {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+#workspace-message {
+  margin: 0 0 1rem;
+}
+
+#workspace-message.alert--success {
+  color: #166534;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+#workspace-message.alert--error {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border: 1px solid var(--danger-border);
+}
+
+.workspace--error {
+  max-width: 640px;
+  padding-top: 12vh;
+}
+
+.workspace--error h1 {
+  color: var(--navy);
+}
+
+.workspace--error p {
+  margin-bottom: 1.5rem;
+  color: var(--muted);
+}
+
+.workspace [hidden] {
+  display: none !important;
+}
+
+@media (max-width: 700px) {
+  .workspace {
+    width: min(100% - 1.5rem, 1160px);
+    padding: 1.75rem 0 3rem;
+  }
+
+  .workspace__table {
+    min-width: 680px;
+  }
+}
+
+@media (max-width: 480px) {
+  .workspace__panel dl {
+    grid-template-columns: 1fr;
+    gap: .25rem;
+  }
+
+  .workspace__panel dd {
+    margin-bottom: .6rem;
+  }
+}

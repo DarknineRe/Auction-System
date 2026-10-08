@@ -3,6 +3,8 @@ package com.example.project.repository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,6 +21,10 @@ public interface BidActionRepository extends JpaRepository<BidAction, Long> {
     Optional<BidAction> findTopByBidding_IdAndStatusOrderByAmountDesc(Long biddingID, BidAction.Status status);
 
     List<BidAction> findByUser_IdAndStatus(Long userID, BidAction.Status status);
+
+    Page<BidAction> findByUser_IdAndStatus(Long userID, BidAction.Status status, Pageable pageable);
+
+    Page<BidAction> findByBidding_IdOrderByAmountDesc(Long biddingID, Pageable pageable);
 
     @Query("select b.bidding.id from BidAction b where b.id = :bidId")
     Optional<Long> findBiddingIdById(@Param("bidId") Long bidId);

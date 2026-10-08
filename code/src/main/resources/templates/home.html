@@ -16,130 +16,51 @@
       <p>Browse items open for bidding and place your bid.</p>
     </header>
 
-    <!-- Loading / empty / error messages -->
-    <div class="state" id="state" role="status" hidden></div>
+    <div th:if="${param.bidPlaced}" class="alert alert--success" role="status">Your bid was placed.</div>
+    <div th:if="${biddings.content.isEmpty()}" class="state">
+      <p class="state__title">No active auctions right now</p>
+      <p class="state__text">Check back soon for new items.</p>
+    </div>
 
-    <!-- Cards are rendered here by the script below -->
-    <div class="card-grid" id="auction-grid"></div>
+    <div class="card-grid" th:unless="${biddings.content.isEmpty()}">
+      <a class="card" th:each="bidding : ${biddings.content}"
+         th:href="@{/biddings/{id}(id=${bidding.id})}">
+        <div class="card__media">
+          <img th:if="${!bidding.artworks.isEmpty() and bidding.artworks[0].imageUrl != null}"
+               th:src="${bidding.artworks[0].imageUrl}"
+               th:alt="${bidding.artworks[0].title}" loading="lazy">
+        </div>
+        <div class="card__body">
+          <span class="badge badge--success">Active</span>
+          <h2 class="card__title"
+              th:text="${bidding.artworks.isEmpty() ? 'Auction #' + bidding.id : bidding.artworks[0].title}">
+            Auction item
+          </h2>
+          <p class="card__label" th:text="${bidding.lastBid == null ? 'Starting price' : 'Current bid'}">Starting price</p>
+          <p class="card__price"
+             th:text="${#numbers.formatDecimal(bidding.lastBid == null ? bidding.startingPrice : bidding.lastBid, 1, 'COMMA', 2, 'POINT')} + ' THB'">
+            0 THB
+          </p>
+          <p class="card__meta">
+            <span th:text="'Ends ' + ${#dates.format(bidding.endDate, 'dd MMM yyyy HH:mm')}">End date</span>
+            <span th:if="${bidding.artworks.size() > 1}"
+                  th:text="' · ' + ${bidding.artworks.size()} + ' items'"></span>
+          </p>
+        </div>
+      </a>
+    </div>
 
-    <nav class="pagination" id="pagination" aria-label="Pagination" hidden>
-      <button type="button" class="pagination__btn" id="prev-btn">Previous</button>
-      <span class="pagination__info" id="page-info"></span>
-      <button type="button" class="pagination__btn" id="next-btn">Next</button>
+    <nav class="pagination" aria-label="Auction pages" th:if="${biddings.totalPages > 1}">
+      <a class="pagination__btn"
+         th:classappend="${biddings.first ? ' pagination__btn--disabled' : ''}"
+         th:if="${!biddings.first}" th:href="@{/(page=${biddings.number - 1})}">Previous</a>
+      <span class="pagination__btn pagination__btn--disabled" th:if="${biddings.first}">Previous</span>
+      <span class="pagination__info"
+            th:text="'Page ' + ${biddings.number + 1} + ' of ' + ${biddings.totalPages}">Page</span>
+      <a class="pagination__btn" th:if="${!biddings.last}"
+         th:href="@{/(page=${biddings.number + 1})}">Next</a>
+      <span class="pagination__btn pagination__btn--disabled" th:if="${biddings.last}">Next</span>
     </nav>
   </main>
-
-  <script>
-    // GET /api/v1/biddings?status=ACTIVE  ->  { content: [BiddingResponse], page: {...} }
-    // BiddingResponse has only artworkIds, so title/image come from GET /api/v1/artworks/{id}
-    const grid = document.getElementById('auction-grid');
-    const baht = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
-
-    function el(tag, className, text) {
-      const node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined) node.textContent = text;   // textContent keeps user data safe from XSS
-      return node;
-    }
-
-    async function loadArtwork(id) {
-      try {
-        const res = await fetch('/api/v1/artworks/' + id);
-        return res.ok ? await res.json() : null;
-      } catch (e) {
-        return null;
-      }
-    }
-
-    function buildCard(bidding, artwork) {
-      const card = el('a', 'card');
-      card.href = '/biddings/' + bidding.id;
-
-      const media = el('div', 'card__media');
-      if (artwork && artwork.imageUrl) {
-        const img = document.createElement('img');
-        img.src = artwork.imageUrl;
-        img.alt = artwork.title || 'Auction item';
-        img.loading = 'lazy';
-        media.appendChild(img);
-      }
-
-      const body = el('div', 'card__body');
-      body.appendChild(el('span', 'badge badge--success', 'Active'));
-      body.appendChild(el('h3', 'card__title', artwork ? artwork.title : 'Auction #' + bidding.id));
-      body.appendChild(el('p', 'card__label', bidding.lastBid != null ? 'Current bid' : 'Starting price'));
-      body.appendChild(el('p', 'card__price', baht.format(bidding.lastBid != null ? bidding.lastBid : bidding.startingPrice)));
-
-      const ends = new Date(bidding.endDate);
-      let meta = 'Ends ' + ends.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
-      if (bidding.artworkIds.length > 1) meta += ' · ' + bidding.artworkIds.length + ' items';
-      body.appendChild(el('p', 'card__meta', meta));
-
-      card.append(media, body);
-      return card;
-    }
-
-    const PAGE_SIZE = 12;
-    const state = document.getElementById('state');
-    const pagination = document.getElementById('pagination');
-    const prevBtn = document.getElementById('prev-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const pageInfo = document.getElementById('page-info');
-    let currentPage = 0;
-
-    // type: 'loading' | 'empty' | 'error'
-    function showState(type, title, text, onRetry) {
-      state.className = 'state' + (type === 'error' ? ' state--error' : '');
-      state.replaceChildren();
-      if (type === 'loading') state.appendChild(el('div', 'spinner'));
-      state.appendChild(el('p', 'state__title', title));
-      if (text) state.appendChild(el('p', 'state__text', text));
-      if (onRetry) {
-        const retry = el('button', 'btn btn--primary state__action', 'Try again');
-        retry.type = 'button';
-        retry.addEventListener('click', onRetry);
-        state.appendChild(retry);
-      }
-      state.hidden = false;
-    }
-
-    async function loadBiddings(page) {
-      currentPage = page;
-      grid.replaceChildren();
-      pagination.hidden = true;
-      showState('loading', 'Loading auctions...');
-
-      try {
-        const res = await fetch('/api/v1/biddings?status=ACTIVE&sort=endDate,asc&size=' + PAGE_SIZE + '&page=' + page);
-        if (res.status === 401) { window.location.href = '/login'; return; }
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const data = await res.json();
-
-        if (data.content.length === 0) {
-          showState('empty', 'No active auctions right now', 'Check back soon for new items.');
-          return;
-        }
-
-        const artworks = await Promise.all(data.content.map(b => loadArtwork(b.artworkIds[0])));
-        state.hidden = true;
-        data.content.forEach((b, i) => grid.appendChild(buildCard(b, artworks[i])));
-
-        const totalPages = data.page.totalPages;
-        if (totalPages > 1) {
-          pageInfo.textContent = 'Page ' + (page + 1) + ' of ' + totalPages;
-          prevBtn.disabled = page === 0;
-          nextBtn.disabled = page >= totalPages - 1;
-          pagination.hidden = false;
-        }
-      } catch (e) {
-        showState('error', 'Could not load auctions', 'Please check your connection and try again.', () => loadBiddings(currentPage));
-      }
-    }
-
-    prevBtn.addEventListener('click', () => { loadBiddings(currentPage - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-    nextBtn.addEventListener('click', () => { loadBiddings(currentPage + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); });
-
-    loadBiddings(0);
-  </script>
 </body>
 </html>

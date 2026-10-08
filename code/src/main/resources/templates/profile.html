@@ -11,261 +11,69 @@
   <div th:replace="~{fragments/navbar :: navbar}"></div>
 
   <main class="profile">
-    <div class="state" id="state" role="status"></div>
+    <div th:if="${param.profileUpdated}" class="alert alert--success" role="status">Your profile has been updated.</div>
+    <div th:if="${param.passwordUpdated}" class="alert alert--success" role="status">Your password has been updated.</div>
 
-    <div class="profile__card" id="card" hidden>
+    <section class="profile__card">
       <header class="profile__header">
-        <div class="profile__avatar" id="avatar" aria-hidden="true"></div>
+        <div class="profile__avatar" aria-hidden="true"
+             th:text="${#strings.isEmpty(user.name) ? '?' : #strings.substring(user.name, 0, 1)}">B</div>
         <div>
-          <h1 class="profile__name" id="header-name"></h1>
-          <p class="profile__email" id="header-email"></p>
-          <span class="badge" id="role-badge"></span>
+          <h1 class="profile__name" th:text="${user.name}">Name</h1>
+          <p class="profile__email" th:text="${user.email}">Email</p>
+          <span class="badge badge--neutral" th:text="${user.role}">Member</span>
         </div>
       </header>
 
-      <form class="profile__form" id="profile-form" novalidate>
+      <form class="profile__form" th:action="@{/profile}" method="post">
         <h2 class="profile__section-title">Personal information</h2>
-
         <div class="field">
           <label for="name">Full name</label>
-          <input type="text" id="name" name="name" autocomplete="name" required>
+          <input type="text" id="name" name="name" autocomplete="name" maxlength="255"
+                 th:value="${user.name}" required>
         </div>
-
         <div class="field">
           <label for="email">Email</label>
-          <input type="email" id="email" name="email" readonly aria-describedby="email-hint">
+          <input type="email" id="email" autocomplete="email" th:value="${user.email}"
+                 readonly aria-describedby="email-hint">
           <p class="field__hint" id="email-hint">Your email is your login and cannot be changed.</p>
         </div>
-
         <div class="field">
           <label for="phone">Phone</label>
-          <input type="tel" id="phone" name="phone" autocomplete="tel">
+          <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="100"
+                 th:value="${user.phone}">
         </div>
-
         <div class="field">
           <label for="address">Address</label>
-          <input type="text" id="address" name="address" autocomplete="street-address">
+          <input type="text" id="address" name="address" autocomplete="street-address" maxlength="1000"
+                 th:value="${user.address}">
         </div>
-
-        <button type="submit" class="btn btn--primary" id="save-btn" disabled>Save changes</button>
-        <p class="alert profile__msg" id="msg" role="alert" hidden></p>
+        <button type="submit" class="btn btn--primary">Save changes</button>
       </form>
-    </div>
+    </section>
 
-    <div class="profile__card" id="password-card" hidden>
-      <form class="profile__form" id="password-form" novalidate>
+    <section class="profile__card">
+      <form class="profile__form" th:action="@{/profile/password}" method="post">
         <h2 class="profile__section-title">Change password</h2>
-
         <div class="field">
           <label for="current-password">Current password</label>
-          <input type="password" id="current-password" autocomplete="current-password" required>
+          <input type="password" id="current-password" name="currentPassword"
+                 autocomplete="current-password" required>
         </div>
-
         <div class="field">
           <label for="new-password">New password</label>
-          <input type="password" id="new-password" minlength="8" maxlength="72" autocomplete="new-password" required>
+          <input type="password" id="new-password" name="newPassword" minlength="8" maxlength="72"
+                 autocomplete="new-password" required>
           <p class="field__hint">8-72 characters</p>
         </div>
-
         <div class="field">
           <label for="confirm-password">Confirm new password</label>
-          <input type="password" id="confirm-password" autocomplete="new-password" required>
+          <input type="password" id="confirm-password" name="confirmPassword"
+                 autocomplete="new-password" required>
         </div>
-
-        <button type="submit" class="btn btn--primary" id="pw-btn">Update password</button>
-        <p class="alert profile__msg" id="pw-msg" role="alert" hidden></p>
+        <button type="submit" class="btn btn--primary">Update password</button>
       </form>
-    </div>
+    </section>
   </main>
-
-  <script>
-    // GET /api/v1/users/me -> UserResponse { id, name, email, phone, address, role }
-    // PUT /api/v1/users/me  <- { name (required), phone, address }
-    const $ = id => document.getElementById(id);
-    const form = $('profile-form');
-    let saved = null;   // last values known to be stored on the server
-
-    const ROLES = {
-      USER:        { label: 'Member',      cls: 'badge--neutral' },
-      ADMIN:       { label: 'Admin',       cls: 'badge--info' },
-      SUPER_ADMIN: { label: 'Super admin', cls: 'badge--info' }
-    };
-
-    function el(tag, className, text) {
-      const node = document.createElement(tag);
-      if (className) node.className = className;
-      if (text !== undefined) node.textContent = text;
-      return node;
-    }
-
-    function showState(type, title, text, onRetry) {
-      const state = $('state');
-      state.className = 'state' + (type === 'error' ? ' state--error' : '');
-      state.replaceChildren();
-      if (type === 'loading') state.appendChild(el('div', 'spinner'));
-      state.appendChild(el('p', 'state__title', title));
-      if (text) state.appendChild(el('p', 'state__text', text));
-      if (onRetry) {
-        const retry = el('button', 'btn btn--primary state__action', 'Try again');
-        retry.type = 'button';
-        retry.addEventListener('click', onRetry);
-        state.appendChild(retry);
-      }
-      state.hidden = false;
-    }
-
-    function showMessage(text, type) {
-      const msg = $('msg');
-      msg.textContent = text;
-      msg.className = 'alert alert--' + type + ' profile__msg';
-      msg.hidden = false;
-    }
-
-    function current() {
-      return {
-        name: form.name.value.trim(),
-        phone: form.phone.value.trim(),
-        address: form.address.value.trim()
-      };
-    }
-
-    // The Save button is only enabled when something actually changed
-    function updateDirty() {
-      const now = current();
-      $('save-btn').disabled = now.name === saved.name && now.phone === saved.phone && now.address === saved.address;
-    }
-
-    function fill(user) {
-      saved = { name: user.name || '', phone: user.phone || '', address: user.address || '' };
-      form.name.value = saved.name;
-      form.email.value = user.email || '';
-      form.phone.value = saved.phone;
-      form.address.value = saved.address;
-
-      $('avatar').textContent = (saved.name || user.email || '?').charAt(0).toUpperCase();
-      $('header-name').textContent = saved.name;
-      $('header-email').textContent = user.email || '';
-      const role = ROLES[user.role] || { label: user.role, cls: 'badge--neutral' };
-      $('role-badge').textContent = role.label;
-      $('role-badge').className = 'badge ' + role.cls;
-      updateDirty();
-    }
-
-    async function load() {
-      showState('loading', 'Loading your profile...');
-      try {
-        const res = await fetch('/api/v1/users/me');
-        if (res.status === 401) { window.location.href = '/login'; return; }
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        fill(await res.json());
-        $('state').hidden = true;
-        $('card').hidden = false;
-        $('password-card').hidden = false;
-      } catch (e) {
-        showState('error', 'Could not load your profile', 'Please check your connection and try again.', load);
-      }
-    }
-
-    form.addEventListener('input', () => { $('msg').hidden = true; updateDirty(); });
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      $('msg').hidden = true;
-
-      const values = current();
-      if (!values.name) { showMessage('Name cannot be empty.', 'error'); return; }
-
-      const btn = $('save-btn');
-      btn.disabled = true;
-      btn.textContent = 'Saving...';
-
-      try {
-        const res = await fetch('/api/v1/users/me', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: values.name,
-            phone: values.phone || null,
-            address: values.address || null
-          })
-        });
-
-        if (res.status === 401) { window.location.href = '/login'; return; }
-
-        if (res.ok) {
-          fill(await res.json());
-          showMessage('Your profile has been updated.', 'success');
-        } else {
-          // Backend error format: { message, details: [...] }
-          const data = await res.json().catch(() => ({}));
-          const detail = data.details && data.details.length ? ' ' + data.details.join(', ') : '';
-          showMessage((data.message || 'Could not save your changes.') + detail, 'error');
-          updateDirty();
-        }
-      } catch (err) {
-        showMessage('Cannot reach the server. Please try again.', 'error');
-        updateDirty();
-      } finally {
-        btn.textContent = 'Save changes';
-        if (saved) updateDirty();
-      }
-    });
-
-    // ---- Change password: PUT /api/v1/users/me/password <- { currentPassword, newPassword } ----
-    const pwForm = $('password-form');
-
-    function showPwMessage(text, type) {
-      const msg = $('pw-msg');
-      msg.textContent = text;
-      msg.className = 'alert alert--' + type + ' profile__msg';
-      msg.hidden = false;
-    }
-
-    pwForm.addEventListener('input', () => { $('pw-msg').hidden = true; });
-
-    pwForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      $('pw-msg').hidden = true;
-
-      const currentPassword = $('current-password').value;
-      const newPassword = $('new-password').value;
-
-      if (!currentPassword || !newPassword) { showPwMessage('Fill in all password fields.', 'error'); return; }
-      if (newPassword.length < 8 || newPassword.length > 72) { showPwMessage('The new password must be 8-72 characters.', 'error'); return; }
-      if (newPassword !== $('confirm-password').value) { showPwMessage('The new passwords do not match.', 'error'); return; }
-      if (newPassword === currentPassword) { showPwMessage('The new password must be different from the current one.', 'error'); return; }
-
-      const btn = $('pw-btn');
-      btn.disabled = true;
-      btn.textContent = 'Updating...';
-
-      try {
-        const res = await fetch('/api/v1/users/me/password', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ currentPassword: currentPassword, newPassword: newPassword })
-        });
-
-        if (res.status === 401) { window.location.href = '/login'; return; }
-
-        if (res.ok) {
-          pwForm.reset();
-          showPwMessage('Your password has been updated.', 'success');
-        } else {
-          // e.g. 400 "Current password is incorrect"
-          const data = await res.json().catch(() => ({}));
-          const detail = data.details && data.details.length ? ' ' + data.details.join(', ') : '';
-          showPwMessage((data.message || 'Could not update your password.') + detail, 'error');
-        }
-      } catch (err) {
-        showPwMessage('Cannot reach the server. Please try again.', 'error');
-      } finally {
-        btn.disabled = false;
-        btn.textContent = 'Update password';
-      }
-    });
-
-    load();
-  </script>
 </body>
 </html>

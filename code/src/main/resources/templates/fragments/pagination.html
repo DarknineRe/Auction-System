@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+  <nav class="pagination" aria-label="Pagination"
+       th:fragment="pagination(resultPage, basePath, pageParam, biddingId)"
+       th:if="${resultPage != null and resultPage.totalPages > 1}">
+    <a class="pagination__btn"
+       th:if="${!resultPage.first}"
+       th:href="${basePath + '?' + pageParam + '=' + (resultPage.number - 1) + (biddingId == null ? '' : '&amp;biddingId=' + biddingId)}">Previous</a>
+    <span class="pagination__btn" th:if="${resultPage.first}" aria-disabled="true">Previous</span>
+    <span class="pagination__info"
+          th:text="'Page ' + ${resultPage.number + 1} + ' of ' + ${resultPage.totalPages}">Page</span>
+    <a class="pagination__btn"
+       th:if="${!resultPage.last}"
+       th:href="${basePath + '?' + pageParam + '=' + (resultPage.number + 1) + (biddingId == null ? '' : '&amp;biddingId=' + biddingId)}">Next</a>
+    <span class="pagination__btn" th:if="${resultPage.last}" aria-disabled="true">Next</span>
+  </nav>
+</body>
+</html>

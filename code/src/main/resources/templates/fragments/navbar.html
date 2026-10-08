@@ -9,7 +9,10 @@
 
     <ul class="navbar__links">
       <li><a th:href="@{/}">Auctions</a></li>
-      <li sec:authorize="isAuthenticated()"><a th:href="@{/my-biddings}">My bids</a></li>
+      <li sec:authorize="isAuthenticated()"><a th:href="@{/my-bids}">My bids</a></li>
+      <li sec:authorize="isAuthenticated()"><a th:href="@{/my-auctions}">My auctions</a></li>
+      <li sec:authorize="isAuthenticated()"><a th:href="@{/purchases}">Purchases</a></li>
+      <li sec:authorize="isAuthenticated()"><a th:href="@{/sales}">Sales</a></li>
     </ul>
 
     <div class="navbar__actions">
@@ -19,6 +22,8 @@
 
       <!-- Logged in: logout must be a POST (CSRF token added by th:action) -->
       <a sec:authorize="isAuthenticated()" th:href="@{/profile}">Profile</a>
+      <a sec:authorize="isAuthenticated()" th:href="@{/seller/settings}">Seller settings</a>
+      <a sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')" th:href="@{/admin}">Admin</a>
       <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
         <button type="submit" class="navbar__logout">Log out</button>
       </form>
