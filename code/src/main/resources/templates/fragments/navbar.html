@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<body>
+  <!-- Usage in any page:  <div th:replace="~{fragments/navbar :: navbar}"></div> -->
+  <header class="navbar" th:fragment="navbar">
+    <a class="navbar__logo" th:href="@{/}">BidHub</a>
+
+    <ul class="navbar__links">
+      <li><a th:href="@{/}">Auctions</a></li>
+      <li sec:authorize="isAuthenticated()"><a th:href="@{/my-biddings}">My bids</a></li>
+    </ul>
+
+    <div class="navbar__actions">
+      <!-- Logged out -->
+      <a sec:authorize="!isAuthenticated()" th:href="@{/login}">Log in</a>
+      <a sec:authorize="!isAuthenticated()" class="navbar__cta" th:href="@{/register}">Sign up</a>
+
+      <!-- Logged in: logout must be a POST (CSRF token added by th:action) -->
+      <a sec:authorize="isAuthenticated()" th:href="@{/profile}">Profile</a>
+      <form sec:authorize="isAuthenticated()" th:action="@{/logout}" method="post">
+        <button type="submit" class="navbar__logout">Log out</button>
+      </form>
+    </div>
+  </header>
+</body>
+</html>

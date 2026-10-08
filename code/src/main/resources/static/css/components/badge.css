@@ -1,0 +1,23 @@
+/* Small status label. Usage: <span class="badge badge--success">Active</span>
+   Variants are semantic so any status (bidding, payment) can map onto them:
+   success = ACTIVE / PAID, warning = AWAITING_*, info = *_SUBMITTED,
+   danger = CANCELLED / rejected, neutral = CLOSED / unknown */
+.badge {
+  display: inline-block;
+  padding: 2px 10px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: #374151;
+  background: #e5e7eb;
+}
+
+.badge--success { color: #166534; background: #dcfce7; }
+.badge--warning { color: #92400e; background: #fef3c7; }
+.badge--info    { color: #1e40af; background: #dbeafe; }
+.badge--danger  { color: #991b1b; background: #fee2e2; }
+.badge--neutral { color: #374151; background: #e5e7eb; }

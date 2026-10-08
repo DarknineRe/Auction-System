@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auctions | BidHub</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/home.css}">
+</head>
+<body>
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <main class="home">
+    <header class="home__header">
+      <h1>Live auctions</h1>
+      <p>Browse items open for bidding and place your bid.</p>
+    </header>
+
+    <!-- Loading / empty / error messages -->
+    <div class="state" id="state" role="status" hidden></div>
+
+    <!-- Cards are rendered here by the script below -->
+    <div class="card-grid" id="auction-grid"></div>
+
+    <nav class="pagination" id="pagination" aria-label="Pagination" hidden>
+      <button type="button" class="pagination__btn" id="prev-btn">Previous</button>
+      <span class="pagination__info" id="page-info"></span>
+      <button type="button" class="pagination__btn" id="next-btn">Next</button>
+    </nav>
+  </main>
+
+  <script>
+    // GET /api/v1/biddings?status=ACTIVE  ->  { content: [BiddingResponse], page: {...} }
+    // BiddingResponse has only artworkIds, so title/image come from GET /api/v1/artworks/{id}
+    const grid = document.getElementById('auction-grid');
+    const baht = new Intl.NumberFormat('th-TH', { style: 'currency', currency: 'THB', maximumFractionDigits: 0 });
+
+    function el(tag, className, text) {
+      const node = document.createElement(tag);
+      if (className) node.className = className;
+      if (text !== undefined) node.textContent = text;   // textContent keeps user data safe from XSS
+      return node;
+    }
+
+    async function loadArtwork(id) {
+      try {
+        const res = await fetch('/api/v1/artworks/' + id);
+        return res.ok ? await res.json() : null;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function buildCard(bidding, artwork) {
+      const card = el('a', 'card');
+      card.href = '/biddings/' + bidding.id;
+
+      const media = el('div', 'card__media');
+      if (artwork && artwork.imageUrl) {
+        const img = document.createElement('img');
+        img.src = artwork.imageUrl;
+        img.alt = artwork.title || 'Auction item';
+        img.loading = 'lazy';
+        media.appendChild(img);
+      }
+
+      const body = el('div', 'card__body');
+      body.appendChild(el('span', 'badge badge--success', 'Active'));
+      body.appendChild(el('h3', 'card__title', artwork ? artwork.title : 'Auction #' + bidding.id));
+      body.appendChild(el('p', 'card__label', bidding.lastBid != null ? 'Current bid' : 'Starting price'));
+      body.appendChild(el('p', 'card__price', baht.format(bidding.lastBid != null ? bidding.lastBid : bidding.startingPrice)));
+
+      const ends = new Date(bidding.endDate);
+      let meta = 'Ends ' + ends.toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' });
+      if (bidding.artworkIds.length > 1) meta += ' · ' + bidding.artworkIds.length + ' items';
+      body.appendChild(el('p', 'card__meta', meta));
+
+      card.append(media, body);
+      return card;
+    }
+
+    const PAGE_SIZE = 12;
+    const state = document.getElementById('state');
+    const pagination = document.getElementById('pagination');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const pageInfo = document.getElementById('page-info');
+    let currentPage = 0;
+
+    // type: 'loading' | 'empty' | 'error'
+    function showState(type, title, text, onRetry) {
+      state.className = 'state' + (type === 'error' ? ' state--error' : '');
+      state.replaceChildren();
+      if (type === 'loading') state.appendChild(el('div', 'spinner'));
+      state.appendChild(el('p', 'state__title', title));
+      if (text) state.appendChild(el('p', 'state__text', text));
+      if (onRetry) {
+        const retry = el('button', 'btn btn--primary state__action', 'Try again');
+        retry.type = 'button';
+        retry.addEventListener('click', onRetry);
+        state.appendChild(retry);
+      }
+      state.hidden = false;
+    }
+
+    async function loadBiddings(page) {
+      currentPage = page;
+      grid.replaceChildren();
+      pagination.hidden = true;
+      showState('loading', 'Loading auctions...');
+
+      try {
+        const res = await fetch('/api/v1/biddings?status=ACTIVE&sort=endDate,asc&size=' + PAGE_SIZE + '&page=' + page);
+        if (res.status === 401) { window.location.href = '/login'; return; }
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+
+        if (data.content.length === 0) {
+          showState('empty', 'No active auctions right now', 'Check back soon for new items.');
+          return;
+        }
+
+        const artworks = await Promise.all(data.content.map(b => loadArtwork(b.artworkIds[0])));
+        state.hidden = true;
+        data.content.forEach((b, i) => grid.appendChild(buildCard(b, artworks[i])));
+
+        const totalPages = data.page.totalPages;
+        if (totalPages > 1) {
+          pageInfo.textContent = 'Page ' + (page + 1) + ' of ' + totalPages;
+          prevBtn.disabled = page === 0;
+          nextBtn.disabled = page >= totalPages - 1;
+          pagination.hidden = false;
+        }
+      } catch (e) {
+        showState('error', 'Could not load auctions', 'Please check your connection and try again.', () => loadBiddings(currentPage));
+      }
+    }
+
+    prevBtn.addEventListener('click', () => { loadBiddings(currentPage - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+    nextBtn.addEventListener('click', () => { loadBiddings(currentPage + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); });
+
+    loadBiddings(0);
+  </script>
+</body>
+</html>

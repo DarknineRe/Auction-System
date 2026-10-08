@@ -1,0 +1,15 @@
+/* Home page (auction listing) only */
+.home {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 24px 64px;
+}
+
+.home__header { margin-bottom: 28px; }
+.home__header h1 { margin: 0 0 4px; font-size: 2rem; color: var(--navy); }
+.home__header p { margin: 0; color: var(--muted); }
+
+@media (max-width: 520px) {
+  .home { padding: 24px 16px 48px; }
+  .home__header h1 { font-size: 1.6rem; }
+}
