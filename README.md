@@ -14,12 +14,14 @@
 
 ##  Tech Stack
 
-- **Backend:** Spring Boot 3.x (Java 17+)
-- **Build Tool:** Maven
-- **Database:** PostgreSQL / MySQL
+- **Backend:** Spring Boot 4.1.1, Java 26, Spring MVC, Spring Security, Bean Validation
+- **Build Tool:** Maven (Maven Wrapper)
+- **Database:** Neon PostgreSQL
 - **ORM:** Spring Data JPA (Hibernate)
-- **API Documentation:** idk
-- **Frontend:** idk
+- **API Documentation:** OpenAPI / Swagger UI (Springdoc)
+- **Frontend:** Thymeleaf
+- **Deployment:** Render Web Service
+- **Containerization:** Docker
 
 ##  System Architecture
 

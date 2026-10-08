@@ -1,0 +1,70 @@
+/* Top navigation bar shared by every page (templates/fragments/navbar.html) */
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 24px;
+  padding: 12px 32px;
+  background: var(--navy);
+}
+
+.navbar__logo {
+  font-size: 1.4rem;
+  font-weight: 800;
+  color: var(--gold);
+  letter-spacing: 0.5px;
+}
+.navbar__logo:hover { text-decoration: none; }
+
+.navbar__links,
+.navbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.navbar__links { flex: 1; }
+
+.navbar a,
+.navbar__logout {
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #cbd5e1;
+}
+.navbar a:hover,
+.navbar__logout:hover { color: var(--white); text-decoration: none; }
+
+.navbar a:focus-visible,
+.navbar__logout:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; border-radius: 4px; }
+
+/* Highlight the current page: add class="is-active" or th:classappend */
+.navbar a.is-active { color: var(--white); box-shadow: 0 2px 0 var(--gold); }
+
+.navbar__cta {
+  padding: 8px 16px;
+  color: var(--navy-dark) !important;
+  background: var(--gold);
+  border-radius: var(--radius);
+}
+.navbar__cta:hover { background: var(--gold-dark); }
+
+.navbar__logout {
+  padding: 0;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .navbar { padding: 12px 16px; }
+  .navbar__links { order: 3; flex-basis: 100%; }
+}

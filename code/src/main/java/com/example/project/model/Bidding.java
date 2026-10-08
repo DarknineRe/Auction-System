@@ -49,6 +49,13 @@ public class Bidding {
     @JoinColumn(name = "user_id")
     private User owner;
 
+    @ManyToOne
+    @JoinColumn(name = "winner_user_id")
+    private User winner;
+
+    @Column
+    private Integer sellerRating;
+
     @Column(precision = 19, scale = 4)
     private BigDecimal startingPrice; // startingPrince and date HERE instead of artwork
     private Date startDate;

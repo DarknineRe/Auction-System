@@ -18,9 +18,9 @@ public interface BiddingService {
 
     Page<Bidding> getBiddings(Bidding.Status status, Pageable pageable);
 
-    BidAction placeBid(Long biddingID, Long userID, Double amount);
+    BidAction placeBid(Long biddingID, String actorEmail, BigDecimal amount);
 
-    Bidding updateBidding(Long biddingID, Long ownerID, Double startingPrice, Date startDate, Date endDate);
+    Bidding updateBidding(Long biddingID, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate);
 
     Bidding cancelBidding(Long biddingID, Long ownerID);
 

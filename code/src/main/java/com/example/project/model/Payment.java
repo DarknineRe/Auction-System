@@ -1,5 +1,6 @@
 package com.example.project.model;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -46,8 +47,8 @@ public class Payment {
     private Sellerprofile sellerprofile;
 
     // Final price, copied from the winning bid when the bidding closed.
-    @Column(nullable = false)
-    private Double amount;
+    @Column(nullable = false, precision = 19, scale = 4)
+    private BigDecimal amount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
@@ -134,11 +135,11 @@ public class Payment {
         this.sellerprofile = sellerprofile;
     }
 
-    public Double getAmount() {
+    public BigDecimal getAmount() {
         return this.amount;
     }
 
-    public void setAmount(Double amount) {
+    public void setAmount(BigDecimal amount) {
         this.amount = amount;
     }
 

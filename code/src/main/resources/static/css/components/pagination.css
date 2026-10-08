@@ -1,0 +1,27 @@
+/* <nav class="pagination"><button class="pagination__btn">Previous</button>
+   <span class="pagination__info">Page 1 of 5</span><button class="pagination__btn">Next</button></nav> */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 32px;
+}
+.pagination[hidden] { display: none; }
+
+.pagination__info { font-size: 0.9rem; color: var(--muted); }
+
+.pagination__btn {
+  padding: 8px 18px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--navy);
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.pagination__btn:hover:not(:disabled) { background: var(--bg); border-color: var(--navy); }
+.pagination__btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.pagination__btn:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.5); outline-offset: 2px; }

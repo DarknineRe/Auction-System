@@ -1,5 +1,6 @@
 package com.example.project.dto.response;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import com.example.project.model.Payment;
@@ -11,7 +12,7 @@ public record PaymentResponse(
         Long sellerUserId,
         Long sellerProfileId,
         String sellerBankAccount,
-        Double amount,
+        BigDecimal amount,
         Payment.Status status,
         Date createdAt,
         Date dueDate,

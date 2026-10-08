@@ -82,7 +82,7 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
                 .findTopByBidding_IdAndStatusOrderByAmountDesc(bidding.getId(), BidAction.Status.VALID)
                 .map(BidAction::getAmount)
                 .orElse(null);
-        bidding.setLastBid(highestValidBid);
+        bidding.setLastBid(currentPrice);
         biddingRepository.save(bidding);
 
         return saved;

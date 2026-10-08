@@ -1,5 +1,6 @@
 package com.example.project.service.implementation;
 
+import java.math.BigDecimal;
 import java.util.Date;
 
 import org.springframework.data.domain.Page;
@@ -81,7 +82,8 @@ public class AdminPaymentServiceImpl implements AdminPaymentService {
                 bidding.setSellerRating(null);
                 biddingRepository.saveAndFlush(bidding);
                 Double average = biddingRepository.averageSellerRatingByOwnerId(bidding.getOwner().getId());
-                sellerprofileRepository.updateRating(sellerProfileId, average == null ? 0 : average);
+                sellerprofileRepository.updateRating(sellerProfileId,
+                    average == null ? BigDecimal.ZERO : BigDecimal.valueOf(average));
             }
             sellerprofileRepository.addToSalecount(sellerProfileId, -1);
         }
