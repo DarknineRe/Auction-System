@@ -35,18 +35,33 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(HttpMethod.GET, "/", "/login", "/register", "/biddings/**", "/css/**", "/favicon.ico").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/v1/biddings/**", "/api/v1/artworks/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/", "/home", "/login", "/register",
+                                "/biddings/**", "/sellers/*", "/css/**", "/js/**", "/favicon.ico", "/error")
+                        .permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll()
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/api/v1/admin/**").hasAnyRole("ADMIN", "SUPER_ADMIN")
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/biddings/mine",
+                                "/api/v1/biddings/won",
+                                "/api/v1/users/me/bids")
+                        .authenticated()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/v1/artworks/**",
+                                "/api/v1/biddings",
+                                "/api/v1/biddings/*",
+                                "/api/v1/biddings/*/bids",
+                                "/api/v1/biddings/*/bids/highest",
+                                "/api/v1/biddings/*/comments",
+                                "/api/v1/seller-profiles/users/*")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
                 .formLogin(form -> form
                         .loginPage("/login")
                         .usernameParameter("email")
                         .passwordParameter("password")
-                        .defaultSuccessUrl("/swagger-ui.html")
+                        .defaultSuccessUrl("/")
                         .failureUrl("/login?error")
                         .permitAll())
                 .rememberMe(remember -> remember
