@@ -10,7 +10,7 @@
 <body>
   <main class="login">
     <section class="login__brand">
-      <a class="login__logo" href="index.html">BidHub</a>
+      <a class="login__logo" th:href="@{/}">BidHub</a>
       <h2>Bid like back in the day.</h2>
       <p>Join live auctions, track your bids and win at the price you choose.</p>
     </section>
@@ -43,7 +43,7 @@
         <p class="alert" role="status" th:if="${param.logout}">You have been logged out.</p>
 
         <p class="login__footer">
-          New to BidHub? <a href="register.html">Create an account</a>
+          New to BidHub? <a th:href="@{/register}">Create an account</a>
         </p>
       </form>
     </section>
