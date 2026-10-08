@@ -4,8 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Log in | BidHub</title>
-  <link rel="stylesheet" href="/css/main.css">
-  <link rel="stylesheet" href="/css/pages/login.css">
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/login.css}">
 </head>
 <body>
   <main class="login">
@@ -34,13 +34,12 @@
           <label class="check">
             <input type="checkbox" name="remember"> Remember me
           </label>
-          <a href="forgot-password.html">Forgot password?</a>
         </div>
 
         <button type="submit" class="btn btn--primary">Log in</button>
 
         <p class="alert alert--error" role="alert" th:if="${param.error}">Incorrect email or password.</p>
-        <p class="alert" role="status" th:if="${param.logout}">You have been logged out.</p>
+        <p class="alert alert--success" role="status" th:if="${param.logout}">You have been logged out.</p>
 
         <p class="login__footer">
           New to BidHub? <a th:href="@{/register}">Create an account</a>
