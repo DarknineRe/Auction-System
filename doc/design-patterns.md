@@ -61,3 +61,56 @@ classDiagram
     User ..> UserBuilder : creates
     UserBuilder ..> User : builds
 ```
+
+## Pattern ในส่วน Service Layer (Behavioral — State)
+
+| Pattern | ปัญหาที่แก้ | ไฟล์/คลาสที่ใช้ |
+|---|---|---|
+| **State** | การเปลี่ยนสถานะของ Bidding (ACTIVE/CLOSED/CANCELLED) และ Payment (AWAITING_PAYMENT ➔ PAYMENT_SUBMITTED ➔ PAID ➔ COMPLETED / EXPIRED / CANCELLED) มีกฎต่างกันในแต่ละสถานะ (เช่น รับ bid ได้หรือไม่, ย้ายไปสถานะไหนได้) การใช้ if-else กระจายใน Service จะซ้ำซ้อนและแก้ยาก จึงแยกกฎของแต่ละสถานะเป็นคลาสของตัวเอง | Interface: `service/state/BiddingState.java`, `service/state/PaymentState.java`<br>Concrete: `ActiveBiddingState`, `ClosedBiddingState`, `CancelledBiddingState`, `AwaitingPaymentState`, `PaymentSubmittedState`, `PaidPaymentState`, `CompletedPaymentState`, `ExpiredPaymentState`, `CancelledPaymentState`<br>ตัวเลือกสถานะ: `BiddingStateResolver`, `PaymentStateResolver`<br>ผู้ใช้งาน (Context): `BiddingServiceImpl` (บรรทัด 160, 177, 223), `AdminBiddingServiceImpl` (51), `AdminBidActionServiceImpl` (77), `PaymentServiceImpl` (207), `AdminPaymentServiceImpl` (68) |
+
+```mermaid
+classDiagram
+    class BiddingState {
+        <<interface>>
+        +getStatus() Bidding.Status
+        +acceptsBids() boolean
+        +canMoveTo(Bidding.Status target) boolean
+    }
+    class ActiveBiddingState
+    class ClosedBiddingState
+    class CancelledBiddingState
+    class BiddingStateResolver {
+        -Map~Bidding.Status, BiddingState~ states
+        +resolve(Bidding.Status status) BiddingState
+    }
+    class BiddingServiceImpl {
+        -BiddingStateResolver stateResolver
+    }
+    class PaymentState {
+        <<interface>>
+        +getStatus() Payment.Status
+        +canMoveTo(Payment.Status target) boolean
+    }
+    class PaymentStateResolver {
+        +resolve(Payment.Status status) PaymentState
+    }
+    class PaymentServiceImpl {
+        -PaymentStateResolver stateResolver
+    }
+
+    BiddingState <|.. ActiveBiddingState
+    BiddingState <|.. ClosedBiddingState
+    BiddingState <|.. CancelledBiddingState
+    BiddingStateResolver o-- BiddingState
+    BiddingServiceImpl --> BiddingStateResolver
+    PaymentState <|.. AwaitingPaymentState
+    PaymentState <|.. PaymentSubmittedState
+    PaymentState <|.. PaidPaymentState
+    PaymentState <|.. CompletedPaymentState
+    PaymentState <|.. ExpiredPaymentState
+    PaymentState <|.. CancelledPaymentState
+    PaymentStateResolver o-- PaymentState
+    PaymentServiceImpl --> PaymentStateResolver
+```
+
+> หมายเหตุ: หมวด GoF ที่เลือกใช้ต้องเป็นกลุ่มเดียวและมีอย่างน้อย 3 แบบ ในโค้ดนี้พบ Behavioral ชัดเจนเพียง State เท่านั้น (ไม่พบ Observer/Strategy/Template Method) จึงควรตัดสินใจว่าจะส่งกลุ่ม Creational (3 แบบด้านบน) หรือไม่
