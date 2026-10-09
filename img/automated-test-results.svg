@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="720" height="260" viewBox="0 0 720 260" role="img" aria-labelledby="title description">
+  <title id="title">Automated test results</title>
+  <desc id="description">All 20 automated tests passed with zero failures, errors, or skipped tests.</desc>
+  <rect width="720" height="260" rx="20" fill="#f4f8f5"/>
+  <text x="40" y="55" fill="#183b2b" font-family="Segoe UI, Arial, sans-serif" font-size="25" font-weight="700">Automated Test Results</text>
+  <text x="40" y="128" fill="#17834a" font-family="Segoe UI, Arial, sans-serif" font-size="56" font-weight="700">20 / 20</text>
+  <text x="42" y="160" fill="#38594a" font-family="Segoe UI, Arial, sans-serif" font-size="18">tests passed</text>
+  <rect x="42" y="190" width="636" height="18" rx="9" fill="#d7e5db"/>
+  <rect x="42" y="190" width="636" height="18" rx="9" fill="#28a15b"/>
+  <text x="42" y="238" fill="#38594a" font-family="Segoe UI, Arial, sans-serif" font-size="16">Failures: 0  ·  Errors: 0  ·  Skipped: 0  ·  BUILD SUCCESS</text>
+</svg>

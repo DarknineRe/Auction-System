@@ -8,7 +8,7 @@
 | Automated test command | `.\mvnw.cmd --batch-mode --no-transfer-progress verify` |
 | Database | Isolated PostgreSQL 16 container (`auction_test`, localhost:5433) |
 | Test frameworks | JUnit 5, Mockito, Spring Boot Test, MockMvc |
-| Automated test result | 17 passed, 0 failed, 0 errors, 0 skipped |
+| Automated test result | 20 passed, 0 failed, 0 errors, 0 skipped |
 | Build result | `BUILD SUCCESS`, exit code 0 |
 
 Tests use generated test accounts and a disposable database. Do not point them at the production Neon database.
@@ -74,6 +74,13 @@ Tests use generated test accounts and a disposable database. Do not point them a
 | BE-043 | `POST /api/v1/biddings/{id}/comments/{commentId}/dislike` | Different user dislikes comment | HTTP 200; thumbs-down count is 1 | HTTP 200; thumbs-down count was 1 | Pass |
 | BE-044 | `GET /api/v1/users/me/bids`, `/api/v1/biddings/mine`, `/api/v1/biddings/won` | Read bidder/owner lists | HTTP 200 and expected page/list shapes | All returned HTTP 200; bidder and owner records verified | Pass |
 
+### Admin APIs (test-only admin fixtures)
+
+| Test Case ID | Endpoint / Action | Input / Action | Expected Result | Actual Result | Status |
+|---|---|---|---|---|---|
+| BE-048 | `GET /api/v1/admin/users`, `POST /admin/users/{id}/promote`, and user status | `SUPER_ADMIN` lists users, promotes a regular user, then disables the resulting admin; regular `ADMIN` cannot promote | Promotion action visible only to `SUPER_ADMIN`; successful promotion changes role to `ADMIN`; regular admin receives HTTP 403; disabled account cannot authenticate | Super admin promoted the test user and changed its status; regular admin saw no promotion action and POST was denied; disabled account authentication returned HTTP 401 | Pass |
+| BE-049 | Admin bidding and payment routes | `SUPER_ADMIN` cancels an auction, closes another with a winning bid, lists/cancels its payment, and opens the web payments screen; `ADMIN` also lists payments | HTTP 200; status/payment transitions persist with cancellation reason; both roles can use payment management | Auction cancel/close succeeded; closing created an `AWAITING_PAYMENT`; both roles listed the payment; `SUPER_ADMIN` canceled it and opened the web screen | Pass |
+
 ### Additional service-level bidding rules
 
 | Test Case ID | Scenario | Expected Result | Actual Result | Status |
@@ -102,12 +109,17 @@ The local flow was interactively executed with Playwright; it is not a committed
 | Artwork integration | 2 | 2 | 0 | 0 |
 | Seller-profile integration | 1 | 1 | 0 | 0 |
 | Bidding/comment integration | 2 | 2 | 0 | 0 |
+| Admin API integration | 3 | 3 | 0 | 0 |
 | Thymeleaf page integration | 2 | 2 | 0 | 0 |
 | Spring Boot application context | 1 | 1 | 0 | 0 |
 | Bidding service unit tests | 5 | 5 | 0 | 0 |
-| **Automated total (`mvn verify`)** | **17** | **17** | **0** | **0** |
+| **Automated total (`mvn verify`)** | **20** | **20** | **0** | **0** |
 | Browser smoke checks (home and Swagger) | 2 | 2 | 0 | 0 |
 | Local Playwright browser flow (register, login, profile update, logout) | 1 | 1 | 0 | 0 |
+
+![Automated test results generated from Surefire reports](../img/automated-test-results.svg)
+
+See [TESTING-GUIDE.md](./TESTING-GUIDE.md) for reproducible commands, pass/fail criteria, manual test steps, and the remaining coverage checklist.
 
 ## 4. Test Execution
 
@@ -122,7 +134,7 @@ $env:REMEMBER_ME_KEY="ci-only-remember-me-key"
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Final result after CSRF remediation and auto-login implementation: `Tests run: 17, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`, exit code 0.
+Final result after CSRF remediation, auto-login, admin permission updates, and promotion UI: `Tests run: 20, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`, exit code 0.
 
 Detailed Surefire XML/text results are under `code/target/surefire-reports/`.
 
@@ -135,10 +147,10 @@ A read-only source review inspected API and web authentication/authorization, st
 - **SQL injection:** No SQL injection vulnerability was identified. Repository operations use derived JPA methods or bound JPQL parameters; no raw input-built SQL was found. The test also confirmed an injection-shaped comment is returned as literal data. This is not a substitute for a dedicated penetration test or exhaustive proof.
 - **CSRF finding remediated:** `SecurityConfig` now keeps Spring Security's CSRF protection enabled for API routes as well as browser routes. A regression test verifies an authenticated state-changing API request without a CSRF token receives HTTP 403 and does not update the profile. A local browser registration/login/profile-update/logout flow also passed with CSRF enabled. API clients must retain their session cookie and send the CSRF token (for example, fetch `/register`, read the hidden `_csrf` value, then send it as `X-CSRF-TOKEN`) on state-changing requests.
 
-The tested scope is materially broader but still does not cover every endpoint/service/page. Remaining coverage includes:
+The tested scope is materially broader but still does not cover every endpoint/service/page. Admin integration tests provision unique test-only accounts in the disposable PostgreSQL database, not production accounts. They cover user listing/disabling, `SUPER_ADMIN` promotion (and denial for regular `ADMIN`), auction cancel/close, and payment list/cancel by both admin roles. Remaining coverage includes:
 
-- Payment submission, confirmation, rejection, shipping, and admin payment actions
-- Admin user listing/status change, moderation, auction close/cancel, and bid-voiding success paths (only non-admin denial was checked)
+- Buyer payment submission, seller confirmation/rejection/shipping, admin payment detail/filter, user re-enabling, and additional authorization transitions
+- Admin moderation and bid-voiding success paths
 - Seller rating and remaining rating/permission edge cases
 - Bidding cancellation/closing, time-window boundaries, and other invalid date scenarios
 - Remaining API error/ownership/validation branches and dedicated unit tests for services beyond bidding
@@ -148,8 +160,8 @@ The tested scope is materially broader but still does not cover every endpoint/s
 
 ## 6. Defect Log
 
-No failures were found in the 16 automated tests or the three browser checks. Untested areas above are coverage gaps, not confirmed defects. The CSRF issue found during source review was remediated and regression-tested; this is not a full penetration test or security certification.
+No failures were found in the 20 automated tests or the three browser checks. Untested areas above are coverage gaps, not confirmed defects. The CSRF issue found during source review was remediated and regression-tested; this is not a full penetration test or security certification.
 
 ## 7. Conclusion
 
-The full automated Maven suite passes: 17 tests, 0 failures. MockMvc integration tests exercise registration/authentication including web sign-up auto-login, CSRF enforcement, user and seller profile updates, artwork CRUD/access control, bidding and comment workflows, a SQL-injection-shaped comment input, admin access denial, and selected rendered Thymeleaf pages against PostgreSQL. Manual browser checks verified the local registration/login/profile-update/logout flow with CSRF enabled; the deployed home page and Swagger UI also rendered. Payment/admin success paths, most UI journeys, automated Playwright spec persistence, and code coverage measurement remain outstanding. No SQL injection was identified in the reviewed code; the CSRF configuration finding was fixed and verified.
+The full automated Maven suite passes: 20 tests, 0 failures. MockMvc integration tests exercise registration/authentication including web sign-up auto-login, CSRF enforcement, user and seller profile updates, artwork CRUD/access control, bidding and comment workflows, a SQL-injection-shaped comment input, admin user listing/disabling/promotion, auction cancellation/closing, payment listing/cancellation by both admin roles, and selected rendered Thymeleaf pages against PostgreSQL. Manual browser checks verified the local registration/login/profile-update/logout flow with CSRF enabled; the deployed home page and Swagger UI also rendered. Buyer/seller payment transitions, other UI journeys, automated Playwright spec persistence, and code coverage measurement remain outstanding. No SQL injection was identified in the reviewed code; the CSRF configuration finding was fixed and verified.

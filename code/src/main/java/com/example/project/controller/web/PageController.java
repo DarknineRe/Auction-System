@@ -481,17 +481,23 @@ public class PageController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminDashboard(Model model, Authentication authentication) {
         model.addAttribute("canManagePayments", authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")));
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN")));
         return workspace(model, "admin-dashboard", "Administration");
     }
 
     @GetMapping("/admin/users")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String adminUsers(@RequestParam(defaultValue = "0") int page, Model model) {
+    public String adminUsers(
+            @RequestParam(defaultValue = "0") int page,
+            Authentication authentication,
+            Model model) {
         Page<User> users = adminUserService.getUsers(
                 null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
         model.addAttribute("users", users.getContent());
         model.addAttribute("tablePage", users);
+        model.addAttribute("isSuperAdmin", authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPER_ADMIN")));
         return workspace(model, "admin-users", "Manage users");
     }
 
@@ -503,6 +509,13 @@ public class PageController {
             @RequestParam boolean enabled) {
         validate(new UpdateUserStatusRequest(enabled));
         adminUserService.setEnabled(authentication.getName(), userId, enabled);
+        return "redirect:/admin/users?success";
+    }
+
+    @PostMapping("/admin/users/{userId}/promote")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String promoteUserToAdmin(@PathVariable Long userId, Authentication authentication) {
+        adminUserService.promoteToAdmin(authentication.getName(), userId);
         return "redirect:/admin/users?success";
     }
 
@@ -531,7 +544,7 @@ public class PageController {
     }
 
     @GetMapping("/admin/payments")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminPayments(@RequestParam(defaultValue = "0") int page, Model model) {
         Page<Payment> payments = adminPaymentService.getPayments(
                 null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
@@ -541,7 +554,7 @@ public class PageController {
     }
 
     @PostMapping("/admin/payments/{paymentId}/cancel")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminCancelPayment(
             @PathVariable Long paymentId,
             @RequestParam @NotBlank @Size(max = 500) String reason) {
