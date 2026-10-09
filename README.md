@@ -136,28 +136,30 @@
 | Swagger UI (production) | https://auction-system-68vk.onrender.com/swagger-ui/index.html |
 | REST API | อยู่ใน Swagger UI ทุก endpoint ขึ้นต้นด้วย /api/v1 |
 
-## How to Run Tests
+## วิธีรันทดสอบ
 
-The project uses Maven Wrapper, JUnit 5, Mockito, Spring Boot Test, and MockMvc. The current suite has 20 automated tests covering application startup, selected user/authentication and authorization flows, CSRF enforcement, admin user promotion/status, auction and payment actions, artwork and seller-profile APIs, bidding and comments, bidding rules, web registration auto-login, and public Thymeleaf pages. This is not exhaustive coverage of every endpoint. The application uses PostgreSQL and Flyway, so local tests need a separate disposable test database. Do not use the production Neon database for tests.
+โปรเจกต์ใช้ Maven Wrapper, JUnit 5, Mockito, Spring Boot Test และ MockMvc ปัจจุบันมี automated test 20 รายการ ครอบคลุมการเริ่มระบบ, การสมัครและยืนยันตัวตนบางกรณี, การกำหนดสิทธิ์และ CSRF, การเลื่อนผู้ใช้เป็น admin, การจัดการ auction และ payment, API ของ artwork และ seller profile, bidding และ comment, กฎการประมูล, การ login อัตโนมัติหลังสมัครผ่านหน้าเว็บ และหน้า Thymeleaf บางส่วน
 
-### Prerequisites and test database
+ผลทดสอบนี้ยังไม่ครอบคลุมทุก endpoint ของระบบ แอปใช้ PostgreSQL และ Flyway จึงต้องใช้ฐานข้อมูลทดสอบแยกต่างหาก **ห้ามใช้ฐานข้อมูล Neon ที่ใช้งานจริงในการทดสอบ**
+
+### สิ่งที่ต้องเตรียมและฐานข้อมูลทดสอบ
 
 - Java 26
-- PostgreSQL running on `localhost:5432`
-- A local test database named `auction_test`
+- PostgreSQL ที่ `localhost:5432`
+- ฐานข้อมูลทดสอบชื่อ `auction_test`
 
-If the test role and database do not already exist, create them in PostgreSQL (for example, using `psql` or pgAdmin):
+หากยังไม่มี role และฐานข้อมูลทดสอบ ให้สร้างใน PostgreSQL ด้วย `psql` หรือ pgAdmin:
 
 ```sql
 CREATE ROLE auction WITH LOGIN PASSWORD 'auction';
 CREATE DATABASE auction_test OWNER auction;
 ```
 
-The test database must be empty or disposable: Flyway applies the project's database migrations when the Spring application context starts.
+ฐานข้อมูลนี้ต้องว่างหรือเป็นฐานข้อมูลที่ลบและสร้างใหม่ได้ เพราะ Flyway จะรัน database migration ของโปรเจกต์เมื่อเริ่ม Spring application context
 
-### Run all tests on Windows (PowerShell)
+### รันทดสอบทั้งหมดบน Windows (PowerShell)
 
-From the repository root, run:
+เปิด PowerShell ที่โฟลเดอร์หลักของ repository แล้วรัน:
 
 ```powershell
 Set-Location .\code
@@ -168,29 +170,32 @@ $env:REMEMBER_ME_KEY="ci-only-remember-me-key"
 .\mvnw.cmd --batch-mode verify
 ```
 
-`verify` builds the application and runs all automated tests. To run just the tests, use `.\mvnw.cmd test`.
+คำสั่ง `verify` จะ build แอปและรัน automated test ทั้งหมด หากต้องการรันเฉพาะ test ให้ใช้ `.\mvnw.cmd test`
 
-CSRF protection is enabled for state-changing API requests. For an API client, first make a GET request to `/register` while retaining the session cookie, read the hidden `_csrf` form value, and send it in the `X-CSRF-TOKEN` header with that cookie on POST, PUT, PATCH, and DELETE requests. Browser forms include the token automatically.
+ระบบเปิด CSRF protection สำหรับ API ที่เปลี่ยนแปลงข้อมูลด้วย หากเรียก API ผ่าน client ให้เรียก `GET /register` ก่อนและเก็บ session cookie จากนั้นอ่านค่า `_csrf` ที่ซ่อนอยู่ใน form แล้วส่งค่านั้นใน header `X-CSRF-TOKEN` พร้อม cookie เดิมเมื่อเรียก POST, PUT, PATCH หรือ DELETE ส่วน browser form จะส่ง token ให้อัตโนมัติ
 
-The current automated tests include:
+รายการ automated test ปัจจุบัน:
 
-| Test class | What it checks |
+| Test class | ทดสอบเรื่อง |
 |---|---|
-| `ProjectApplicationTests` | The Spring application context starts successfully with the test database. |
-| `BiddingServiceImplTest` | Bidding increment, first bid, auction owner, and inactive-auction rules using Mockito. |
-| `UserApiIntegrationTest` | Registration, validation, duplicate email, authentication, profile update/password change, admin access denial, and CSRF rejection without a token. |
-| `ArtworkApiIntegrationTest` | Seller profile setup, artwork creation/list/read/update/delete, validation, and ownership authorization. |
-| `SellerprofileApiIntegrationTest` | Seller profile read/update, unauthenticated access, and public profile bank-account privacy. |
-| `BiddingApiIntegrationTest` | Bidding creation/list/read, bid rules/highest bid, authorization, and comment create/react/update/delete. |
-| `AdminApiIntegrationTest` | Test-admin user listing, `SUPER_ADMIN` promotion, regular-admin promotion denial, and disabling; admin auction cancellation/closing and payment management permissions. |
-| `PageControllerIntegrationTest` | Thymeleaf rendering for home/login/registration and web registration automatically signing the new user in. |
+| `ProjectApplicationTests` | เริ่ม Spring application context ด้วยฐานข้อมูลทดสอบได้ |
+| `BiddingServiceImplTest` | กฎการเพิ่มราคา, bid แรก, เจ้าของ auction และ auction ที่ไม่รับ bid โดยใช้ Mockito |
+| `UserApiIntegrationTest` | สมัครบัญชี, validation, email ซ้ำ, authentication, แก้ profile/รหัสผ่าน, ปฏิเสธผู้ใช้ทั่วไปเมื่อเข้า admin และปฏิเสธ request ที่ไม่มี CSRF token |
+| `ArtworkApiIntegrationTest` | ตั้งค่า seller profile, สร้าง/อ่าน/แก้ไข/ลบ artwork, validation และตรวจสิทธิ์เจ้าของ |
+| `SellerprofileApiIntegrationTest` | อ่าน/แก้ seller profile, เรียกโดยไม่ login และตรวจว่า public profile ไม่เปิดเผยเลขบัญชี |
+| `BiddingApiIntegrationTest` | สร้าง/อ่าน auction, กฎ bid, bid สูงสุด, ตรวจสิทธิ์ และสร้าง/โต้ตอบ/แก้ไข/ลบ comment |
+| `AdminApiIntegrationTest` | ดูรายชื่อผู้ใช้, เลื่อน `USER` เป็น `ADMIN` โดย `SUPER_ADMIN`, ปฏิเสธการเลื่อนโดย `ADMIN`, ปิดบัญชี, ยกเลิก/ปิด auction และตรวจสิทธิ์ payment |
+| `PageControllerIntegrationTest` | แสดงหน้า home/login/register ด้วย Thymeleaf และ login อัตโนมัติหลังสมัครผ่านหน้าเว็บ |
 
-Maven writes detailed test results to `code/target/surefire-reports/`.
-For step-by-step pass/fail criteria and remaining manual test cases, see [test/TESTING-GUIDE.md](test/TESTING-GUIDE.md) and the [test report](test/test-report.md).
+Maven บันทึกผลทดสอบโดยละเอียดไว้ที่ `code/target/surefire-reports/`
 
-### Run tests with GitHub Actions
+ดูวิธีตรวจ PASS/FAIL และรายการ manual test ที่ยังเหลือได้ที่ [คู่มือทดสอบ](test/TESTING-GUIDE.md) และ [รายงานผลทดสอบ](test/test-report.md)
 
-The workflow at `.github/workflows/ci.yml` automatically builds and tests the project when code is pushed to `develop` or a pull request targets `develop`. It starts a temporary PostgreSQL database; it does not use Neon. In GitHub, open the repository's **Actions** tab, select **Build, test, and deploy**, and check the `build-and-test` job. A push to `develop` triggers the Render deployment job only after the tests pass.
+### ดูผลทดสอบบน GitHub Actions
+
+Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอบโปรเจกต์อัตโนมัติเมื่อ push code ไปที่ `develop` หรือเปิด pull request โดยมี base เป็น `develop` workflow จะสร้าง PostgreSQL ชั่วคราวสำหรับทดสอบ ไม่ได้ใช้ Neon
+
+ดูผลได้โดยเปิด repository บน GitHub → แท็บ **Actions** → เลือก **Build, test, and deploy** → เปิด job `build-and-test` การ push ไป `develop` จะเริ่ม job deploy ไป Render ต่อเมื่อ test ผ่านเท่านั้น
 
 ## Deployment URL
 

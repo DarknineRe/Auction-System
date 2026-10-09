@@ -1,26 +1,22 @@
-# Auction-System Testing Guide
+# คู่มือทดสอบ Auction-System
 
-This guide explains how to repeat the automated tests, how to decide whether a test passed, and which test areas still need attention.
+เอกสารนี้อธิบายวิธีรันทดสอบ วิธีตัดสินผล PASS/FAIL และรายการที่ยังต้องทดสอบเพิ่มเติม
 
-## Current verified status
+## สถานะล่าสุดที่ตรวจยืนยันแล้ว
 
-- Automated suite: **20 passed, 0 failed, 0 errors, 0 skipped**
+- Automated test: **20 ผ่าน, 0 ล้มเหลว, 0 error, 0 ข้าม**
 - Build: **`BUILD SUCCESS`**, exit code `0`
-- Database: disposable PostgreSQL 16 test database, not production
-- Tested: selected user/authentication flows, CSRF enforcement, `SUPER_ADMIN` promotion of a regular user and regular `ADMIN` denial, admin user listing/disabling, admin auction cancel/close, `ADMIN` and `SUPER_ADMIN` payment listing, `SUPER_ADMIN` web payment screen and payment cancellation, artwork and seller-profile APIs, bids/comments, bidding rules, selected Thymeleaf views, and web sign-up auto-login
-- Not fully tested: the buyer/seller payment lifecycle, remaining admin endpoints/transitions, all service branches and UI flows, test coverage percentage, and a repeatable browser E2E suite
+- Database: PostgreSQL 16 แบบ disposable สำหรับทดสอบ ไม่ใช่ฐานข้อมูล production
+- ทดสอบแล้ว: สมัครและยืนยันตัวตนบางกรณี, CSRF, เลื่อนผู้ใช้เป็น `ADMIN` โดย `SUPER_ADMIN`, ปฏิเสธการเลื่อนโดย `ADMIN`, จัดการสถานะผู้ใช้, ยกเลิก/ปิด auction, ดู payment โดย `ADMIN` และ `SUPER_ADMIN`, จัดการ artwork และ seller profile, bid/comment, กฎการประมูล, หน้า Thymeleaf บางส่วน และ login อัตโนมัติหลังสมัครผ่านหน้าเว็บ
+- ยังไม่ครอบคลุมทั้งหมด: วงจร payment ฝั่ง buyer/seller, admin endpoint และ transition บางรายการ, service/UI ทุกกรณี, เปอร์เซ็นต์ test coverage และ browser E2E suite ที่รันซ้ำได้
 
-The image linked below is a visual summary made from Maven Surefire's XML results; the actual detailed results are in `code/target/surefire-reports/`.
+## 1. รัน automated test ทั้งชุด
 
-![Automated test results: 20 tests passed](../img/automated-test-results.svg)
+ใช้ฐานข้อมูลทดสอบที่ลบและสร้างใหม่ได้เท่านั้น ห้ามรัน test กับฐานข้อมูล Neon production เพราะ test จะสร้างข้อมูลใหม่
 
-## 1. Repeat the automated test suite
+### เปิด PostgreSQL ด้วย Docker
 
-Use a disposable local database. Never use the production Neon database for test runs because the integration tests create records.
-
-### Start PostgreSQL with Docker
-
-Start Docker Desktop, then from PowerShell run:
+เปิด Docker Desktop แล้วรันคำสั่งต่อไปนี้ใน PowerShell:
 
 ```powershell
 docker run --rm -d --name auction-test-db `
@@ -32,9 +28,9 @@ docker run --rm -d --name auction-test-db `
 docker exec auction-test-db pg_isready -U auction_test -d auction_test
 ```
 
-Wait until `pg_isready` says the server accepts connections.
+รอจน `pg_isready` แจ้งว่า server รับการเชื่อมต่อแล้ว
 
-### Run the tests
+### รันทดสอบ
 
 ```powershell
 Set-Location 'D:\Coding project\Project\Auction-System\code'
@@ -47,118 +43,118 @@ $testExitCode = $LASTEXITCODE
 "Test command exit code: $testExitCode"
 ```
 
-Stop the disposable database after the test run:
+หลังทดสอบเสร็จให้ปิดฐานข้อมูลชั่วคราว:
 
 ```powershell
 docker stop auction-test-db
 ```
 
-### Decide pass or fail
+### วิธีตัดสิน PASS หรือ FAIL
 
-**PASS** only when all of these are true:
+ถือว่า **PASS** เมื่อครบทุกข้อ:
 
-1. The Maven command exit code is `0`.
-2. Output ends with `BUILD SUCCESS`.
-3. The summary has zero failures, errors, and skipped tests.
-4. The test count is consistent with the current Surefire report files.
+1. คำสั่ง Maven มี exit code เป็น `0`
+2. ผลลัพธ์ลงท้ายด้วย `BUILD SUCCESS`
+3. จำนวน failure, error และ skipped เป็น `0`
+4. จำนวน test ตรงกับไฟล์รายงาน Surefire
 
-**FAIL** if the command exit code is non-zero, Maven reports `BUILD FAILURE`, or any test has a failure/error. A partial pass is still a failed run. Read the first failing test and its stack trace under `code/target/surefire-reports/`, fix the cause, and rerun `verify`.
+ถือว่า **FAIL** หาก exit code ไม่ใช่ `0`, Maven แสดง `BUILD FAILURE` หรือมี test ล้มเหลว/เกิด error แม้บาง test จะผ่านก็ตาม ให้เปิด stack trace ของ test แรกที่ล้มเหลวใน `code/target/surefire-reports/` แก้สาเหตุ แล้วรัน `verify` ซ้ำ
 
-To run only one test class, use the same environment variables and replace the final command with:
+หากต้องการรัน test class เดียว ให้ใช้ environment variables เดิมและเปลี่ยนคำสั่งสุดท้าย เช่น:
 
 ```powershell
 .\mvnw.cmd --batch-mode -Dtest=PageControllerIntegrationTest test
 ```
 
-Other available focused classes include `AdminApiIntegrationTest`, `UserApiIntegrationTest`, `ArtworkApiIntegrationTest`, `SellerprofileApiIntegrationTest`, `BiddingApiIntegrationTest`, and `BiddingServiceImplTest`.
+test class อื่นที่เลือกแยกรันได้ ได้แก่ `AdminApiIntegrationTest`, `UserApiIntegrationTest`, `ArtworkApiIntegrationTest`, `SellerprofileApiIntegrationTest`, `BiddingApiIntegrationTest` และ `BiddingServiceImplTest`
 
-### Promote a registered user to admin
+### เลื่อนบัญชีผู้ใช้เป็น admin
 
-1. Register the person as a normal user and have a `SUPER_ADMIN` sign in.
-2. Open **Admin → Users** and find the account in the user list.
-3. Click **Promote to Admin** next to an account whose role is `USER`.
-4. **Pass:** the page reports success and the user's role changes to `ADMIN`. The button is shown only to `SUPER_ADMIN`; regular `ADMIN` accounts cannot promote users.
-5. The new admin should sign out and back in for the new role to take effect in their session.
+1. ให้บุคคลนั้นสมัครบัญชีตามปกติ และให้ `SUPER_ADMIN` login เข้าระบบ
+2. เปิด **Admin → Users** แล้วค้นหาบัญชีที่ต้องการ
+3. กด **Promote to Admin** ที่แถวบัญชีซึ่งมี role เป็น `USER`
+4. **PASS:** ระบบแจ้งว่าสำเร็จ และ role เปลี่ยนเป็น `ADMIN` ปุ่มนี้แสดงให้ `SUPER_ADMIN` เท่านั้น; `ADMIN` ทั่วไปไม่มีสิทธิ์เลื่อนผู้ใช้
+5. ให้ผู้ใช้ที่ถูกเลื่อนออกจากระบบแล้ว login ใหม่ เพื่อให้ session โหลด role ใหม่
 
-## 2. Manual browser checks
+## 2. ตรวจหน้าเว็บด้วยตนเอง
 
-Run these against local or staging data only. Use a fresh test email and a dummy password; do not use a real payment or production user.
+ทำกับ local หรือ staging เท่านั้น ใช้ email ทดสอบและรหัสผ่านจำลอง ห้ามใช้ข้อมูล payment จริงหรือบัญชี production
 
-### Sign-up automatically logs in
+### สมัครแล้ว login อัตโนมัติ
 
-1. Open `/register`.
-2. Register a new test account with matching passwords.
-3. **Pass:** the app redirects to `/`, shows authenticated navigation (for example, Profile and Log out), and `/profile` opens without a separate login.
-4. **Fail:** it returns to the login form, stays anonymous, or the new account is not persisted.
+1. เปิด `/register`
+2. สมัครบัญชีทดสอบใหม่ โดยกรอกรหัสผ่านและยืนยันรหัสผ่านให้ตรงกัน
+3. **PASS:** ระบบกลับไปหน้า `/`, แสดงเมนูสำหรับผู้ใช้ที่ login แล้ว เช่น Profile และ Log out และเปิด `/profile` ได้โดยไม่ต้อง login ซ้ำ
+4. **FAIL:** กลับไปหน้า login, ยังเป็นผู้ใช้ที่ไม่ได้ login หรือไม่มีบัญชีถูกบันทึก
 
-### Normal browser authentication and profile
+### Login และแก้ไข profile
 
-1. Log out, then log in with the test account.
-2. Update the profile name and save.
-3. Change password using the correct current password; log out and back in using the new password.
-4. **Pass:** success messages/redirects appear, the updated profile persists after reload, the new password works, and the old password no longer works.
-5. **Fail:** a successful-looking response is shown but a reload loses the update, or the password behavior does not match the expected results.
+1. Log out แล้ว login ด้วยบัญชีทดสอบ
+2. แก้ชื่อใน profile แล้วบันทึก
+3. เปลี่ยนรหัสผ่านด้วยรหัสผ่านเดิม จากนั้น log out แล้ว login ด้วยรหัสผ่านใหม่
+4. **PASS:** มีข้อความ/redirect แจ้งสำเร็จ, reload แล้วยังเห็น profile ที่แก้, รหัสผ่านใหม่ใช้ได้ และรหัสผ่านเดิมใช้ไม่ได้
+5. **FAIL:** ระบบแจ้งสำเร็จแต่ reload แล้วข้อมูลหาย หรือผลการเปลี่ยนรหัสผ่านไม่ตรงตามที่คาด
 
-### Auction, bid, and comment journey
+### Auction, bid และ comment
 
-1. Use a seller test account with a seller profile; create an artwork and an auction with valid future dates.
-2. Open the auction as a different buyer account; place a first bid at the starting price and then a higher valid bid.
-3. Add a comment and try the like/dislike controls.
-4. Reload the detail page and check the persisted auction, highest bid, comment, and reactions.
-5. **Pass:** the displayed values survive reload and invalid/under-increment bids are rejected without appearing in bid history.
-6. **Fail:** another user's bid is attributed to the wrong account, invalid bids persist, or persisted values differ from the success response.
+1. ใช้ seller test account ที่มี seller profile สร้าง artwork และ auction ที่กำหนดวันเวลาในอนาคตอย่างถูกต้อง
+2. ใช้ buyer อีกบัญชีเปิด auction แล้ววาง bid แรกเท่ากับราคาเริ่มต้น จากนั้นวาง bid ที่สูงขึ้นตาม increment
+3. เพิ่ม comment แล้วลองกด like/dislike
+4. Reload หน้ารายละเอียดแล้วตรวจ auction, bid สูงสุด, comment และ reaction ที่บันทึกไว้
+5. **PASS:** ข้อมูลยังอยู่หลัง reload และ bid ที่ผิดกฎ/เพิ่มไม่ถึงขั้นต่ำไม่ถูกบันทึกในประวัติ
+6. **FAIL:** bid ถูกระบุว่าเป็นของผู้ใช้อื่น, bid ที่ผิดกฎถูกบันทึก หรือข้อมูลหลัง reload ไม่ตรงกับผลตอบกลับ
 
-The corresponding core bid/comment API flows are automated already, but the rendered browser screens are not covered by an automated browser suite.
+API flow หลักของ bid/comment มี automated test แล้ว แต่หน้าจอ browser จริงยังไม่มี browser test suite ที่รันอัตโนมัติซ้ำได้
 
-## 3. Remaining API and business-flow tests
+## 3. API และ business flow ที่ยังต้องทดสอบ
 
-Use local/staging accounts and the API operations documented in Swagger. Follow the request schema/status descriptions in Swagger and `doc/api-spec.md`; record actual values and response codes rather than assuming behavior from this checklist. Every state-changing API request must carry a CSRF token and the same session cookie.
+ใช้บัญชี local/staging และ API ตามเอกสาร Swagger โดยยึด request schema และ status ใน Swagger กับ `doc/api-spec.md` ให้บันทึกค่าที่ส่งและ response จริง ทุก API ที่เปลี่ยนข้อมูลต้องส่ง CSRF token และใช้ session cookie เดิม
 
-| Priority | Area still needing test coverage | What to exercise | Pass evidence |
+| ความสำคัญ | ส่วนที่ยังต้องทดสอบ | สิ่งที่ให้ทดลอง | หลักฐาน PASS |
 |---|---|---|---|
-| High | Payments | Buyer submits a payment slip; seller confirms or rejects; seller ships with tracking details; buyer and seller list/detail views | Each allowed transition returns the documented success status; unauthorized roles are denied; reloading shows the new persisted state; invalid/repeated transitions are rejected |
-| Medium | Remaining admin payment/user actions | Admin payment detail/filter; enabling a user; non-admin denial for additional admin routes | Allowed actions persist; unauthorized users receive 403 |
-| Medium | Auction/admin edge cases | Owner cancellation; repeated/invalid admin cancel/close; resulting bid/payment state | Only authorized actor succeeds; action is visible on subsequent reads; invalid or repeated transition is rejected |
-| Medium | Bid moderation | Admin lists bids and voids a test bid with a reason | Non-admin is denied; admin action records reason/actor; bid and highest-bid result are consistent afterward |
-| Medium | Seller rating | Winner rates a seller; try invalid score, non-winner, duplicate rating, and missing seller | Valid rating persists; invalid/unauthorized/duplicate requests are rejected according to API contract |
-| Medium | Permission and not-found cases | Try another user's profile/artwork/comment/payment and nonexistent IDs | No private data is exposed; expected 403/404 is returned without changing records |
-| Medium | Date and value boundaries | Auction starts in future, at start/end boundary, already ended; zero/negative amounts and invalid date order | Boundary behavior matches business rules; rejected actions do not persist |
-| Medium | Error handling and validation | Missing required fields, malformed JSON, invalid enum/page/sort inputs | Clear documented 4xx response; no stack trace, secret, or internal SQL details returned |
+| สูง | Payment | Buyer ส่งหลักฐานชำระเงิน; seller ยืนยันหรือปฏิเสธ; seller ส่งสินค้าและข้อมูล tracking; buyer/seller ดูรายการและรายละเอียด | แต่ละ transition ที่อนุญาตได้ status ตาม API; role ที่ไม่มีสิทธิ์ถูกปฏิเสธ; reload แล้วยังเห็นสถานะใหม่; transition ที่ผิดหรือทำซ้ำถูกปฏิเสธ |
+| กลาง | Admin payment/user ที่เหลือ | ดูรายละเอียด/กรอง payment; เปิดใช้งาน user; ทดลองเรียก admin route โดย role ที่ไม่มีสิทธิ์ | การเปลี่ยนแปลงถูกบันทึกและผู้ไม่มีสิทธิ์ได้ HTTP 403 |
+| กลาง | ขอบเขต admin auction | เจ้าของยกเลิก; ทดลอง admin cancel/close ซ้ำหรือไม่ถูกสถานะ; ตรวจผลต่อ bid/payment | เฉพาะผู้มีสิทธิ์ทำได้; อ่านซ้ำเห็นสถานะ; transition ที่ผิด/ทำซ้ำถูกปฏิเสธ |
+| กลาง | Bid moderation | Admin ดู bid และ void bid ทดสอบพร้อมเหตุผล | ผู้ไม่มีสิทธิ์ถูกปฏิเสธ; มีการบันทึกเหตุผล/ผู้ดำเนินการ; bid และ bid สูงสุดสอดคล้องกัน |
+| กลาง | Seller rating | ผู้ชนะให้คะแนน seller; ลองคะแนนผิด, ผู้ไม่ชนะ, ให้ซ้ำ และ seller ที่ไม่มีอยู่ | คะแนนถูกต้องถูกบันทึก; คำขอที่ผิด/ไม่มีสิทธิ์/ซ้ำถูกปฏิเสธตาม API contract |
+| กลาง | Permission และ not found | ลองเปิด profile/artwork/comment/payment ของคนอื่น และ ID ที่ไม่มี | ไม่เปิดเผยข้อมูลส่วนตัว; ได้ 403/404 ตามกรณี และข้อมูลไม่ถูกเปลี่ยน |
+| กลาง | ขอบเขตวันเวลาและตัวเลข | Auction เริ่มในอนาคต, ถึงเวลาเริ่ม/จบ, หมดเวลาแล้ว; จำนวนเงินศูนย์/ติดลบ; วันเวลาเรียงผิด | ผลตรงกับ business rule; คำขอที่ไม่ผ่าน validation ไม่ถูกบันทึก |
+| กลาง | Error handling และ validation | ขาด field, JSON ผิดรูปแบบ, enum/page/sort ไม่ถูกต้อง | ได้ 4xx ที่อธิบายปัญหาโดยไม่เปิด stack trace, secret หรือรายละเอียด SQL ภายใน |
 
-`AdminApiIntegrationTest` provisions its own unique test-only `SUPER_ADMIN` and `ADMIN` accounts in the disposable test database; no real admin credentials or production account are needed for those automated flows. For manual payment workflows, use test auctions and the app's test data only. Do not transfer real money or upload real bank slips. Never promote users in production for testing.
+`AdminApiIntegrationTest` สร้าง `SUPER_ADMIN` และ `ADMIN` สำหรับ test โดยเฉพาะในฐานข้อมูล disposable ไม่ต้องใช้ credential จริงหรือบัญชี production สำหรับ automated test เหล่านั้น การทดลอง payment ด้วยตนเองให้ใช้ auction และข้อมูลทดสอบเท่านั้น ห้ามโอนเงินจริงหรืออัปโหลดสลิปจริง และห้ามเลื่อน role ใน production เพื่อทดสอบ
 
-## 4. CSRF and API client check
+## 4. ตรวจ CSRF และ API client
 
-CSRF protection is enabled for write requests, including `/api/v1/**`. Swagger loading is not enough to prove a write operation works.
+ระบบเปิด CSRF protection สำหรับ write request รวมถึง `/api/v1/**` การเปิด Swagger UI ได้ไม่ได้ยืนยันว่า write operation ใช้งานได้
 
-- Browser forms should include their hidden CSRF token automatically.
-- An API client must first establish/retain the session cookie, obtain the CSRF token (the local `/register` HTML form contains a hidden `_csrf` input), and send the token in `X-CSRF-TOKEN` with that same cookie on POST/PUT/PATCH/DELETE.
-- **Pass:** a valid authenticated write with a token follows its API contract; the same write without a token returns `403` and leaves data unchanged.
-- **Fail:** a write without a token changes persisted data.
+- Browser form ควรแนบ CSRF token ให้อัตโนมัติ
+- API client ต้องเก็บ session cookie, อ่าน token จาก hidden `_csrf` ใน HTML ของ `/register` และส่ง token ใน `X-CSRF-TOKEN` พร้อม cookie เดิมเมื่อเรียก POST/PUT/PATCH/DELETE
+- **PASS:** write request ที่ login และมี token ทำงานตาม API contract; request เดียวกันเมื่อไม่มี token ได้ `403` และข้อมูลไม่เปลี่ยน
+- **FAIL:** write request ที่ไม่มี token ยังแก้ข้อมูลได้
 
-The tokenless rejection is already covered by an automated regression test. A client-specific Swagger flow is still not verified.
+การปฏิเสธ request ที่ไม่มี token มี regression test แล้ว แต่ยังไม่ได้ยืนยัน flow ผ่าน Swagger ด้วย client ที่ใช้งานจริง
 
-## 5. SQL injection and security testing
+## 5. SQL injection และ security testing
 
-The source review found no raw input-built SQL; persistence uses Spring Data JPA derived queries or bound JPQL. An injection-shaped comment string was also accepted as literal text. These checks do not prove that every input path is safe.
+การตรวจ source code ไม่พบ SQL ที่นำ input มาต่อ string โดยตรง; persistence ใช้ Spring Data JPA derived query หรือ JPQL ที่ bind parameter นอกจากนี้ยังทดสอบข้อความ comment ที่มีรูปแบบคล้าย SQL injection ว่าถูกบันทึกเป็นข้อความธรรมดา อย่างไรก็ตาม ยังสรุปไม่ได้ว่าทุก input ปลอดภัยทั้งหมด
 
-If you want additional dynamic testing:
+หากต้องการทดสอบเพิ่มเติม:
 
-1. Use only a local disposable database or an explicitly authorized staging environment.
-2. Run OWASP ZAP's passive/baseline scan first.
-3. Only run active scans with permission and disposable data; active scans can create/change records and generate load.
-4. Review each alert manually and record the scanner/version, exact URL/role tested, evidence, severity, and whether it reproduced.
-5. **Pass:** no confirmed injection, authentication bypass, or unexpected data change; investigate and document every high/medium alert before claiming a clean result.
+1. ใช้ฐานข้อมูล local ที่ทิ้งได้ หรือ staging ที่ได้รับอนุญาตชัดเจนเท่านั้น
+2. เริ่มจาก OWASP ZAP แบบ passive/baseline scan
+3. ใช้ active scan เมื่อได้รับอนุญาตและมีข้อมูลทดสอบ เพราะอาจสร้าง/เปลี่ยนข้อมูลและเพิ่ม load
+4. ตรวจ alert ทีละรายการและจด scanner/version, URL/role, หลักฐาน, severity และว่าสามารถทำซ้ำได้หรือไม่
+5. **PASS:** ไม่พบ injection, authentication bypass หรือข้อมูลเปลี่ยนโดยไม่คาดหมาย; ตรวจสอบและบันทึก alert ระดับสูง/กลางทุกข้อก่อนสรุปว่าปลอดภัย
 
-Do not run SQL injection payloads or automated active scans against production without explicit authorization. Do not use destructive payloads.
+ห้ามยิง payload SQL injection หรือสั่ง active scan กับ production โดยไม่มีสิทธิ์อนุญาตชัดเจน และห้ามใช้ payload ที่ทำลายข้อมูล
 
-## 6. What you should do next
+## 6. สิ่งที่ควรทำต่อ
 
-1. Repeat `mvn verify` using the disposable database steps above and save the command output.
-2. Manually finish the buyer/seller payment lifecycle using test accounts.
-3. Exercise remaining admin endpoints/transitions, seller-rating, permission, and auction-boundary cases in the table above.
-4. Test the bidding and account-management screens in a real browser, including failed form submissions.
-5. If the course requires a security scan, run OWASP ZAP only on local/staging and add verified findings to the report.
-6. Record each manual case as **Pass**, **Fail**, or **Not Run** with date, test data (no secrets), expected result, actual result, and evidence. Do not label unrun cases as passed.
+1. รัน `mvn verify` ซ้ำตามขั้นตอนฐานข้อมูล disposable ด้านบน และเก็บ output ไว้
+2. ทดสอบวงจร payment buyer/seller ด้วยบัญชีทดสอบ
+3. ทดสอบ admin endpoint/transition ที่เหลือ, seller rating, permission และขอบเขตวันเวลาตามตาราง
+4. ทดสอบหน้าประมูลและจัดการบัญชีผ่าน browser รวมถึงกรณีกรอกข้อมูลผิด
+5. หากรายวิชากำหนด security scan ให้ใช้ OWASP ZAP กับ local/staging แล้วเพิ่มเฉพาะผลที่ตรวจยืนยันแล้วลงรายงาน
+6. บันทึกแต่ละกรณีเป็น **ผ่าน**, **ไม่ผ่าน** หรือ **ยังไม่ได้ทดสอบ** พร้อมวันที่, ข้อมูลทดสอบที่ไม่ใช่ secret, ผลที่คาดหวัง, ผลจริง และหลักฐาน ห้ามระบุกรณีที่ยังไม่ได้ทดสอบว่าผ่าน
 
-The automated suite is evidence for its listed cases, not proof that every service, endpoint, browser page, or security property has been tested.
+ผล automated test เป็นหลักฐานเฉพาะกรณีที่ระบุไว้ ไม่ใช่หลักฐานว่าทุก service, endpoint, browser page หรือ security property ผ่านการทดสอบทั้งหมดแล้ว

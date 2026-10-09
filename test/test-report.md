@@ -1,129 +1,127 @@
-# Backend Test Report — 10 ตุลาคม 2026
+# รายงานผลทดสอบ Backend — 10 ตุลาคม 2026
 
 ## 1. ข้อมูลการทดสอบ
 
 | รายการ | รายละเอียด |
 |---|---|
-| Project | Auction-System |
-| Automated test command | `.\mvnw.cmd --batch-mode --no-transfer-progress verify` |
-| Database | Isolated PostgreSQL 16 container (`auction_test`, localhost:5433) |
-| Test frameworks | JUnit 5, Mockito, Spring Boot Test, MockMvc |
-| Automated test result | 20 passed, 0 failed, 0 errors, 0 skipped |
-| Build result | `BUILD SUCCESS`, exit code 0 |
+| โปรเจกต์ | Auction-System |
+| คำสั่งทดสอบอัตโนมัติ | `.\mvnw.cmd --batch-mode --no-transfer-progress verify` |
+| ฐานข้อมูล | PostgreSQL 16 container แยกสำหรับทดสอบ (`auction_test`, `localhost:5433`) |
+| Test framework | JUnit 5, Mockito, Spring Boot Test, MockMvc |
+| ผล automated test | ผ่าน 20, ล้มเหลว 0, error 0, ข้าม 0 |
+| ผล build | `BUILD SUCCESS`, exit code 0 |
 
-Tests use generated test accounts and a disposable database. Do not point them at the production Neon database.
+การทดสอบสร้างบัญชีทดสอบและใช้ฐานข้อมูล disposable ห้ามชี้ test ไปยัง Neon production
 
-## 2. Test Cases and Results
+## 2. กรณีทดสอบและผลลัพธ์
 
-### Application and user/authentication
+### ระบบ, ผู้ใช้ และ authentication
 
-| Test Case ID | Endpoint | Input / Action | Expected Result | Actual Result | Status |
+| รหัส | Endpoint | ข้อมูล/การทดสอบ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|---|
-| BE-001 | Spring Boot startup | Start app context and apply Flyway migrations | Application context starts | `ProjectApplicationTests.contextLoads` passed against PostgreSQL | Pass |
-| BE-002 | `POST /api/v1/users` | Register with valid data | HTTP 201; account can be read back | HTTP 201; authenticated `GET /me` returned the registered user | Pass |
-| BE-003 | `POST /api/v1/users` | Empty name, invalid email, short password | HTTP 400 with validation error | HTTP 400; response contained `Validation failed` | Pass |
-| BE-004 | `POST /api/v1/users` | Register the same email twice | Second request returns HTTP 409 | Duplicate registration returned HTTP 409 | Pass |
-| BE-005 | `GET /api/v1/users/me` | No authentication | HTTP 401 | HTTP 401 | Pass |
-| BE-006 | `GET /api/v1/users/me` | Valid Basic authentication | HTTP 200 and current user details | HTTP 200; returned email matched the test account | Pass |
-| BE-007 | `PUT /api/v1/users/me` | Update name, phone and address | HTTP 200 and updated profile | HTTP 200; updated name returned | Pass |
-| BE-008 | `PUT /api/v1/users/me/password` | Change current password | HTTP 204; new password works, old password fails | HTTP 204; new credentials succeeded and old credentials returned HTTP 401 | Pass |
-| BE-046 | `PUT /api/v1/users/me` | Authenticated request without CSRF token | HTTP 403; profile remains unchanged | HTTP 403; subsequent authenticated read showed the original name | Pass |
-| BE-047 | `POST /register` | Create user from web registration form | Redirect to home and be authenticated in that session | Redirected to `/`; same session could access protected `/profile` | Pass |
-| BE-038 | `GET /api/v1/admin/users` | Regular user requests admin user list | HTTP 403 | HTTP 403 | Pass |
+| BE-001 | Spring Boot startup | เริ่ม application context และรัน Flyway migration | ระบบเริ่มได้ | `ProjectApplicationTests.contextLoads` ผ่านเมื่อเชื่อม PostgreSQL | ผ่าน |
+| BE-002 | `POST /api/v1/users` | สมัครด้วยข้อมูลที่ถูกต้อง | HTTP 201 และอ่านบัญชีกลับได้ | HTTP 201; `GET /me` หลัง authentication คืนผู้ใช้ที่สมัคร | ผ่าน |
+| BE-003 | `POST /api/v1/users` | ชื่อว่าง, email ไม่ถูกต้อง, password สั้น | HTTP 400 พร้อม validation error | HTTP 400; response มี `Validation failed` | ผ่าน |
+| BE-004 | `POST /api/v1/users` | สมัคร email เดิมซ้ำ | คำขอที่สองได้ HTTP 409 | สมัครซ้ำได้ HTTP 409 | ผ่าน |
+| BE-005 | `GET /api/v1/users/me` | ไม่ได้ authentication | HTTP 401 | HTTP 401 | ผ่าน |
+| BE-006 | `GET /api/v1/users/me` | Basic authentication ที่ถูกต้อง | HTTP 200 และข้อมูลผู้ใช้ปัจจุบัน | HTTP 200; email ตรงกับ test account | ผ่าน |
+| BE-007 | `PUT /api/v1/users/me` | แก้ชื่อ, เบอร์โทร และที่อยู่ | HTTP 200 พร้อม profile ใหม่ | HTTP 200; response มีชื่อที่แก้แล้ว | ผ่าน |
+| BE-008 | `PUT /api/v1/users/me/password` | เปลี่ยน password ปัจจุบัน | HTTP 204; password ใหม่ใช้ได้และ password เดิมใช้ไม่ได้ | HTTP 204; login ด้วยรหัสใหม่ผ่าน รหัสเดิมได้ HTTP 401 | ผ่าน |
+| BE-046 | `PUT /api/v1/users/me` | ส่งคำขอที่ authentication แล้วแต่ไม่มี CSRF token | HTTP 403 และ profile ไม่เปลี่ยน | HTTP 403; อ่านซ้ำพบชื่อเดิม | ผ่าน |
+| BE-047 | `POST /register` | สมัครผ่านหน้าเว็บ | กลับหน้าแรกและ session นั้น login แล้ว | กลับ `/`; session เดิมเปิด `/profile` ที่ต้อง login ได้ | ผ่าน |
+| BE-038 | `GET /api/v1/admin/users` | ผู้ใช้ทั่วไปขอรายชื่อผู้ใช้ admin | HTTP 403 | HTTP 403 | ผ่าน |
 
-### Seller and artwork
+### Seller และ artwork
 
-| Test Case ID | Endpoint | Input / Action | Expected Result | Actual Result | Status |
+| รหัส | Endpoint | ข้อมูล/การทดสอบ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|---|
-| BE-009 | `POST /api/v1/seller-profiles` | Authenticated user creates seller profile | HTTP 201 | HTTP 201 | Pass |
-| BE-010 | `POST /api/v1/artworks` | Seller creates artwork | HTTP 201 and generated ID | HTTP 201; returned artwork ID | Pass |
-| BE-011 | `POST /api/v1/artworks` | Unauthenticated request / blank title | HTTP 401 / HTTP 400 | HTTP 401 / HTTP 400 | Pass |
-| BE-012 | `GET /api/v1/artworks?page=0&size=10&sort=id,desc` | Paginated and sorted listing | HTTP 200 with paged content | HTTP 200; content array included the created artwork | Pass |
-| BE-013 | `GET /api/v1/artworks/{id}` | Read created artwork | HTTP 200 and matching ID | HTTP 200; ID matched | Pass |
-| BE-014 | `PUT /api/v1/artworks/{id}` | Owner updates artwork | HTTP 200 with changed details | HTTP 200; updated title returned | Pass |
-| BE-015 | `PUT /api/v1/artworks/{id}` | Different user attempts update | HTTP 403 | HTTP 403 | Pass |
-| BE-016 | `DELETE /api/v1/artworks/{id}` | Owner deletes artwork without bidding history | HTTP 204; subsequent read returns 404 | HTTP 204; subsequent read returned HTTP 404 | Pass |
+| BE-009 | `POST /api/v1/seller-profiles` | ผู้ใช้ที่ login สร้าง seller profile | HTTP 201 | HTTP 201 | ผ่าน |
+| BE-010 | `POST /api/v1/artworks` | Seller สร้าง artwork | HTTP 201 และมี ID | HTTP 201; ได้ artwork ID | ผ่าน |
+| BE-011 | `POST /api/v1/artworks` | ไม่ได้ login / ชื่อว่าง | HTTP 401 / HTTP 400 | HTTP 401 / HTTP 400 | ผ่าน |
+| BE-012 | `GET /api/v1/artworks?page=0&size=10&sort=id,desc` | อ่านรายการแบบ pagination และ sorting | HTTP 200 พร้อมรายการแบ่งหน้า | HTTP 200; content มี artwork ที่สร้าง | ผ่าน |
+| BE-013 | `GET /api/v1/artworks/{id}` | อ่าน artwork ที่สร้างไว้ | HTTP 200 และ ID ตรงกัน | HTTP 200; ID ตรงกัน | ผ่าน |
+| BE-014 | `PUT /api/v1/artworks/{id}` | เจ้าของแก้ artwork | HTTP 200 และรายละเอียดเปลี่ยน | HTTP 200; title ใหม่ถูกส่งกลับ | ผ่าน |
+| BE-015 | `PUT /api/v1/artworks/{id}` | ผู้ใช้อื่นพยายามแก้ artwork | HTTP 403 | HTTP 403 | ผ่าน |
+| BE-016 | `DELETE /api/v1/artworks/{id}` | เจ้าของลบ artwork ที่ไม่มีประวัติ bidding | HTTP 204; อ่านอีกครั้งได้ 404 | HTTP 204; อ่านอีกครั้งได้ HTTP 404 | ผ่าน |
 
 ### Seller profile
 
-| Test Case ID | Endpoint | Input / Action | Expected Result | Actual Result | Status |
+| รหัส | Endpoint | ข้อมูล/การทดสอบ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|---|
-| BE-039 | `GET /api/v1/seller-profiles/me` | Seller reads private profile | HTTP 200 and bank account is visible to owner | HTTP 200; expected bank account returned | Pass |
-| BE-040 | `PUT /api/v1/seller-profiles/me` | Seller updates bank account | HTTP 200 and changed account returned | HTTP 200; updated value returned | Pass |
-| BE-041 | `GET /api/v1/seller-profiles/users/{userId}` | Public profile lookup | HTTP 200 without bank account | HTTP 200; user ID returned and bank account omitted | Pass |
-| BE-042 | `GET /api/v1/seller-profiles/me` | Unauthenticated request | HTTP 401 | HTTP 401 | Pass |
+| BE-039 | `GET /api/v1/seller-profiles/me` | Seller อ่าน profile ส่วนตัว | HTTP 200 และเจ้าของเห็นเลขบัญชี | HTTP 200; ได้เลขบัญชีตามที่ตั้งไว้ | ผ่าน |
+| BE-040 | `PUT /api/v1/seller-profiles/me` | Seller แก้เลขบัญชี | HTTP 200 และค่าใหม่ถูกส่งกลับ | HTTP 200; ได้ค่าใหม่ | ผ่าน |
+| BE-041 | `GET /api/v1/seller-profiles/users/{userId}` | อ่าน public profile | HTTP 200 โดยไม่เปิดเผยเลขบัญชี | HTTP 200; มี user ID แต่ไม่มีเลขบัญชี | ผ่าน |
+| BE-042 | `GET /api/v1/seller-profiles/me` | ไม่ได้ authentication | HTTP 401 | HTTP 401 | ผ่าน |
 
-### Bidding, bids and comments
+### Bidding, bid และ comment
 
-| Test Case ID | Endpoint | Input / Action | Expected Result | Actual Result | Status |
+| รหัส | Endpoint | ข้อมูล/การทดสอบ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|---|
-| BE-017 | `POST /api/v1/biddings` | Seller creates bidding for owned artwork | HTTP 201 | HTTP 201; bidding was readable afterward | Pass |
-| BE-018 | `GET /api/v1/biddings?page=0&size=5&sort=id,asc` | Paginated listing | HTTP 200 with paged content | HTTP 200; content array returned | Pass |
-| BE-019 | `GET /api/v1/biddings/{id}` | Read created bidding | HTTP 200 and `ACTIVE` status | HTTP 200; status was `ACTIVE` | Pass |
-| BE-020 | `POST /api/v1/biddings/{id}/bids` | No authentication | HTTP 401 | HTTP 401 | Pass |
-| BE-021 | `POST /api/v1/biddings/{id}/bids` | Auction owner bids on own auction | HTTP 409 | HTTP 409 | Pass |
-| BE-022 | `POST /api/v1/biddings/{id}/bids` | First bid at starting price 100.00 | HTTP 201 | HTTP 201; amount was 100.00 | Pass |
-| BE-023 | `POST /api/v1/biddings/{id}/bids` | Next bid at minimum increment 102.50 | HTTP 201 | HTTP 201; amount was 102.50 | Pass |
-| BE-024 | `POST /api/v1/biddings/{id}/bids` | Bid below required increment | HTTP 409 | HTTP 409 | Pass |
-| BE-025 | `GET /api/v1/biddings/{id}/bids/highest` | Read highest bid | HTTP 200; amount is 102.50 | HTTP 200; amount was 102.50 | Pass |
-| BE-026 | `PUT /api/v1/biddings/{id}` | Owner edits bidding after bids exist | HTTP 409 | HTTP 409 | Pass |
-| BE-027 | `POST /api/v1/biddings/{id}/comments` | Save SQL-injection-shaped text (`' OR '1'='1 --`) as comment | HTTP 201; text is stored as data | HTTP 201; response preserved the exact text | Pass |
-| BE-028 | `POST /api/v1/biddings/{id}/comments/{commentId}/like` | Different user likes comment | HTTP 200; thumbs-up count is 1 | HTTP 200; thumbs-up count was 1 | Pass |
-| BE-029 | `PUT /api/v1/biddings/{id}/comments/{commentId}` | Comment author updates message | HTTP 200 and changed message | HTTP 200; updated message was readable | Pass |
-| BE-030 | `DELETE /api/v1/biddings/{id}/comments/{commentId}` | Comment author deletes comment | HTTP 204; list empty afterward | HTTP 204; subsequent list was empty | Pass |
-| BE-043 | `POST /api/v1/biddings/{id}/comments/{commentId}/dislike` | Different user dislikes comment | HTTP 200; thumbs-down count is 1 | HTTP 200; thumbs-down count was 1 | Pass |
-| BE-044 | `GET /api/v1/users/me/bids`, `/api/v1/biddings/mine`, `/api/v1/biddings/won` | Read bidder/owner lists | HTTP 200 and expected page/list shapes | All returned HTTP 200; bidder and owner records verified | Pass |
+| BE-017 | `POST /api/v1/biddings` | Seller สร้าง bidding สำหรับ artwork ของตน | HTTP 201 | HTTP 201; อ่าน bidding ที่สร้างได้ | ผ่าน |
+| BE-018 | `GET /api/v1/biddings?page=0&size=5&sort=id,asc` | อ่านรายการแบบแบ่งหน้า | HTTP 200 พร้อม content | HTTP 200; ได้ content array | ผ่าน |
+| BE-019 | `GET /api/v1/biddings/{id}` | อ่าน bidding ที่สร้างไว้ | HTTP 200 และสถานะ `ACTIVE` | HTTP 200; สถานะเป็น `ACTIVE` | ผ่าน |
+| BE-020 | `POST /api/v1/biddings/{id}/bids` | ไม่ได้ authentication | HTTP 401 | HTTP 401 | ผ่าน |
+| BE-021 | `POST /api/v1/biddings/{id}/bids` | เจ้าของ auction bid ใน auction ของตน | HTTP 409 | HTTP 409 | ผ่าน |
+| BE-022 | `POST /api/v1/biddings/{id}/bids` | bid แรกเท่ากับราคาเริ่มต้น 100.00 | HTTP 201 | HTTP 201; จำนวน 100.00 | ผ่าน |
+| BE-023 | `POST /api/v1/biddings/{id}/bids` | bid ถัดไปตาม minimum increment 102.50 | HTTP 201 | HTTP 201; จำนวน 102.50 | ผ่าน |
+| BE-024 | `POST /api/v1/biddings/{id}/bids` | bid ต่ำกว่า increment ที่กำหนด | HTTP 409 | HTTP 409 | ผ่าน |
+| BE-025 | `GET /api/v1/biddings/{id}/bids/highest` | อ่าน bid สูงสุด | HTTP 200; จำนวน 102.50 | HTTP 200; จำนวน 102.50 | ผ่าน |
+| BE-026 | `PUT /api/v1/biddings/{id}` | เจ้าของแก้ bidding หลังมี bid แล้ว | HTTP 409 | HTTP 409 | ผ่าน |
+| BE-027 | `POST /api/v1/biddings/{id}/comments` | บันทึกข้อความลักษณะคล้าย SQL injection (`' OR '1'='1 --`) | HTTP 201; เก็บเป็นข้อความธรรมดา | HTTP 201; response คืนข้อความเดิมตรงกัน | ผ่าน |
+| BE-028 | `POST /api/v1/biddings/{id}/comments/{commentId}/like` | ผู้ใช้อื่นกด like comment | HTTP 200; thumbs-up เป็น 1 | HTTP 200; thumbs-up เป็น 1 | ผ่าน |
+| BE-029 | `PUT /api/v1/biddings/{id}/comments/{commentId}` | เจ้าของ comment แก้ข้อความ | HTTP 200 และอ่านข้อความใหม่ได้ | HTTP 200; อ่านข้อความที่แก้แล้วได้ | ผ่าน |
+| BE-030 | `DELETE /api/v1/biddings/{id}/comments/{commentId}` | เจ้าของลบ comment | HTTP 204; รายการหลังลบว่าง | HTTP 204; อ่านรายการอีกครั้งแล้วว่าง | ผ่าน |
+| BE-043 | `POST /api/v1/biddings/{id}/comments/{commentId}/dislike` | ผู้ใช้อื่นกด dislike | HTTP 200; thumbs-down เป็น 1 | HTTP 200; thumbs-down เป็น 1 | ผ่าน |
+| BE-044 | `GET /api/v1/users/me/bids`, `/api/v1/biddings/mine`, `/api/v1/biddings/won` | อ่านรายการ bid/auction ของตน | HTTP 200 และรูปแบบรายการถูกต้อง | ทั้งหมด HTTP 200; ตรวจข้อมูล bidder และ owner | ผ่าน |
 
-### Admin APIs (test-only admin fixtures)
+### Admin API (ใช้บัญชีทดสอบ)
 
-| Test Case ID | Endpoint / Action | Input / Action | Expected Result | Actual Result | Status |
+| รหัส | Endpoint/การทำงาน | ข้อมูล/การทดสอบ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|---|
-| BE-048 | `GET /api/v1/admin/users`, `POST /admin/users/{id}/promote`, and user status | `SUPER_ADMIN` lists users, promotes a regular user, then disables the resulting admin; regular `ADMIN` cannot promote | Promotion action visible only to `SUPER_ADMIN`; successful promotion changes role to `ADMIN`; regular admin receives HTTP 403; disabled account cannot authenticate | Super admin promoted the test user and changed its status; regular admin saw no promotion action and POST was denied; disabled account authentication returned HTTP 401 | Pass |
-| BE-049 | Admin bidding and payment routes | `SUPER_ADMIN` cancels an auction, closes another with a winning bid, lists/cancels its payment, and opens the web payments screen; `ADMIN` also lists payments | HTTP 200; status/payment transitions persist with cancellation reason; both roles can use payment management | Auction cancel/close succeeded; closing created an `AWAITING_PAYMENT`; both roles listed the payment; `SUPER_ADMIN` canceled it and opened the web screen | Pass |
+| BE-048 | `GET /api/v1/admin/users`, `POST /admin/users/{id}/promote` และเปลี่ยนสถานะบัญชี | `SUPER_ADMIN` ดูรายชื่อ, เลื่อนผู้ใช้ทั่วไปเป็น `ADMIN` แล้วปิดบัญชี; `ADMIN` ทั่วไปเลื่อนผู้ใช้ไม่ได้ | ปุ่มเลื่อน role แสดงเฉพาะ `SUPER_ADMIN`; เลื่อนแล้ว role เป็น `ADMIN`; `ADMIN` ได้ HTTP 403; บัญชีที่ปิด login ไม่ได้ | `SUPER_ADMIN` เลื่อนและปิดบัญชีได้; `ADMIN` ไม่เห็นปุ่มและ POST ถูกปฏิเสธ; บัญชีที่ปิดได้ HTTP 401 เมื่อลอง login | ผ่าน |
+| BE-049 | Admin bidding และ payment | `SUPER_ADMIN` ยกเลิก auction, ปิด auction ที่มีผู้ชนะ, ดู/ยกเลิก payment และเปิดหน้าจัดการ payment; `ADMIN` ดู payment ได้ | HTTP 200; สถานะและเหตุผลการยกเลิกถูกบันทึก; ทั้งสอง role ใช้ payment management ได้ | ยกเลิก/ปิด auction สำเร็จ; เกิด payment `AWAITING_PAYMENT`; ทั้งสอง role ดู payment ได้; `SUPER_ADMIN` ยกเลิก payment และเปิดหน้าเว็บได้ | ผ่าน |
 
-### Additional service-level bidding rules
+### กฎ bidding ระดับ service
 
-| Test Case ID | Scenario | Expected Result | Actual Result | Status |
+| รหัส | สถานการณ์ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|
-| BE-031 | Accept a bid at seller-configured increment | Bid accepted and last bid updated | Passed with amount 102.50 | Pass |
-| BE-032 | Bid below seller-configured increment | HTTP 409; bid is not saved | HTTP 409; repository save was not called | Pass |
-| BE-033 | First bid equals starting price | Bid accepted and last bid updated | Passed with amount 50.00 | Pass |
-| BE-034 | Auction owner tries to bid | HTTP 409; bid is not saved | HTTP 409; repository save was not called | Pass |
-| BE-035 | Bidding state does not accept bids | HTTP 409; bid is not saved | HTTP 409; repository save was not called | Pass |
+| BE-031 | รับ bid ตาม increment ของ seller | รับ bid และอัปเดต last bid | ผ่านที่จำนวน 102.50 | ผ่าน |
+| BE-032 | bid ต่ำกว่า increment | HTTP 409 และไม่บันทึก bid | HTTP 409; ไม่เรียก repository save | ผ่าน |
+| BE-033 | bid แรกเท่ากับราคาเริ่มต้น | รับ bid และอัปเดต last bid | ผ่านที่จำนวน 50.00 | ผ่าน |
+| BE-034 | เจ้าของ auction พยายาม bid | HTTP 409 และไม่บันทึก bid | HTTP 409; ไม่เรียก repository save | ผ่าน |
+| BE-035 | สถานะ auction ไม่รับ bid | HTTP 409 และไม่บันทึก bid | HTTP 409; ไม่เรียก repository save | ผ่าน |
 
-### Browser/deployment smoke checks
+### ตรวจหน้าเว็บและ deployment
 
-| Test Case ID | Endpoint | Action | Expected Result | Actual Result | Status |
+| รหัส | URL/หน้า | การทดสอบ | ผลที่คาดหวัง | ผลที่ได้ | สถานะ |
 |---|---|---|---|---|---|
-| BE-036 | `https://auction-system-68vk.onrender.com/` | Open home page in browser | Auction page renders | “Live auctions” page and listing rendered after Render cold start | Pass |
-| BE-037 | `https://auction-system-68vk.onrender.com/swagger-ui/index.html` | Open Swagger UI in browser | Swagger UI renders | Swagger UI page loaded | Pass |
-| BE-045 | Local Thymeleaf browser flow | Register, log in, update profile, then log out | Each page/action completes and updated name is shown | Playwright browser flow passed; logout returned to `/login?logout` | Pass |
+| BE-036 | `https://auction-system-68vk.onrender.com/` | เปิดหน้าแรกใน browser | หน้า auction แสดงผล | หน้า “Live auctions” และรายการแสดงหลัง Render cold start | ผ่าน |
+| BE-037 | `https://auction-system-68vk.onrender.com/swagger-ui/index.html` | เปิด Swagger UI | Swagger UI แสดงผล | หน้า Swagger UI โหลดสำเร็จ | ผ่าน |
+| BE-045 | Local Thymeleaf browser flow | สมัคร, login, แก้ profile แล้ว logout | แต่ละหน้า/การทำงานสำเร็จและแสดงชื่อใหม่ | Playwright browser flow ผ่าน; logout กลับ `/login?logout` | ผ่าน |
 
-The local flow was interactively executed with Playwright; it is not a committed, repeatable Playwright test suite.
+Browser flow ในเครื่องทดสอบด้วย Playwright แบบโต้ตอบ ยังไม่ใช่ Playwright test suite ที่บันทึกใน repository และรันซ้ำอัตโนมัติได้
 
-## 3. Test Result Summary
+## 3. สรุปผลทดสอบ
 
-| Test group | Tests | Passed | Failed | Skipped |
+| กลุ่ม test | จำนวน | ผ่าน | ไม่ผ่าน | ข้าม |
 |---|---:|---:|---:|---:|
-| User/authentication and authorization integration | 4 | 4 | 0 | 0 |
-| Artwork integration | 2 | 2 | 0 | 0 |
-| Seller-profile integration | 1 | 1 | 0 | 0 |
-| Bidding/comment integration | 2 | 2 | 0 | 0 |
-| Admin API integration | 3 | 3 | 0 | 0 |
-| Thymeleaf page integration | 2 | 2 | 0 | 0 |
+| Integration: user/authentication/authorization | 4 | 4 | 0 | 0 |
+| Integration: artwork | 2 | 2 | 0 | 0 |
+| Integration: seller profile | 1 | 1 | 0 | 0 |
+| Integration: bidding/comment | 2 | 2 | 0 | 0 |
+| Integration: admin API | 3 | 3 | 0 | 0 |
+| Integration: Thymeleaf page | 2 | 2 | 0 | 0 |
 | Spring Boot application context | 1 | 1 | 0 | 0 |
-| Bidding service unit tests | 5 | 5 | 0 | 0 |
-| **Automated total (`mvn verify`)** | **20** | **20** | **0** | **0** |
-| Browser smoke checks (home and Swagger) | 2 | 2 | 0 | 0 |
-| Local Playwright browser flow (register, login, profile update, logout) | 1 | 1 | 0 | 0 |
+| Unit test: bidding service | 5 | 5 | 0 | 0 |
+| **รวม automated test (`mvn verify`)** | **20** | **20** | **0** | **0** |
+| ตรวจหน้า home และ Swagger ใน browser | 2 | 2 | 0 | 0 |
+| Local Playwright flow (สมัคร, login, แก้ profile, logout) | 1 | 1 | 0 | 0 |
 
-![Automated test results generated from Surefire reports](../img/automated-test-results.svg)
+ดูขั้นตอนรันซ้ำ เกณฑ์ PASS/FAIL และกรณีทดสอบที่ยังเหลือใน [คู่มือทดสอบ](./TESTING-GUIDE.md)
 
-See [TESTING-GUIDE.md](./TESTING-GUIDE.md) for reproducible commands, pass/fail criteria, manual test steps, and the remaining coverage checklist.
+## 4. การรันทดสอบ
 
-## 4. Test Execution
-
-The full verification was run on 10 October 2026 against a fresh, disposable PostgreSQL 16 container using the `auction_test` database on port 5433. The project's existing PostgreSQL data volume was not used.
+รัน full verification วันที่ 10 ตุลาคม 2026 ด้วย PostgreSQL 16 container ใหม่ที่แยกสำหรับทดสอบ ใช้ฐาน `auction_test` ที่ port 5433 ไม่ได้ใช้ volume ของ PostgreSQL อื่น
 
 ```powershell
 Set-Location .\code
@@ -134,34 +132,36 @@ $env:REMEMBER_ME_KEY="ci-only-remember-me-key"
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Final result after CSRF remediation, auto-login, admin permission updates, and promotion UI: `Tests run: 20, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`, exit code 0.
+ผลล่าสุดหลังแก้ CSRF, auto-login, สิทธิ์ admin และหน้าเลื่อน role: `Tests run: 20, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`, exit code 0
 
-Detailed Surefire XML/text results are under `code/target/surefire-reports/`.
+ผล Surefire แบบ XML/text อยู่ที่ `code/target/surefire-reports/`
 
-The local browser flows used Playwright 1.64.0 with Chromium and the same disposable PostgreSQL database. After CSRF protection was enabled, registration/login/profile-update/logout passed. Following the auto-login change, a fresh sign-up redirected directly to `/` and displayed authenticated navigation, including Profile and Log out, without a separate login. These were executed interactively through the browser and are not yet committed Playwright specs. The browser console also logged a DNS failure for the deliberately fake `example.test` image URL used by an API fixture; it did not block page rendering or the user journey.
+ทดสอบ browser ในเครื่องด้วย Playwright 1.64.0 และ Chromium โดยใช้ PostgreSQL disposable เดียวกัน หลังเปิด CSRF แล้ว flow สมัคร/login/แก้ profile/logout ผ่าน หลังแก้ auto-login การสมัครใหม่กลับหน้า `/` และแสดงเมนูที่ต้อง login เช่น Profile และ Log out โดยไม่ต้อง login ซ้ำ ทั้งหมดทดสอบแบบโต้ตอบ ยังไม่มี Playwright spec ที่ commit ไว้ นอกจากนี้ console แจ้ง DNS failure สำหรับ URL รูป `example.test` ที่ใช้เป็นข้อมูลจำลองของ API แต่ไม่ขัดขวางการแสดงหน้าหรือ flow ของผู้ใช้
 
-## 5. Security Review and Coverage Limits
+## 5. Security review และขอบเขตที่ยังไม่ครอบคลุม
 
-A read-only source review inspected API and web authentication/authorization, state-changing controller paths, request validation, JPA repositories/query construction, relevant templates, and application/deployment configuration.
+มีการตรวจ source code แบบอ่านอย่างเดียวในส่วน authentication/authorization, endpoint ที่แก้ข้อมูล, request validation, JPA repository/query, template ที่เกี่ยวข้อง และ config ของแอป/deployment
 
-- **SQL injection:** No SQL injection vulnerability was identified. Repository operations use derived JPA methods or bound JPQL parameters; no raw input-built SQL was found. The test also confirmed an injection-shaped comment is returned as literal data. This is not a substitute for a dedicated penetration test or exhaustive proof.
-- **CSRF finding remediated:** `SecurityConfig` now keeps Spring Security's CSRF protection enabled for API routes as well as browser routes. A regression test verifies an authenticated state-changing API request without a CSRF token receives HTTP 403 and does not update the profile. A local browser registration/login/profile-update/logout flow also passed with CSRF enabled. API clients must retain their session cookie and send the CSRF token (for example, fetch `/register`, read the hidden `_csrf` value, then send it as `X-CSRF-TOKEN`) on state-changing requests.
+- **SQL injection:** ไม่พบช่องโหว่ SQL injection ในโค้ดที่ตรวจ repository ใช้ derived JPA query หรือ JPQL ที่ bind parameter ไม่พบการประกอบ SQL จาก input โดยตรง และ test ยืนยันว่าข้อความ comment ที่มีรูปแบบคล้าย injection ถูกเก็บเป็นข้อความตามตัวอักษร ผลนี้ไม่ใช่ penetration test หรือหลักฐานว่าทุกเส้นทางปลอดภัยสมบูรณ์
+- **แก้ CSRF finding แล้ว:** `SecurityConfig` เปิด Spring Security CSRF protection ทั้ง API และ browser มี regression test ยืนยันว่า state-changing API ที่ไม่มี token ได้ HTTP 403 และไม่เปลี่ยน profile; browser flow สมัคร/login/แก้ profile/logout ผ่านเมื่อเปิด CSRF API client ต้องเก็บ session cookie และส่ง CSRF token เช่นอ่าน hidden `_csrf` จาก `/register` แล้วส่งใน `X-CSRF-TOKEN` สำหรับ write request
 
-The tested scope is materially broader but still does not cover every endpoint/service/page. Admin integration tests provision unique test-only accounts in the disposable PostgreSQL database, not production accounts. They cover user listing/disabling, `SUPER_ADMIN` promotion (and denial for regular `ADMIN`), auction cancel/close, and payment list/cancel by both admin roles. Remaining coverage includes:
+ขอบเขต test กว้างขึ้น แต่ยังไม่ครอบคลุมทุก endpoint/service/page Admin integration test สร้างบัญชีเฉพาะทดสอบใน PostgreSQL disposable ไม่ใช้บัญชี production ครอบคลุมการดู/ปิดบัญชีผู้ใช้, `SUPER_ADMIN` เลื่อนเป็น `ADMIN` (และปฏิเสธ `ADMIN` ทั่วไป), ยกเลิก/ปิด auction และดู/ยกเลิก payment โดยทั้งสอง role ส่วนที่ยังต้องทดสอบ:
 
-- Buyer payment submission, seller confirmation/rejection/shipping, admin payment detail/filter, user re-enabling, and additional authorization transitions
-- Admin moderation and bid-voiding success paths
-- Seller rating and remaining rating/permission edge cases
-- Bidding cancellation/closing, time-window boundaries, and other invalid date scenarios
-- Remaining API error/ownership/validation branches and dedicated unit tests for services beyond bidding
-- Most authenticated Thymeleaf pages and browser workflows, including auctions, bids, comments, seller settings, purchases/sales, and admin screens
-- Automated, repeatable Playwright spec in the repository
-- JaCoCo line/branch coverage (not configured or measured)
+- Buyer ส่ง payment, seller ยืนยัน/ปฏิเสธ/จัดส่ง, admin ดูรายละเอียด/กรอง payment และเปิดใช้งานผู้ใช้อีกครั้ง
+- Admin moderation และการ void bid
+- Seller rating และ edge case ของ rating/permission
+- การยกเลิก/ปิด bidding, ขอบเขตเวลา และวันที่ไม่ถูกต้อง
+- API error, ownership, validation และ unit test สำหรับ service อื่นนอกเหนือจาก bidding
+- หน้า Thymeleaf ที่ต้อง login และ browser flow ส่วนใหญ่ เช่น auction, bid, comment, seller settings, purchases/sales และหน้า admin
+- Playwright spec ที่บันทึกไว้และรันซ้ำอัตโนมัติ
+- JaCoCo line/branch coverage (ยังไม่ได้ติดตั้งหรือวัด)
 
-## 6. Defect Log
+## 6. บันทึก defect
 
-No failures were found in the 20 automated tests or the three browser checks. Untested areas above are coverage gaps, not confirmed defects. The CSRF issue found during source review was remediated and regression-tested; this is not a full penetration test or security certification.
+ไม่พบ failure ใน automated test 20 รายการหรือ browser check 3 รายการ ส่วนที่ยังไม่ได้ทดสอบข้างต้นเป็น coverage gap ไม่ใช่ defect ที่ยืนยันแล้ว CSRF finding จาก source review ได้แก้และเพิ่ม regression test แล้ว รายงานนี้ไม่ใช่ penetration test หรือ security certification
 
-## 7. Conclusion
+## 7. สรุป
 
-The full automated Maven suite passes: 20 tests, 0 failures. MockMvc integration tests exercise registration/authentication including web sign-up auto-login, CSRF enforcement, user and seller profile updates, artwork CRUD/access control, bidding and comment workflows, a SQL-injection-shaped comment input, admin user listing/disabling/promotion, auction cancellation/closing, payment listing/cancellation by both admin roles, and selected rendered Thymeleaf pages against PostgreSQL. Manual browser checks verified the local registration/login/profile-update/logout flow with CSRF enabled; the deployed home page and Swagger UI also rendered. Buyer/seller payment transitions, other UI journeys, automated Playwright spec persistence, and code coverage measurement remain outstanding. No SQL injection was identified in the reviewed code; the CSRF configuration finding was fixed and verified.
+Full automated Maven suite ผ่าน: 20 test, 0 failure MockMvc integration test ครอบคลุมสมัคร/authentication รวม web sign-up auto-login, CSRF, แก้ user/seller profile, artwork CRUD และ access control, bidding/comment, ข้อความ comment รูปแบบคล้าย SQL injection, admin ดู/ปิด/เลื่อนบัญชี, ยกเลิก/ปิด auction, ดู/ยกเลิก payment ด้วยทั้งสอง admin role และ render หน้า Thymeleaf บางส่วนบน PostgreSQL
+
+Browser check ด้วยตนเองยืนยัน flow สมัคร/login/แก้ profile/logout ในเครื่องเมื่อเปิด CSRF รวมถึงหน้า home และ Swagger UI บน Render ส่วน payment flow ฝั่ง buyer/seller, UI อื่น, Playwright spec ที่รันซ้ำได้ และ code coverage ยังต้องทำต่อ ไม่พบ SQL injection จากโค้ดที่ตรวจ และได้แก้ CSRF finding พร้อมทดสอบยืนยันแล้ว
