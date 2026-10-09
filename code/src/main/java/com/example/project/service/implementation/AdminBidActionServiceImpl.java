@@ -5,6 +5,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -44,6 +46,15 @@ public class AdminBidActionServiceImpl implements AdminBidActionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bidding not found: " + biddingId);
         }
         return bidActionRepository.findByBidding_IdOrderByAmountDesc(biddingId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BidAction> getAllBids(Long biddingId, Pageable pageable) {
+        if (!biddingRepository.existsById(biddingId)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Bidding not found: " + biddingId);
+        }
+        return bidActionRepository.findByBidding_IdOrderByAmountDesc(biddingId, pageable);
     }
 
     @Override

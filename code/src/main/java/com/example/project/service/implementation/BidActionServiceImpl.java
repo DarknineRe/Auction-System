@@ -2,6 +2,8 @@ package com.example.project.service.implementation;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,6 +53,15 @@ public class BidActionServiceImpl implements BidActionService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + userID);
         }
         return bidActionRepository.findByUser_IdAndStatus(userID, BidAction.Status.VALID);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<BidAction> getBidsByUser(Long userID, Pageable pageable) {
+        if (!userRepository.existsById(userID)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found: " + userID);
+        }
+        return bidActionRepository.findByUser_IdAndStatus(userID, BidAction.Status.VALID, pageable);
     }
 
     private void requireBidding(Long biddingID) {

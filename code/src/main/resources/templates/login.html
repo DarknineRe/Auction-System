@@ -40,6 +40,7 @@
 
         <p class="alert alert--error" role="alert" th:if="${param.error}">Incorrect email or password.</p>
         <p class="alert alert--success" role="status" th:if="${param.logout}">You have been logged out.</p>
+        <p class="alert alert--success" role="status" th:if="${param.registered}">Your account was created. Log in to continue.</p>
 
         <p class="login__footer">
           New to BidHub? <a th:href="@{/register}">Create an account</a>
