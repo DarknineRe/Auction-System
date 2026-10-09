@@ -8,7 +8,7 @@
 | Automated test command | `.\mvnw.cmd --batch-mode --no-transfer-progress verify` |
 | Database | Isolated PostgreSQL 16 container (`auction_test`, localhost:5433) |
 | Test frameworks | JUnit 5, Mockito, Spring Boot Test, MockMvc |
-| Automated test result | 16 passed, 0 failed, 0 errors, 0 skipped |
+| Automated test result | 17 passed, 0 failed, 0 errors, 0 skipped |
 | Build result | `BUILD SUCCESS`, exit code 0 |
 
 Tests use generated test accounts and a disposable database. Do not point them at the production Neon database.
@@ -28,6 +28,7 @@ Tests use generated test accounts and a disposable database. Do not point them a
 | BE-007 | `PUT /api/v1/users/me` | Update name, phone and address | HTTP 200 and updated profile | HTTP 200; updated name returned | Pass |
 | BE-008 | `PUT /api/v1/users/me/password` | Change current password | HTTP 204; new password works, old password fails | HTTP 204; new credentials succeeded and old credentials returned HTTP 401 | Pass |
 | BE-046 | `PUT /api/v1/users/me` | Authenticated request without CSRF token | HTTP 403; profile remains unchanged | HTTP 403; subsequent authenticated read showed the original name | Pass |
+| BE-047 | `POST /register` | Create user from web registration form | Redirect to home and be authenticated in that session | Redirected to `/`; same session could access protected `/profile` | Pass |
 | BE-038 | `GET /api/v1/admin/users` | Regular user requests admin user list | HTTP 403 | HTTP 403 | Pass |
 
 ### Seller and artwork
@@ -101,10 +102,10 @@ The local flow was interactively executed with Playwright; it is not a committed
 | Artwork integration | 2 | 2 | 0 | 0 |
 | Seller-profile integration | 1 | 1 | 0 | 0 |
 | Bidding/comment integration | 2 | 2 | 0 | 0 |
-| Thymeleaf page integration | 1 | 1 | 0 | 0 |
+| Thymeleaf page integration | 2 | 2 | 0 | 0 |
 | Spring Boot application context | 1 | 1 | 0 | 0 |
 | Bidding service unit tests | 5 | 5 | 0 | 0 |
-| **Automated total (`mvn verify`)** | **16** | **16** | **0** | **0** |
+| **Automated total (`mvn verify`)** | **17** | **17** | **0** | **0** |
 | Browser smoke checks (home and Swagger) | 2 | 2 | 0 | 0 |
 | Local Playwright browser flow (register, login, profile update, logout) | 1 | 1 | 0 | 0 |
 
@@ -121,11 +122,11 @@ $env:REMEMBER_ME_KEY="ci-only-remember-me-key"
 .\mvnw.cmd --batch-mode --no-transfer-progress verify
 ```
 
-Final result after CSRF remediation: `Tests run: 16, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`, exit code 0.
+Final result after CSRF remediation and auto-login implementation: `Tests run: 17, Failures: 0, Errors: 0, Skipped: 0`; `BUILD SUCCESS`, exit code 0.
 
 Detailed Surefire XML/text results are under `code/target/surefire-reports/`.
 
-The local browser flow used Playwright 1.64.0 with Chromium and the same disposable PostgreSQL database, after CSRF protection was enabled. It registered a dummy account, authenticated, updated the profile, and logged out successfully. The registration form contained a CSRF token and submitted successfully. This was executed interactively through the browser and is not yet a committed Playwright spec. The browser console also logged a DNS failure for the deliberately fake `example.test` image URL used by an API fixture; it did not block page rendering or the user journey.
+The local browser flows used Playwright 1.64.0 with Chromium and the same disposable PostgreSQL database. After CSRF protection was enabled, registration/login/profile-update/logout passed. Following the auto-login change, a fresh sign-up redirected directly to `/` and displayed authenticated navigation, including Profile and Log out, without a separate login. These were executed interactively through the browser and are not yet committed Playwright specs. The browser console also logged a DNS failure for the deliberately fake `example.test` image URL used by an API fixture; it did not block page rendering or the user journey.
 
 ## 5. Security Review and Coverage Limits
 
@@ -151,4 +152,4 @@ No failures were found in the 16 automated tests or the three browser checks. Un
 
 ## 7. Conclusion
 
-The full automated Maven suite passes: 16 tests, 0 failures. MockMvc integration tests exercise registration/authentication, CSRF enforcement, user and seller profile updates, artwork CRUD/access control, bidding and comment workflows, a SQL-injection-shaped comment input, admin access denial, and selected rendered Thymeleaf pages against PostgreSQL. Manual browser checks verified the local registration/login/profile-update/logout flow with CSRF enabled; the deployed home page and Swagger UI also rendered. Payment/admin success paths, most UI journeys, automated Playwright spec persistence, and code coverage measurement remain outstanding. No SQL injection was identified in the reviewed code; the CSRF configuration finding was fixed and verified.
+The full automated Maven suite passes: 17 tests, 0 failures. MockMvc integration tests exercise registration/authentication including web sign-up auto-login, CSRF enforcement, user and seller profile updates, artwork CRUD/access control, bidding and comment workflows, a SQL-injection-shaped comment input, admin access denial, and selected rendered Thymeleaf pages against PostgreSQL. Manual browser checks verified the local registration/login/profile-update/logout flow with CSRF enabled; the deployed home page and Swagger UI also rendered. Payment/admin success paths, most UI journeys, automated Playwright spec persistence, and code coverage measurement remain outstanding. No SQL injection was identified in the reviewed code; the CSRF configuration finding was fixed and verified.

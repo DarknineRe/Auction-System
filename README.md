@@ -138,7 +138,7 @@
 
 ## How to Run Tests
 
-The project uses Maven Wrapper, JUnit 5, Mockito, Spring Boot Test, and MockMvc. The current suite has 16 automated tests covering application startup, selected user/authentication and authorization flows, CSRF enforcement, artwork and seller-profile APIs, bidding and comments, bidding rules, and public Thymeleaf pages. This is not exhaustive coverage of every endpoint. The application uses PostgreSQL and Flyway, so local tests need a separate disposable test database. Do not use the production Neon database for tests.
+The project uses Maven Wrapper, JUnit 5, Mockito, Spring Boot Test, and MockMvc. The current suite has 17 automated tests covering application startup, selected user/authentication and authorization flows, CSRF enforcement, artwork and seller-profile APIs, bidding and comments, bidding rules, web registration auto-login, and public Thymeleaf pages. This is not exhaustive coverage of every endpoint. The application uses PostgreSQL and Flyway, so local tests need a separate disposable test database. Do not use the production Neon database for tests.
 
 ### Prerequisites and test database
 
@@ -182,7 +182,7 @@ The current automated tests include:
 | `ArtworkApiIntegrationTest` | Seller profile setup, artwork creation/list/read/update/delete, validation, and ownership authorization. |
 | `SellerprofileApiIntegrationTest` | Seller profile read/update, unauthenticated access, and public profile bank-account privacy. |
 | `BiddingApiIntegrationTest` | Bidding creation/list/read, bid rules/highest bid, authorization, and comment create/react/update/delete. |
-| `PageControllerIntegrationTest` | Thymeleaf rendering for home, login, and registration pages. |
+| `PageControllerIntegrationTest` | Thymeleaf rendering for home/login/registration and web registration automatically signing the new user in. |
 
 Maven writes detailed test results to `code/target/surefire-reports/`.
 

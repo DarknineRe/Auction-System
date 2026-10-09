@@ -14,6 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +26,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.web.context.SecurityContextRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.project.dto.request.CancelPaymentRequest;
 import com.example.project.dto.request.SellerprofileRequest;
@@ -78,6 +86,8 @@ public class PageController {
     private final AuctionListingService auctionListingService;
     private final CommentService commentService;
     private final Validator validator;
+    private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
 
     public PageController(
             UserService userService,
@@ -93,7 +103,9 @@ public class PageController {
             AdminBidActionService adminBidActionService,
             AuctionListingService auctionListingService,
             CommentService commentService,
-            Validator validator) {
+            Validator validator,
+            AuthenticationManager authenticationManager,
+            SecurityContextRepository securityContextRepository) {
         this.userService = userService;
         this.artworkService = artworkService;
         this.biddingService = biddingService;
@@ -108,6 +120,8 @@ public class PageController {
         this.auctionListingService = auctionListingService;
         this.commentService = commentService;
         this.validator = validator;
+        this.authenticationManager = authenticationManager;
+        this.securityContextRepository = securityContextRepository;
     }
 
     @GetMapping({ "/", "/home" })
@@ -136,12 +150,20 @@ public class PageController {
             @RequestParam @NotBlank @Size(min = 8, max = 72) String password,
             @RequestParam @NotBlank String confirmPassword,
             @RequestParam(required = false) @Size(max = 100) String phone,
-            @RequestParam(required = false) @Size(max = 1000) String address) {
+            @RequestParam(required = false) @Size(max = 1000) String address,
+            HttpServletRequest request,
+            HttpServletResponse response) {
         if (!password.equals(confirmPassword)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
         }
         userService.registerUser(name, email, password, phone, address);
-        return "redirect:/login?registered";
+        Authentication authentication = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(email, password));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
+        return "redirect:/";
     }
 
     @GetMapping("/profile")
