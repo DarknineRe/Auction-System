@@ -7,5 +7,5 @@ import com.example.project.model.Bidding;
 
 public interface AuctionListingService {
     Bidding createListing(Long sellerUserId, String title, String imageUrl,
-            BigDecimal startingPrice, Date startDate, Date endDate);
+            BigDecimal startingPrice, BigDecimal minimumBidIncrement, Date startDate, Date endDate);
 }

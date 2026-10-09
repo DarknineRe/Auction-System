@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Positive;
 
 public record UpdateBiddingRequest(
         @NotNull @Positive BigDecimal startingPrice,
+        @NotNull @Positive BigDecimal minimumBidIncrement,
         @NotNull Date startDate,
         @NotNull Date endDate) {
 }
