@@ -212,10 +212,16 @@
           <tbody><tr th:each="user : ${users}">
             <td th:text="${user.id}"></td><td th:text="${user.name}"></td><td th:text="${user.email}"></td><td th:text="${user.role}"></td>
             <td th:text="${user.enabled ? 'Enabled' : 'Disabled'}"></td>
-            <td><form th:action="@{/admin/users/{id}/status(id=${user.id})}" method="post">
-              <input type="hidden" name="enabled" th:value="${!user.enabled}">
-              <button class="btn btn--secondary" type="submit" th:text="${user.enabled ? 'Disable' : 'Enable'}"></button>
-            </form></td>
+            <td>
+              <form th:action="@{/admin/users/{id}/status(id=${user.id})}" method="post">
+                <input type="hidden" name="enabled" th:value="${!user.enabled}">
+                <button class="btn btn--secondary" type="submit" th:text="${user.enabled ? 'Disable' : 'Enable'}"></button>
+              </form>
+              <form th:if="${isSuperAdmin and user.role.name() == 'USER'}"
+                    th:action="@{/admin/users/{id}/promote(id=${user.id})}" method="post">
+                <button class="btn btn--secondary" type="submit">Promote to Admin</button>
+              </form>
+            </td>
           </tr></tbody>
         </table>
       </div>

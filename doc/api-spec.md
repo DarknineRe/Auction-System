@@ -18,8 +18,8 @@ curl -u user@example.com:password123 http://localhost:8080/api/v1/users/me
 | Role | สิทธิ์ |
 |---|---|
 | `USER` | ผู้ใช้ทั่วไป (ซื้อ/ขาย/ประมูล/คอมเมนต์) |
-| `ADMIN` | จัดการระบบ + ยกเลิก/ดู payment ทั้งหมด |
-| `SUPER_ADMIN` | เหมือน ADMIN ยกเว้น `/api/v1/admin/payments/**` (เฉพาะ `ADMIN`) |
+| `ADMIN` | จัดการผู้ใช้ทั่วไป, ประมูล, moderation และ payment |
+| `SUPER_ADMIN` | ได้สิทธิ์ทั้งหมดของ `ADMIN` รวมถึงจัดการบัญชี `ADMIN`/`SUPER_ADMIN` อื่น |
 
 | ระดับการเข้าถึง | Endpoint |
 |---|---|
@@ -34,7 +34,7 @@ curl -u user@example.com:password123 http://localhost:8080/api/v1/users/me
 
 ## 1. Endpoint ทั้งหมด
 
-คำย่อ: **P** = Public · **A** = ต้อง login · **O** = เจ้าของ resource · **AD** = ADMIN/SUPER_ADMIN · **ADM** = ADMIN เท่านั้น
+คำย่อ: **P** = Public · **A** = ต้อง login · **O** = เจ้าของ resource · **AD** = ADMIN หรือ SUPER_ADMIN
 
 ### Users — `/api/v1/users`
 | Method | Endpoint | Success | Error | สิทธิ์ | คำอธิบาย |
@@ -118,9 +118,9 @@ Payment ถูกสร้างอัตโนมัติเมื่อกา
 | POST | `/admin/bids/{bidId}/void` | 200 | 400, 404, 409 | AD | ทำให้บิดเป็นโมฆะ (ต้องระบุเหตุผล) |
 | DELETE | `/admin/artworks/{artworkId}` | 204 | 404 | AD | ลบผลงาน (moderation) |
 | DELETE | `/admin/comments/{commentId}` | 204 | 404 | AD | ลบคอมเมนต์ (moderation) |
-| GET | `/admin/payments?status=&page=&size=&sort=` | 200 | 400 | **ADM** | payment ทั้งหมด |
-| GET | `/admin/payments/{paymentId}` | 200 | 404 | **ADM** | ดู payment |
-| POST | `/admin/payments/{paymentId}/cancel` | 200 | 400, 404, 409 | **ADM** | ยกเลิก payment (ต้องระบุเหตุผล) |
+| GET | `/admin/payments?status=&page=&size=&sort=` | 200 | 400 | **AD** | payment ทั้งหมด |
+| GET | `/admin/payments/{paymentId}` | 200 | 404 | **AD** | ดู payment |
+| POST | `/admin/payments/{paymentId}/cancel` | 200 | 400, 404, 409 | **AD** | ยกเลิก payment (ต้องระบุเหตุผล) |
 
 ### Pagination & Sorting
 Endpoint ที่คืนค่าแบบแบ่งหน้ารับ `?page=0&size=10&sort=field,asc` (ค่าเริ่มต้น: `size=10`, `sort=id`)
