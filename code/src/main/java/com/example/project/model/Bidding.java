@@ -23,6 +23,8 @@ import jakarta.persistence.Table;
 @Table (name = "Biddings")
 public class Bidding {
 
+    public static final BigDecimal DEFAULT_MINIMUM_BID_INCREMENT = new BigDecimal("1.00");
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -58,6 +60,8 @@ public class Bidding {
 
     @Column(precision = 19, scale = 4)
     private BigDecimal startingPrice; // startingPrince and date HERE instead of artwork
+    @Column(precision = 19, scale = 4)
+    private BigDecimal minimumBidIncrement = DEFAULT_MINIMUM_BID_INCREMENT;
     private Date startDate;
     private Date endDate;
 
@@ -166,6 +170,14 @@ public class Bidding {
 
     public void setStartingPrice(BigDecimal startingPrice) {
         this.startingPrice = startingPrice;
+    }
+
+    public BigDecimal getMinimumBidIncrement() {
+        return minimumBidIncrement == null ? DEFAULT_MINIMUM_BID_INCREMENT : minimumBidIncrement;
+    }
+
+    public void setMinimumBidIncrement(BigDecimal minimumBidIncrement) {
+        this.minimumBidIncrement = minimumBidIncrement;
     }
 
     public Date getEndDate() {

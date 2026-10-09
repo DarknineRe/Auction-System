@@ -66,6 +66,7 @@ public class BiddingController {
                 request.artworkIds(),
                 owner.getId(),
                 request.startingPrice(),
+                request.minimumBidIncrement(),
                 request.startDate(),
                 request.endDate());
 
@@ -120,6 +121,7 @@ public class BiddingController {
                 biddingId,
                 owner.getId(),
                 request.startingPrice(),
+                request.minimumBidIncrement(),
                 request.startDate(),
                 request.endDate());
 

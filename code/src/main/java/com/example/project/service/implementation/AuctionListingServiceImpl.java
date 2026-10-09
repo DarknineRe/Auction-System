@@ -39,13 +39,13 @@ public class AuctionListingServiceImpl implements AuctionListingService {
     @Override
     @Transactional
     public Bidding createListing(Long sellerUserId, String title, String imageUrl,
-            BigDecimal startingPrice, Date startDate, Date endDate) {
+            BigDecimal startingPrice, BigDecimal minimumBidIncrement, Date startDate, Date endDate) {
         validate(new CreateArtworkRequest(title, imageUrl));
         Artwork artwork = artworkService.createArtwork(sellerUserId, title, imageUrl);
         validate(new CreateBiddingRequest(
-                List.of(artwork.getId()), sellerUserId, startingPrice, startDate, endDate));
+                List.of(artwork.getId()), sellerUserId, startingPrice, minimumBidIncrement, startDate, endDate));
         return biddingService.createBidding(
-                List.of(artwork.getId()), sellerUserId, startingPrice, startDate, endDate);
+                List.of(artwork.getId()), sellerUserId, startingPrice, minimumBidIncrement, startDate, endDate);
     }
 
     private <T> void validate(T request) {

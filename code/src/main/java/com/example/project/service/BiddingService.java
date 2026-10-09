@@ -12,7 +12,8 @@ import com.example.project.model.Bidding;
 
 //READ: ทำเป็น interface in case if adding mroe serviuce later, might undo ts
 public interface BiddingService {
-    Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate);
+    Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice,
+            BigDecimal minimumBidIncrement, Date startDate, Date endDate);
 
     Bidding getBiddingById(Long biddingID);
 
@@ -20,7 +21,8 @@ public interface BiddingService {
 
     BidAction placeBid(Long biddingID, String actorEmail, BigDecimal amount);
 
-    Bidding updateBidding(Long biddingID, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate);
+    Bidding updateBidding(Long biddingID, Long ownerID, BigDecimal startingPrice,
+            BigDecimal minimumBidIncrement, Date startDate, Date endDate);
 
     Bidding cancelBidding(Long biddingID, Long ownerID);
 

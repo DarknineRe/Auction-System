@@ -301,11 +301,12 @@ public class PageController {
             @RequestParam @NotBlank @Size(max = 255) String title,
             @RequestParam(required = false) @Size(max = 2048) String imageUrl,
             @RequestParam @Positive BigDecimal startingPrice,
+            @RequestParam @Positive BigDecimal minimumBidIncrement,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         User owner = currentUser(authentication);
         Bidding bidding = auctionListingService.createListing(
-                owner.getId(), title.trim(), imageUrl, startingPrice,
+                owner.getId(), title.trim(), imageUrl, startingPrice, minimumBidIncrement,
                 toDate(startDate), toDate(endDate));
         return "redirect:/biddings/" + bidding.getId() + "?success";
     }
@@ -329,12 +330,13 @@ public class PageController {
             @PathVariable Long biddingId,
             Authentication authentication,
             @RequestParam @Positive BigDecimal startingPrice,
+            @RequestParam @Positive BigDecimal minimumBidIncrement,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         User owner = currentUser(authentication);
-        validate(new UpdateBiddingRequest(startingPrice, toDate(startDate), toDate(endDate)));
+        validate(new UpdateBiddingRequest(startingPrice, minimumBidIncrement, toDate(startDate), toDate(endDate)));
         biddingService.updateBidding(
-                biddingId, owner.getId(), startingPrice, toDate(startDate), toDate(endDate));
+                biddingId, owner.getId(), startingPrice, minimumBidIncrement, toDate(startDate), toDate(endDate));
         return "redirect:/my-auctions?success";
     }
 
