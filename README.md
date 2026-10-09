@@ -195,6 +195,16 @@ Maven บันทึกผลทดสอบโดยละเอียดไ�
 
 Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอบโปรเจกต์อัตโนมัติเมื่อ push code ไปที่ `develop` หรือเปิด pull request โดยมี base เป็น `develop` workflow จะสร้าง PostgreSQL ชั่วคราวสำหรับทดสอบ ไม่ได้ใช้ Neon
 
+ก่อนรัน workflow ให้ตั้ง GitHub repository secrets ที่ **Settings → Secrets and variables → Actions**:
+
+| Secret | ค่าที่ต้องใส่ |
+|---|---|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token (แนะนำให้ใช้ token แทนรหัสผ่านบัญชี) |
+| `RENDER_DEPLOY_HOOK` | Render deploy hook URL สำหรับ deploy หลัง test ผ่าน |
+
+`DOCKERHUB_USERNAME` และ `DOCKERHUB_TOKEN` ช่วยให้ GitHub Actions login ก่อน pull image `postgres:16` และลดโอกาสติด unauthenticated pull rate limit
+
 ดูผลได้โดยเปิด repository บน GitHub → แท็บ **Actions** → เลือก **Build, test, and deploy** → เปิด job `build-and-test` การ push ไป `develop` จะเริ่ม job deploy ไป Render ต่อเมื่อ test ผ่านเท่านั้น
 
 ## Deployment URL
