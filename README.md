@@ -1,18 +1,21 @@
 # Auction-System
 
-ระบบสำหรับประมูลสินค้า พัฒนาด้วย Spring Boot, PostgreSQL ตาม Layered Architecture
+ระบบประมูลสินค้าออนไลน์สำหรับลงประกาศและเข้าร่วมประมูลผลงาน
+ผู้ใช้สามารถสมัครสมาชิก สร้างการประมูล เสนอราคา และจัดการการชำระเงินได้
+ระบบพัฒนาด้วย Spring Boot และ PostgreSQL โดยแบ่งโครงสร้างตาม Layered Architecture
+มีหน้าเว็บด้วย Thymeleaf พร้อม REST API ที่เปิดดูเอกสารผ่าน Swagger UI ได้
 
-## สมาชิกและ Branch
+## สมาชิกกลุ่ม
 
-| สมาชิก | รหัสนักศึกษา | Section | Branch | Feature Owner |
-|---|---:|---:|---|---|
-| ปุณยวีร์ แทนคำ | 673380282-8 | 01 | `poonywee_6733802828-01` | backend#1 |
-| ปริญญ์นกร อยู่แท้กูล | 673380277-1 | 02 | `parinnakorn_6733802771_02` | |
-| พงศพัศ เลบ้านแท่น | 673380283-6 | 01 | `poonywee_6733802828_01` | readme.md, presentation |
-| ชนิณทร์ ใจช่วง | 673380264-0 | 01 | `chanin_6733802640_01` | reviewer, testing, deployment |
-| จิณณวัตร โพธิ์ศรีทอง | 673380263-2 | 01 | `jinnawat_6733801632_01` | frontend |
+| ลำดับ | ชื่อ-นามสกุล | รหัสนักศึกษา | Section | Branch | หน้าที่รับผิดชอบ |
+|---:|---|---:|---:|---|---|
+| 1 | ปุณยวีร์ แทนคำ | 673380282-8 | 01 | `poonywee_6733802828-01` | backend#1 |
+| 2 | ปริญญ์นกร อยู่แท้กูล | 673380277-1 | 02 | `parinnakorn_6733802771_02` |  |
+| 3 | พงศพัศ เลบ้านแท่น | 673380283-6 | 01 | `poonywee_6733802828_01` | README และ presentation |
+| 4 | ชนิณทร์ ใจช่วง | 673380264-0 | 01 | `chanin_6733802640_01` | Reviewer, testing และ deployment |
+| 5 | จิณณวัตร โพธิ์ศรีทอง | 673380263-2 | 01 | `jinnawat_6733801632_01` | Frontend |
 
-##  Tech Stack
+## Tech Stack
 
 - **Backend:** Spring Boot 4.1.1, Java 26, Spring MVC, Spring Security, Bean Validation
 - **Build Tool:** Maven (Maven Wrapper)
@@ -23,18 +26,18 @@
 - **Deployment:** Render Web Service (Hybrid)
 - **Containerization:** Docker
 
-##  System Architecture
+## System Architecture
 
 - **Presentation Layer:** Controller / RestController / Views
 - **Service Layer:** Business Logic & Transactions
 - **Repository Layer:** Data Access Layer (Spring Data JPA)
 - **Domain / Entity:** Entities, Value Objects, Enums & DTOs
 
-##  Database Design (ER Diagram)
+## Database Design (ER Diagram)
 
+ดู ER Diagram ได้ที่ [doc/diagrams/06-er-diagram.md](doc/diagrams/06-er-diagram.md)
 
-##  Installation & Setup (LOCAL)
-
+## Installation & Setup
 1. **Clone repository:**
    ```bash
    git clone https://github.com/DarknineRe/Auction-System.git
@@ -72,7 +75,7 @@
    $env:ADMIN_PASSWORD="adminpassword123"
    ```
 
-##  How to Run
+## How to Run
 
 ###  Docker
 
@@ -123,7 +126,7 @@
 | verity@gmail.com | 67ihatemylife | SUPER ADMIN |
 
 
-##  API Documentation
+## API Documentation
 
 > 📖 **[ดูรายละเอียด REST API Specification ฉบับเต็มได้ที่นี่ (doc/api-spec.md)](doc/api-spec.md)**
 
@@ -133,11 +136,54 @@
 | Swagger UI (production) | https://auction-system-68vk.onrender.com/swagger-ui/index.html |
 | REST API | อยู่ใน Swagger UI ทุก endpoint ขึ้นต้นด้วย /api/v1 |
 
-##  How to Run Tests
+## How to Run Tests
 
-`@Darknine` all yours buddy
+The project uses Maven Wrapper, JUnit 5, and Spring Boot Test. Automated tests start the Spring application and verify bidding rules. The application uses PostgreSQL and Flyway, so local tests need a separate test database. Do not use the production Neon database for tests.
 
-##  Deployment URL
+### Prerequisites and test database
+
+- Java 26
+- PostgreSQL running on `localhost:5432`
+- A local test database named `auction_test`
+
+If the test role and database do not already exist, create them in PostgreSQL (for example, using `psql` or pgAdmin):
+
+```sql
+CREATE ROLE auction WITH LOGIN PASSWORD 'auction';
+CREATE DATABASE auction_test OWNER auction;
+```
+
+The test database must be empty or disposable: Flyway applies the project's database migrations when the Spring application context starts.
+
+### Run all tests on Windows (PowerShell)
+
+From the repository root, run:
+
+```powershell
+Set-Location .\code
+$env:DB_URL="jdbc:postgresql://localhost:5432/auction_test"
+$env:DB_USERNAME="auction"
+$env:DB_PASSWORD="auction"
+$env:REMEMBER_ME_KEY="ci-only-remember-me-key"
+.\mvnw.cmd --batch-mode verify
+```
+
+`verify` builds the application and runs all automated tests. To run just the tests, use `.\mvnw.cmd test`.
+
+The current automated tests include:
+
+| Test class | What it checks |
+|---|---|
+| `ProjectApplicationTests` | The Spring application context starts successfully with the test database. |
+| `BiddingServiceImplTest` | A bid at the seller-configured minimum increment is accepted; a lower bid is rejected. |
+
+Maven writes detailed test results to `code/target/surefire-reports/`.
+
+### Run tests with GitHub Actions
+
+The workflow at `.github/workflows/ci.yml` automatically builds and tests the project when code is pushed to `main` or a pull request targets `main`. It starts a temporary PostgreSQL database; it does not use Neon. In GitHub, open the repository's **Actions** tab, select **Build, test, and deploy**, and check the `build-and-test` job. A push to `main` triggers the Render deployment job only after the tests pass.
+
+## Deployment URL
 
  Service | URL |
 |---|---|
@@ -145,4 +191,14 @@
 | Swagger UI | https://auction-system-68vk.onrender.com/swagger-ui/index.html |
 | PostgreSQL | Neon PostgreSQL |
 
-##  Project Structure
+## Project Structure
+
+```text
+Auction-System/
+├── code/       # Spring Boot application, tests, and configuration
+├── doc/        # API specification, design documents, diagrams, and slides
+├── img/        # Project images and media
+├── test/       # Test report and test documentation
+├── docker-compose.yml
+└── README.md
+```
