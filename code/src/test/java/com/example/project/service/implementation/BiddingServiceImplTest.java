@@ -55,7 +55,62 @@ class BiddingServiceImplTest {
         verify(bidActionRepository, never()).save(any(BidAction.class));
     }
 
+    @Test
+    void acceptsFirstBidAtStartingPrice() {
+        BidActionRepository bidActionRepository = mock(BidActionRepository.class);
+        Bidding bidding = createBidding();
+        bidding.setStartingPrice(new BigDecimal("50.00"));
+        BiddingServiceImpl service = createService(
+                bidding, bidActionRepository, Optional.empty(), true);
+        when(bidActionRepository.save(any(BidAction.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        BidAction savedBid = service.placeBid(7L, "bidder@example.com", new BigDecimal("50.00"));
+
+        assertEquals(new BigDecimal("50.00"), savedBid.getAmount());
+        assertEquals(new BigDecimal("50.00"), bidding.getLastBid());
+    }
+
+    @Test
+    void rejectsBidOnOwnAuction() {
+        BidActionRepository bidActionRepository = mock(BidActionRepository.class);
+        BiddingServiceImpl service = createService(
+                createBidding(3L), bidActionRepository);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> service.placeBid(7L, "bidder@example.com", new BigDecimal("102.50")));
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        verify(bidActionRepository, never()).save(any(BidAction.class));
+    }
+
+    @Test
+    void rejectsBidWhenBiddingIsNotAcceptingBids() {
+        BidActionRepository bidActionRepository = mock(BidActionRepository.class);
+        BiddingServiceImpl service = createService(
+                createBidding(), bidActionRepository, Optional.empty(), false);
+
+        ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+                () -> service.placeBid(7L, "bidder@example.com", new BigDecimal("100.00")));
+
+        assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+        verify(bidActionRepository, never()).save(any(BidAction.class));
+    }
+
     private BiddingServiceImpl createService(Bidding bidding, BidActionRepository bidActionRepository) {
+        User previousBidder = new User();
+        previousBidder.setId(2L);
+        BidAction previousBid = new BidAction();
+        previousBid.setAmount(new BigDecimal("100.00"));
+        previousBid.setUser(previousBidder);
+        return createService(bidding, bidActionRepository, Optional.of(previousBid), true);
+    }
+
+    private BiddingServiceImpl createService(
+            Bidding bidding,
+            BidActionRepository bidActionRepository,
+            Optional<BidAction> highestBid,
+            boolean acceptsBids) {
         BiddingRepository biddingRepository = mock(BiddingRepository.class);
         UserRepository userRepository = mock(UserRepository.class);
         BiddingStateResolver stateResolver = mock(BiddingStateResolver.class);
@@ -63,19 +118,14 @@ class BiddingServiceImplTest {
 
         User bidder = new User();
         bidder.setId(3L);
-        User previousBidder = new User();
-        previousBidder.setId(2L);
-        BidAction previousBid = new BidAction();
-        previousBid.setAmount(new BigDecimal("100.00"));
-        previousBid.setUser(previousBidder);
 
         when(biddingRepository.findByIdForUpdate(7L)).thenReturn(Optional.of(bidding));
         when(biddingRepository.save(bidding)).thenReturn(bidding);
         when(userRepository.findByEmail("bidder@example.com")).thenReturn(Optional.of(bidder));
         when(stateResolver.resolve(Bidding.Status.ACTIVE)).thenReturn(activeState);
-        when(activeState.acceptsBids()).thenReturn(true);
+        when(activeState.acceptsBids()).thenReturn(acceptsBids);
         when(bidActionRepository.findTopByBidding_IdAndStatusOrderByAmountDesc(
-                7L, BidAction.Status.VALID)).thenReturn(Optional.of(previousBid));
+                7L, BidAction.Status.VALID)).thenReturn(highestBid);
 
         return new BiddingServiceImpl(
                 biddingRepository,
@@ -87,11 +137,16 @@ class BiddingServiceImplTest {
     }
 
     private Bidding createBidding() {
+        return createBidding(1L);
+    }
+
+    private Bidding createBidding(Long ownerId) {
         User owner = new User();
-        owner.setId(1L);
+        owner.setId(ownerId);
         Bidding bidding = new Bidding();
         bidding.setId(7L);
         bidding.setOwner(owner);
+        bidding.setStartingPrice(new BigDecimal("50.00"));
         bidding.setMinimumBidIncrement(new BigDecimal("2.50"));
         bidding.setEndDate(new Date(System.currentTimeMillis() + 60_000));
         return bidding;

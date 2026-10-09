@@ -138,7 +138,7 @@
 
 ## How to Run Tests
 
-The project uses Maven Wrapper, JUnit 5, and Spring Boot Test. Automated tests start the Spring application and verify bidding rules. The application uses PostgreSQL and Flyway, so local tests need a separate test database. Do not use the production Neon database for tests.
+The project uses Maven Wrapper, JUnit 5, Mockito, Spring Boot Test, and MockMvc. Automated tests cover application startup, user/authentication flows, artwork and bidding APIs, comments, and bidding rules. The application uses PostgreSQL and Flyway, so local tests need a separate disposable test database. Do not use the production Neon database for tests.
 
 ### Prerequisites and test database
 
@@ -175,13 +175,16 @@ The current automated tests include:
 | Test class | What it checks |
 |---|---|
 | `ProjectApplicationTests` | The Spring application context starts successfully with the test database. |
-| `BiddingServiceImplTest` | A bid at the seller-configured minimum increment is accepted; a lower bid is rejected. |
+| `BiddingServiceImplTest` | Bidding increment, first bid, auction owner, and inactive-auction rules using Mockito. |
+| `UserApiIntegrationTest` | Registration, validation, duplicate email, authentication, profile update, and password change. |
+| `ArtworkApiIntegrationTest` | Seller profile setup, artwork creation/list/read/update/delete, validation, and ownership authorization. |
+| `BiddingApiIntegrationTest` | Bidding creation/list/read, bid rules/highest bid, authorization, and comment create/react/update/delete. |
 
 Maven writes detailed test results to `code/target/surefire-reports/`.
 
 ### Run tests with GitHub Actions
 
-The workflow at `.github/workflows/ci.yml` automatically builds and tests the project when code is pushed to `main` or a pull request targets `main`. It starts a temporary PostgreSQL database; it does not use Neon. In GitHub, open the repository's **Actions** tab, select **Build, test, and deploy**, and check the `build-and-test` job. A push to `main` triggers the Render deployment job only after the tests pass.
+The workflow at `.github/workflows/ci.yml` automatically builds and tests the project when code is pushed to `develop` or a pull request targets `develop`. It starts a temporary PostgreSQL database; it does not use Neon. In GitHub, open the repository's **Actions** tab, select **Build, test, and deploy**, and check the `build-and-test` job. A push to `develop` triggers the Render deployment job only after the tests pass.
 
 ## Deployment URL
 
