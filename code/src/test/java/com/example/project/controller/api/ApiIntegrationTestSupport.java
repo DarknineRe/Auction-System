@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,6 +31,7 @@ abstract class ApiIntegrationTestSupport {
                 name, email, password, "0812345678", "Test address"));
 
         MvcResult result = mockMvc.perform(post("/api/v1/users")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(request))
                 .andExpect(status().isCreated())
@@ -42,6 +44,7 @@ abstract class ApiIntegrationTestSupport {
     protected void createSellerProfile(UserFixture user) throws Exception {
         mockMvc.perform(post("/api/v1/seller-profiles")
                         .with(httpBasic(user.email(), user.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"bankaccount":"test-account-123"}

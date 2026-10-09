@@ -8,6 +8,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -32,6 +33,7 @@ class UserApiIntegrationTest extends ApiIntegrationTestSupport {
 
         mockMvc.perform(put("/api/v1/users/me")
                         .with(httpBasic(user.email(), user.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"Updated Test User","phone":"0899999999","address":"Updated address"}
@@ -41,6 +43,7 @@ class UserApiIntegrationTest extends ApiIntegrationTestSupport {
 
         mockMvc.perform(put("/api/v1/users/me/password")
                         .with(httpBasic(user.email(), user.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"currentPassword":"TestPassword123!","newPassword":"NewPassword456!"}
@@ -64,11 +67,13 @@ class UserApiIntegrationTest extends ApiIntegrationTestSupport {
                 "Duplicate User", user.email(), "AnotherPassword123!", "0812345678", "Address"));
 
         mockMvc.perform(post("/api/v1/users")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(duplicateRequest))
                 .andExpect(status().isConflict());
 
         MvcResult invalidResult = mockMvc.perform(post("/api/v1/users")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"name":"","email":"not-an-email","password":"short"}
@@ -77,6 +82,33 @@ class UserApiIntegrationTest extends ApiIntegrationTestSupport {
                 .andReturn();
 
         assertTrue(invalidResult.getResponse().getContentAsString().contains("Validation failed"));
+    }
+
+    @Test
+    void regularUserCannotAccessAdminEndpoints() throws Exception {
+        UserFixture user = registerUser("Non Admin");
+
+        mockMvc.perform(get("/api/v1/admin/users")
+                        .with(httpBasic(user.email(), user.password())))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void rejectsStateChangingApiRequestWithoutCsrfToken() throws Exception {
+        UserFixture user = registerUser("Csrf Protected User");
+
+        mockMvc.perform(put("/api/v1/users/me")
+                        .with(httpBasic(user.email(), user.password()))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"name":"Should Not Update","phone":"0811111111","address":"No token"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/api/v1/users/me")
+                        .with(httpBasic(user.email(), user.password())))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Csrf Protected User"));
     }
 
     private record RegistrationPayload(

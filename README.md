@@ -138,7 +138,7 @@
 
 ## How to Run Tests
 
-The project uses Maven Wrapper, JUnit 5, Mockito, Spring Boot Test, and MockMvc. Automated tests cover application startup, user/authentication flows, artwork and bidding APIs, comments, and bidding rules. The application uses PostgreSQL and Flyway, so local tests need a separate disposable test database. Do not use the production Neon database for tests.
+The project uses Maven Wrapper, JUnit 5, Mockito, Spring Boot Test, and MockMvc. The current suite has 16 automated tests covering application startup, selected user/authentication and authorization flows, CSRF enforcement, artwork and seller-profile APIs, bidding and comments, bidding rules, and public Thymeleaf pages. This is not exhaustive coverage of every endpoint. The application uses PostgreSQL and Flyway, so local tests need a separate disposable test database. Do not use the production Neon database for tests.
 
 ### Prerequisites and test database
 
@@ -170,15 +170,19 @@ $env:REMEMBER_ME_KEY="ci-only-remember-me-key"
 
 `verify` builds the application and runs all automated tests. To run just the tests, use `.\mvnw.cmd test`.
 
+CSRF protection is enabled for state-changing API requests. For an API client, first make a GET request to `/register` while retaining the session cookie, read the hidden `_csrf` form value, and send it in the `X-CSRF-TOKEN` header with that cookie on POST, PUT, PATCH, and DELETE requests. Browser forms include the token automatically.
+
 The current automated tests include:
 
 | Test class | What it checks |
 |---|---|
 | `ProjectApplicationTests` | The Spring application context starts successfully with the test database. |
 | `BiddingServiceImplTest` | Bidding increment, first bid, auction owner, and inactive-auction rules using Mockito. |
-| `UserApiIntegrationTest` | Registration, validation, duplicate email, authentication, profile update, and password change. |
+| `UserApiIntegrationTest` | Registration, validation, duplicate email, authentication, profile update/password change, admin access denial, and CSRF rejection without a token. |
 | `ArtworkApiIntegrationTest` | Seller profile setup, artwork creation/list/read/update/delete, validation, and ownership authorization. |
+| `SellerprofileApiIntegrationTest` | Seller profile read/update, unauthenticated access, and public profile bank-account privacy. |
 | `BiddingApiIntegrationTest` | Bidding creation/list/read, bid rules/highest bid, authorization, and comment create/react/update/delete. |
+| `PageControllerIntegrationTest` | Thymeleaf rendering for home, login, and registration pages. |
 
 Maven writes detailed test results to `code/target/surefire-reports/`.
 

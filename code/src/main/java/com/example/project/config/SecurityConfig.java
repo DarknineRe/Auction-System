@@ -33,7 +33,7 @@ public class SecurityConfig {
             UserDetailsService userDetailsService,
             @Value("${app.remember-me.key:}") String rememberMeKey) throws Exception {
         http
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/v1/**"))
+                .csrf(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.GET, "/", "/home", "/login", "/register",
                                 "/biddings/**", "/sellers/*", "/css/**", "/js/**", "/favicon.ico", "/error")

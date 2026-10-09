@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.httpBasic;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -29,6 +30,7 @@ class ArtworkApiIntegrationTest extends ApiIntegrationTestSupport {
 
         MvcResult created = mockMvc.perform(post("/api/v1/artworks")
                         .with(httpBasic(seller.email(), seller.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"Integration Artwork","imageUrl":"https://example.test/artwork.jpg"}
@@ -52,6 +54,7 @@ class ArtworkApiIntegrationTest extends ApiIntegrationTestSupport {
 
         mockMvc.perform(put("/api/v1/artworks/{id}", artworkId)
                         .with(httpBasic(otherUser.email(), otherUser.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"Unauthorized Update","imageUrl":"https://example.test/no.jpg"}
@@ -60,6 +63,7 @@ class ArtworkApiIntegrationTest extends ApiIntegrationTestSupport {
 
         mockMvc.perform(put("/api/v1/artworks/{id}", artworkId)
                         .with(httpBasic(seller.email(), seller.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"Updated Integration Artwork","imageUrl":"https://example.test/updated.jpg"}
@@ -68,7 +72,8 @@ class ArtworkApiIntegrationTest extends ApiIntegrationTestSupport {
                 .andExpect(jsonPath("$.title").value("Updated Integration Artwork"));
 
         mockMvc.perform(delete("/api/v1/artworks/{id}", artworkId)
-                        .with(httpBasic(seller.email(), seller.password())))
+                        .with(httpBasic(seller.email(), seller.password()))
+                        .with(csrf()))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(get("/api/v1/artworks/{id}", artworkId))
@@ -81,6 +86,7 @@ class ArtworkApiIntegrationTest extends ApiIntegrationTestSupport {
         createSellerProfile(seller);
 
         mockMvc.perform(post("/api/v1/artworks")
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":"Unauthenticated Artwork"}
@@ -89,6 +95,7 @@ class ArtworkApiIntegrationTest extends ApiIntegrationTestSupport {
 
         mockMvc.perform(post("/api/v1/artworks")
                         .with(httpBasic(seller.email(), seller.password()))
+                        .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"title":" "}
