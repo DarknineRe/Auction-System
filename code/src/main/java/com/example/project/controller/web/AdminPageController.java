@@ -1,6 +1,7 @@
 package com.example.project.controller.web;
 
 import org.springframework.data.domain.Page;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.dto.request.CancelPaymentRequest;
 import com.example.project.dto.request.UpdateUserStatusRequest;
@@ -52,7 +54,11 @@ public class AdminPageController {
     }
 
     @GetMapping("/admin")
+    @PreAuthorize("@webSupport.hasAnyCurrentRole(authentication, 'ADMIN', 'SUPER_ADMIN')")
     public String adminDashboard(Model model, Authentication authentication) {
+        if (!web.hasAnyCurrentRole(authentication, "ADMIN", "SUPER_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Administrator access required");
+        }
         model.addAttribute("canManagePayments",
                 web.hasAnyRole(authentication, "ROLE_ADMIN", "ROLE_SUPER_ADMIN"));
         return web.workspace(model, "admin-dashboard", "Administration");
