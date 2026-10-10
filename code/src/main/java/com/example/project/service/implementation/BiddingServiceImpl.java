@@ -5,8 +5,11 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,7 +34,8 @@ import com.example.project.service.state.BiddingStateResolver;
 @Service
 public class BiddingServiceImpl implements BiddingService {
 
-    private static final Set<String> SORTABLE_FIELDS = Set.of("id", "startingPrice", "lastBid", "startDate", "endDate", "status", "owner.id", "owner.name", "owner.email");
+    private static final Set<String> SORTABLE_FIELDS =
+            Set.of("id", "startingPrice", "lastBid", "startDate", "endDate", "status");
 
     private final BiddingRepository biddingRepository;
     private final ArtworkRepository artworkRepository;
@@ -52,6 +56,7 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
+    @Transactional
     public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice,
             BigDecimal minimumBidIncrement, Date startDate, Date endDate) {
         validateBidPrices(startingPrice, minimumBidIncrement);
@@ -78,11 +83,15 @@ public class BiddingServiceImpl implements BiddingService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Duplicate artwork IDs in request.");
         }
 
+        List<Artwork> lockedArtworks = artworkRepository.findAllByIdForUpdate(artworkIDs);
+        Map<Long, Artwork> artworksById = lockedArtworks.stream()
+                .collect(Collectors.toMap(Artwork::getId, Function.identity()));
         List<Artwork> artworks = new ArrayList<>();
         for (Long artworkID : new LinkedHashSet<>(artworkIDs)) {
-            Artwork artwork = artworkRepository.findById(artworkID)
-                    .orElseThrow(() -> new ResponseStatusException(
-                            HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID));
+            Artwork artwork = artworksById.get(artworkID);
+            if (artwork == null) {
+                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Artwork not found: " + artworkID);
+            }
             if (artwork.getSellerprofile() == null || artwork.getSellerprofile().getUser() == null
                     || !artwork.getSellerprofile().getUser().getId().equals(ownerID)) {
                 throw new ResponseStatusException(HttpStatus.FORBIDDEN,

@@ -3,6 +3,8 @@ package com.example.project.service.implementation;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,15 +18,19 @@ import com.example.project.service.PaymentService;
 @Service
 public class BiddingClosingServiceImpl implements BiddingClosingService {
 
+    private static final Logger log = LoggerFactory.getLogger(BiddingClosingServiceImpl.class);
+
     private final BiddingRepository biddingRepository;
     private final BidActionRepository bidActionRepository;
     private final PaymentService paymentService;
+    private final BiddingExpiryProcessor expiryProcessor;
 
     public BiddingClosingServiceImpl(BiddingRepository biddingRepository, BidActionRepository bidActionRepository,
-            PaymentService paymentService) {
+            PaymentService paymentService, BiddingExpiryProcessor expiryProcessor) {
         this.biddingRepository = biddingRepository;
         this.bidActionRepository = bidActionRepository;
         this.paymentService = paymentService;
+        this.expiryProcessor = expiryProcessor;
     }
 
     // The sale is counted when its payment completes, not here.
@@ -44,10 +50,19 @@ public class BiddingClosingServiceImpl implements BiddingClosingService {
     }
 
     @Override
-    @Transactional
     public int closeExpiredBiddings() {
-        List<Bidding> expired = biddingRepository.findByStatusAndEndDateBefore(Bidding.Status.ACTIVE, new Date());
-        expired.forEach(this::close);
-        return expired.size();
+        List<Long> expiredIds =
+                biddingRepository.findIdsByStatusAndEndDateBefore(Bidding.Status.ACTIVE, new Date());
+        int closed = 0;
+        for (Long biddingId : expiredIds) {
+            try {
+                if (expiryProcessor.closeExpiredBidding(biddingId)) {
+                    closed++;
+                }
+            } catch (RuntimeException e) {
+                log.error("Failed to close expired bidding {}", biddingId, e);
+            }
+        }
+        return closed;
     }
 }

@@ -26,8 +26,8 @@
       <p th:if="${page == 'my-seller-profile'}">Your seller details as buyers see them, plus your payout account.</p>
       <p th:if="${page == 'seller-settings'}">Set up or update the bank account associated with your seller profile.</p>
       <p th:if="${page == 'seller-profile'}">Public seller information and listed artwork.</p>
-      <p th:if="${page == 'admin-dashboard'}">Administrative tools. Access is checked by the server for every operation.</p>
-      <p th:if="${page == 'admin-moderation'}">There is no moderation queue yet; enter the exact content ID to remove.</p>
+      <p class="workspace__eyebrow" th:if="${page == 'admin-dashboard'}">Operations console</p>
+      <p th:if="${page == 'admin-dashboard'}">Manage accounts, auctions, payments, and community content from one place.</p>
       <p th:if="${page == 'admin-bids'}">Inspect a bidding’s history and void invalid bids.</p>
     </header>
 
@@ -36,6 +36,10 @@
       <div th:replace="~{fragments/notifications :: pay-banner}"></div>
     </th:block>
     <div th:if="${param.success}" class="alert alert--success" role="status">Your changes have been saved.</div>
+    <div th:if="${param.auctionRequired}" class="alert alert--info" role="status">
+      <p>A seller profile is required before you can create an auction.</p>
+      <p>Add your bank account below, then return to create your auction.</p>
+    </div>
 
     <section th:if="${page == 'my-bids'}" class="workspace__panel">
       <h2>Auctions you won</h2>
@@ -108,8 +112,16 @@
     </section>
 
     <form th:if="${page == 'new-auction'}" class="workspace__form workspace__panel" th:action="@{/auctions}" method="post">
-      <label>Artwork title<input name="title" maxlength="255" required></label>
-      <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
+      <div class="workspace__artwork-list" id="artwork-list">
+        <div class="workspace__artwork-row">
+          <label>Artwork title<input name="title" maxlength="255" required></label>
+          <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
+          <button class="btn btn--secondary btn--sm workspace__remove-artwork" type="button" data-remove-artwork>Remove</button>
+        </div>
+      </div>
+      <div class="workspace__actions">
+        <button class="btn btn--secondary btn--sm" type="button" id="add-artwork-row">Add another artwork</button>
+      </div>
       <div class="workspace__form-row">
         <label>Starting price / minimum first bid (THB)<input name="startingPrice" type="number" min="0.01" step="0.01" required></label>
         <label>Minimum bid increment (THB)<input name="minimumBidIncrement" type="number" min="0.01" step="0.01" value="1.00" required></label>
@@ -123,6 +135,34 @@
         <a class="btn btn--secondary" th:href="@{/my-auctions}">Cancel</a>
       </div>
     </form>
+
+    <script th:if="${page == 'new-auction'}">
+      const artworkList = document.getElementById('artwork-list');
+      const addArtworkRowButton = document.getElementById('add-artwork-row');
+
+      function addArtworkRow() {
+        const row = document.createElement('div');
+        row.className = 'workspace__artwork-row';
+        row.innerHTML = `
+          <label>Artwork title<input name="title" maxlength="255" required></label>
+          <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
+          <button class="btn btn--secondary btn--sm workspace__remove-artwork" type="button" data-remove-artwork>Remove</button>
+        `;
+        artworkList.appendChild(row);
+      }
+
+      addArtworkRowButton.addEventListener('click', addArtworkRow);
+      artworkList.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('[data-remove-artwork]');
+        if (!removeButton) {
+          return;
+        }
+        const row = removeButton.closest('.workspace__artwork-row');
+        if (row && artworkList.querySelectorAll('.workspace__artwork-row').length > 1) {
+          row.remove();
+        }
+      });
+    </script>
 
     <form th:if="${page == 'edit-auction'}" class="workspace__form workspace__panel"
           th:action="@{/auctions/{id}/edit(id=${bidding.id})}" method="post">
@@ -326,13 +366,36 @@
       <p class="workspace__empty" th:if="${#lists.isEmpty(artworks)}">No listed artwork.</p>
     </section>
 
-    <div th:if="${page == 'admin-dashboard'}" class="workspace__grid">
-      <article class="workspace__card"><h2>Users</h2><p>Review accounts and access.</p><a class="btn btn--primary" th:href="@{/admin/users}">Open</a></article>
-      <article class="workspace__card"><h2>Auctions</h2><p>Review, close, or cancel auctions.</p><a class="btn btn--primary" th:href="@{/admin/auctions}">Open</a></article>
-      <article class="workspace__card" th:if="${canManagePayments}"><h2>Payments</h2><p>Review payment records.</p><a class="btn btn--primary" th:href="@{/admin/payments}">Open</a></article>
-      <article class="workspace__card"><h2>Bid review</h2><p>Inspect and moderate bid history.</p><a class="btn btn--primary" th:href="@{/admin/bids}">Open</a></article>
-      <article class="workspace__card"><h2>Moderation</h2><p>Remove artwork or comments.</p><a class="btn btn--primary" th:href="@{/admin/moderation}">Open</a></article>
-    </div>
+    <section th:if="${page == 'admin-dashboard'}" class="admin-dashboard" aria-label="Administration tools">
+      <a class="admin-card" th:href="@{/admin/users}">
+        <span class="admin-card__icon" aria-hidden="true">01</span>
+        <span class="admin-card__eyebrow">Access &amp; roles</span>
+        <h2>Users</h2>
+        <p>Manage account access and permissions.</p>
+        <span class="admin-card__action">Manage users <span aria-hidden="true">→</span></span>
+      </a>
+      <a class="admin-card" th:href="@{/admin/auctions}">
+        <span class="admin-card__icon" aria-hidden="true">02</span>
+        <span class="admin-card__eyebrow">Marketplace</span>
+        <h2>Auctions</h2>
+        <p>Review auctions, close bidding, or cancel listings.</p>
+        <span class="admin-card__action">Manage auctions <span aria-hidden="true">→</span></span>
+      </a>
+      <a class="admin-card" th:if="${canManagePayments}" th:href="@{/admin/payments}">
+        <span class="admin-card__icon" aria-hidden="true">03</span>
+        <span class="admin-card__eyebrow">Transactions</span>
+        <h2>Payments</h2>
+        <p>Review payment records and resolve issues.</p>
+        <span class="admin-card__action">Manage payments <span aria-hidden="true">→</span></span>
+      </a>
+      <a class="admin-card" th:href="@{/admin/bids}">
+        <span class="admin-card__icon" aria-hidden="true">04</span>
+        <span class="admin-card__eyebrow">Bid integrity</span>
+        <h2>Bid review</h2>
+        <p>Inspect bid history and void invalid bids.</p>
+        <span class="admin-card__action">Review bids <span aria-hidden="true">→</span></span>
+      </a>
+    </section>
 
     <section th:if="${page == 'admin-users'}">
       <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(users)}">
@@ -349,6 +412,10 @@
               <form class="workspace__inline-form" th:if="${isSuperAdmin and user.role.name() == 'USER'}"
                     th:action="@{/admin/users/{id}/promote(id=${user.id})}" method="post">
                 <button class="btn btn--secondary btn--sm" type="submit">Promote to Admin</button>
+              </form>
+              <form class="workspace__inline-form" th:if="${isSuperAdmin and user.role.name() == 'ADMIN'}"
+                    th:action="@{/admin/users/{id}/demote(id=${user.id})}" method="post">
+                <button class="btn btn--secondary btn--sm" type="submit">Demote to User</button>
               </form>
             </td>
           </tr></tbody>
@@ -396,15 +463,6 @@
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(payments)}">No payment records found.</p>
       <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/admin/payments', 'page', null)}"></div>
-    </section>
-
-    <section th:if="${page == 'admin-moderation'}" class="workspace__panel">
-      <form class="workspace__form" th:action="@{/admin/moderation}" method="post">
-        <label>Content type<select name="type"><option value="artworks">Artwork</option><option value="comments">Comment</option></select></label>
-        <label>Content ID<input name="contentId" type="number" min="1" required></label>
-        <button class="btn btn--danger" type="submit">Remove content</button>
-      </form>
-      <p>The API does not currently provide a moderation queue; enter the exact ID of the content to remove.</p>
     </section>
 
     <section th:if="${page == 'admin-bids'}">

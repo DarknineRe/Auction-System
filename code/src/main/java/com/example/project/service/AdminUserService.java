@@ -15,4 +15,6 @@ public interface AdminUserService {
     User setEnabled(String actorEmail, Long userId, boolean enabled);
 
     User promoteToAdmin(String actorEmail, Long userId);
+
+    User demoteAdminToUser(String actorEmail, Long userId);
 }

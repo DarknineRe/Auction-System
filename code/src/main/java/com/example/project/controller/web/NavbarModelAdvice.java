@@ -14,7 +14,7 @@ import com.example.project.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 
 // Supplies what the shared navbar fragment needs on every server-rendered page.
-@ControllerAdvice(assignableTypes = PageController.class)
+@ControllerAdvice(basePackages = "com.example.project.controller.web")
 public class NavbarModelAdvice {
 
     private final UserService userService;

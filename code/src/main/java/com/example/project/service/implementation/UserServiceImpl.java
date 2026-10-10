@@ -1,8 +1,11 @@
 package com.example.project.service.implementation;
 
+import java.time.Instant;
 import java.util.Locale;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,10 +20,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SessionRegistry sessionRegistry;
 
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, SessionRegistry sessionRegistry) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.sessionRegistry = sessionRegistry;
     }
 
     @Override
@@ -38,6 +43,7 @@ public class UserServiceImpl implements UserService {
         user.setName(name.trim());
         user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(password));
+        user.setPasswordChangedAt(Instant.now());
         user.setPhone(phone);
         user.setAddress(address);
         user.setRole(User.Role.USER);
@@ -48,7 +54,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public User getCurrentUser(String email) {
-        return findUserByEmail(email);
+        User user = userRepository.findByEmail(normalizeEmail(email)).orElse(null);
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authentication required");
+        }
+        if (!user.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is disabled");
+        }
+        return user;
     }
 
     @Override
@@ -76,7 +89,12 @@ public class UserServiceImpl implements UserService {
         }
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        user.setPasswordChangedAt(Instant.now());
         userRepository.save(user);
+
+        for (SessionInformation sessionInfo : sessionRegistry.getAllSessions(user.getEmail(), false)) {
+            sessionInfo.expireNow();
+        }
     }
 
     private User findUserByEmail(String email) {

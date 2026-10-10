@@ -16,7 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
-@ControllerAdvice(assignableTypes = PageController.class)
+@ControllerAdvice(basePackages = "com.example.project.controller.web")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class WebPageExceptionHandler {
 
@@ -99,9 +99,6 @@ public class WebPageExceptionHandler {
         }
         if (requestPath.startsWith("/admin/payments")) {
             return "/admin/payments";
-        }
-        if (requestPath.startsWith("/admin/moderation")) {
-            return "/admin/moderation";
         }
         if (requestPath.startsWith("/admin/bids")) {
             return "/admin/bids";

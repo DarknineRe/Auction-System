@@ -3,6 +3,8 @@ package com.example.project.service.implementation;
 import java.util.Locale;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -19,6 +21,7 @@ import com.example.project.service.AdminUserService;
 @Service
 public class AdminUserServiceImpl implements AdminUserService {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminUserServiceImpl.class);
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "name", "email", "role", "enabled");
 
     private final UserRepository userRepository;
@@ -40,13 +43,9 @@ public class AdminUserServiceImpl implements AdminUserService {
             if (user.getRole() == User.Role.SUPER_ADMIN) {
                 return false; // Already a super admin
             }
-            // Upgrade existing user to super admin
-            user.setRole(User.Role.SUPER_ADMIN);
-            user.setEnabled(true);
-            user.setPassword(passwordEncoder.encode(rawPassword));
-            user.setName(name.trim());
-            userRepository.save(user);
-            return true;
+            log.warn("Default super admin was not created: configured email {} already belongs to a non-super-admin account",
+                    normalizedEmail);
+            return false;
         }
 
         User admin = new User();
@@ -115,6 +114,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         }
 
         target.setRole(User.Role.ADMIN);
+        return userRepository.save(target);
+    }
+
+    @Override
+    @Transactional
+    public User demoteAdminToUser(String actorEmail, Long userId) {
+        User actor = userRepository.findByEmail(actorEmail.trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Super admin access required"));
+        if (actor.getRole() != User.Role.SUPER_ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Super admin access required");
+        }
+
+        User target = findUserById(userId);
+        rejectSelfChange(actorEmail, target);
+        if (target.getRole() != User.Role.ADMIN) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only admins can be demoted");
+        }
+
+        target.setRole(User.Role.USER);
         return userRepository.save(target);
     }
 

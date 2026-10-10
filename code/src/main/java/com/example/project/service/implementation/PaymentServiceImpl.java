@@ -39,15 +39,18 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentRepository paymentRepository;
     private final SellerprofileRepository sellerprofileRepository;
     private final PaymentStateResolver stateResolver;
+    private final PaymentExpiryProcessor expiryProcessor;
     private final int dueDays;
 
     public PaymentServiceImpl(PaymentRepository paymentRepository,
             SellerprofileRepository sellerprofileRepository,
             PaymentStateResolver stateResolver,
+            PaymentExpiryProcessor expiryProcessor,
             @Value("${app.payment.due-days:3}") int dueDays) {
         this.paymentRepository = paymentRepository;
         this.sellerprofileRepository = sellerprofileRepository;
         this.stateResolver = stateResolver;
+        this.expiryProcessor = expiryProcessor;
         this.dueDays = dueDays;
     }
 
@@ -198,13 +201,21 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
-    @Transactional
     public int expireOverduePayments() {
-        List<Payment> overdue = paymentRepository
-                .findByStatusAndDueDateBefore(Payment.Status.AWAITING_PAYMENT, new Date());
-        overdue.forEach(payment -> payment.setStatus(Payment.Status.EXPIRED));
-        paymentRepository.saveAll(overdue);
-        return overdue.size();
+        Date now = new Date();
+        List<Long> overdueIds =
+                paymentRepository.findIdsByStatusAndDueDateBefore(Payment.Status.AWAITING_PAYMENT, now);
+        int expired = 0;
+        for (Long paymentId : overdueIds) {
+            try {
+                if (expiryProcessor.expireOverduePayment(paymentId, now)) {
+                    expired++;
+                }
+            } catch (RuntimeException e) {
+                log.error("Failed to expire overdue payment {}", paymentId, e);
+            }
+        }
+        return expired;
     }
 
     private Payment findForUpdate(Long paymentID) {

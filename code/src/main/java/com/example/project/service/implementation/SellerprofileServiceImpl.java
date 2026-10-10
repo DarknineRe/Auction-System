@@ -85,6 +85,9 @@ public class SellerprofileServiceImpl implements SellerprofileService {
     @Override
     @Transactional
     public Sellerprofile rateSeller(Long biddingID, Long userID, int score) {
+        if (score < 1 || score > 5) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Score must be between 1 and 5");
+        }
         Bidding bidding = biddingRepository.findByIdForUpdate(biddingID)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Bidding not found"));
         if (bidding.getStatus() != Bidding.Status.CLOSED || bidding.getWinner() == null

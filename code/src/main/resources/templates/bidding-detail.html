@@ -42,18 +42,86 @@
 
     <div class="detail__layout">
       <section class="gallery" aria-label="Item photos">
-        <div class="gallery__main">
-          <img th:if="${!artworks.isEmpty() and artworks[0].imageUrl != null}"
-               th:src="${artworks[0].imageUrl}" th:alt="${artworks[0].title}">
-          <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="gallery__empty">No image available.</p>
+        <div class="gallery__main" th:if="${!artworks.isEmpty() and artworks[0].imageUrl != null}">
+          <button class="gallery__nav gallery__nav--prev" type="button" aria-label="Previous image" th:if="${artworks.size() > 1}">&lsaquo;</button>
+          <img id="gallery-main-image" th:src="${artworks[0].imageUrl}" th:alt="${artworks[0].title}">
+          <button class="gallery__nav gallery__nav--next" type="button" aria-label="Next image" th:if="${artworks.size() > 1}">&rsaquo;</button>
         </div>
-        <div class="gallery__thumbs" th:if="${artworks.size() > 1}">
-          <div class="gallery__thumb" th:each="artwork : ${artworks}">
-            <img th:if="${artwork.imageUrl != null}" th:src="${artwork.imageUrl}"
-                 th:alt="${artwork.title}" loading="lazy">
+        <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="gallery__empty">No image available.</p>
+
+        <div class="gallery__thumbs-wrap" th:if="${artworks.size() > 1}">
+          <button class="gallery__nav gallery__nav--thumb gallery__nav--thumb-prev" type="button" aria-label="Scroll thumbnails left">&lsaquo;</button>
+          <div class="gallery__thumbs" id="gallery-thumbs" role="listbox" aria-label="Select image">
+            <button type="button" class="gallery__thumb" th:each="artwork, iter : ${artworks}"
+                    th:attr="data-index=${iter.index}, aria-current=${iter.index == 0 ? 'true' : 'false'}"
+                    th:if="${artwork.imageUrl != null}">
+              <img th:src="${artwork.imageUrl}" th:alt="${artwork.title}" loading="lazy">
+            </button>
           </div>
+          <button class="gallery__nav gallery__nav--thumb gallery__nav--thumb-next" type="button" aria-label="Scroll thumbnails right">&rsaquo;</button>
         </div>
       </section>
+
+      <script th:if="${artworks.size() > 1}">
+        const galleryMainImage = document.getElementById('gallery-main-image');
+        const galleryThumbs = Array.from(document.querySelectorAll('.gallery__thumb'));
+        const galleryPrev = document.querySelector('.gallery__nav--prev');
+        const galleryNext = document.querySelector('.gallery__nav--next');
+        let galleryIndex = 0;
+
+        function syncGallery(index) {
+          galleryIndex = index;
+
+          const activeThumb = galleryThumbs[index];
+          if (!activeThumb) return;
+
+          galleryThumbs.forEach((thumb, position) => {
+            const isActive = position === index;
+            thumb.setAttribute('aria-current', isActive ? 'true' : 'false');
+            thumb.classList.toggle('is-active', isActive);
+          });
+
+          const activeImage = activeThumb.querySelector('img');
+          if (galleryMainImage && activeImage) {
+            galleryMainImage.src = activeImage.src;
+            galleryMainImage.alt = activeImage.alt;
+          }
+
+          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        galleryThumbs.forEach((thumb) => {
+          thumb.addEventListener('click', () => {
+            syncGallery(Number(thumb.dataset.index));
+          });
+        });
+
+        if (galleryPrev && galleryNext) {
+          galleryPrev.addEventListener('click', () => {
+            const nextIndex = (galleryIndex - 1 + galleryThumbs.length) % galleryThumbs.length;
+            syncGallery(nextIndex);
+          });
+
+          galleryNext.addEventListener('click', () => {
+            const nextIndex = (galleryIndex + 1) % galleryThumbs.length;
+            syncGallery(nextIndex);
+          });
+        }
+
+        const scrollThumbs = document.getElementById('gallery-thumbs');
+        const thumbPrev = document.querySelector('.gallery__nav--thumb-prev');
+        const thumbNext = document.querySelector('.gallery__nav--thumb-next');
+
+        if (scrollThumbs && thumbPrev && thumbNext) {
+          thumbPrev.addEventListener('click', () => {
+            scrollThumbs.scrollBy({ left: -180, behavior: 'smooth' });
+          });
+
+          thumbNext.addEventListener('click', () => {
+            scrollThumbs.scrollBy({ left: 180, behavior: 'smooth' });
+          });
+        }
+      </script>
 
       <section class="info" aria-label="Auction details">
         <span th:replace="~{fragments/status :: badge(${bidding.status})}"></span>
@@ -140,6 +208,23 @@
           <label for="message">Write a comment</label>
           <textarea id="message" name="message" rows="3" maxlength="2000" required
                     placeholder="Ask the seller a question or share your thoughts..."></textarea>
+          <details class="comment-emoji-picker">
+            <summary>😊 Add emoji</summary>
+            <div class="comment-emoji-picker__grid" aria-label="Choose an emoji">
+              <button type="button" data-emoji="😀" aria-label="Add grinning face">😀</button>
+              <button type="button" data-emoji="😂" aria-label="Add face with tears of joy">😂</button>
+              <button type="button" data-emoji="😍" aria-label="Add heart eyes">😍</button>
+              <button type="button" data-emoji="🥰" aria-label="Add smiling face with hearts">🥰</button>
+              <button type="button" data-emoji="😊" aria-label="Add smiling face">😊</button>
+              <button type="button" data-emoji="👍" aria-label="Add thumbs up">👍</button>
+              <button type="button" data-emoji="👏" aria-label="Add clapping hands">👏</button>
+              <button type="button" data-emoji="❤️" aria-label="Add red heart">❤️</button>
+              <button type="button" data-emoji="🔥" aria-label="Add fire">🔥</button>
+              <button type="button" data-emoji="🎉" aria-label="Add party popper">🎉</button>
+              <button type="button" data-emoji="🤔" aria-label="Add thinking face">🤔</button>
+              <button type="button" data-emoji="🙏" aria-label="Add folded hands">🙏</button>
+            </div>
+          </details>
         </div>
         <button type="submit" class="btn btn--primary">Post comment</button>
       </form>
@@ -150,41 +235,75 @@
       <ul class="comments__list">
         <li class="comment" th:each="comment : ${comments}">
           <div class="comment__head">
-            <span class="comment__author" th:text="${comment.user == null ? 'Member' : comment.user.name}">User</span>
-            <span class="badge badge--info" th:if="${comment.user != null and comment.user.id == bidding.owner.id}">Seller</span>
+            <div class="comment__meta">
+              <span class="comment__author" th:text="${comment.user == null ? 'Member' : comment.user.name}">User</span>
+              <span class="badge badge--info" th:if="${comment.user != null and comment.user.id == bidding.owner.id}">Seller</span>
+            </div>
+            <form class="comment__moderate" sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}"
+                  method="post" onsubmit="return confirm('Delete this comment? This cannot be undone.')">
+              <button class="comment__trash" type="submit" aria-label="Delete comment as admin" title="Delete comment">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3"></path>
+                </svg>
+              </button>
+            </form>
+            <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
+              <summary class="comment__btn">Edit</summary>
+              <form class="comments__form"
+                    th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+                <div class="field">
+                  <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
+                  <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
+                            th:text="${comment.message}" required></textarea>
+                  <details class="comment-emoji-picker">
+                    <summary>😊 Add emoji</summary>
+                    <div class="comment-emoji-picker__grid" aria-label="Choose an emoji">
+                      <button type="button" data-emoji="😀" aria-label="Add grinning face">😀</button>
+                      <button type="button" data-emoji="😂" aria-label="Add face with tears of joy">😂</button>
+                      <button type="button" data-emoji="😍" aria-label="Add heart eyes">😍</button>
+                      <button type="button" data-emoji="🥰" aria-label="Add smiling face with hearts">🥰</button>
+                      <button type="button" data-emoji="😊" aria-label="Add smiling face">😊</button>
+                      <button type="button" data-emoji="👍" aria-label="Add thumbs up">👍</button>
+                      <button type="button" data-emoji="👏" aria-label="Add clapping hands">👏</button>
+                      <button type="button" data-emoji="❤️" aria-label="Add red heart">❤️</button>
+                      <button type="button" data-emoji="🔥" aria-label="Add fire">🔥</button>
+                      <button type="button" data-emoji="🎉" aria-label="Add party popper">🎉</button>
+                      <button type="button" data-emoji="🤔" aria-label="Add thinking face">🤔</button>
+                      <button type="button" data-emoji="🙏" aria-label="Add folded hands">🙏</button>
+                    </div>
+                  </details>
+                </div>
+                <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
+              </form>
+            </details>
           </div>
           <p class="comment__text" th:text="${comment.message}"></p>
           <div class="comment__actions">
-            <span class="comment__btn" th:text="'👍 ' + ${comment.thumbsup}"></span>
-            <span class="comment__btn" th:text="'👎 ' + ${comment.thumbsdown}"></span>
-            <form th:if="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}"
+            <!-- Other users: clickable reaction buttons (count inside the button) -->
+            <form th:if="${currentUser != null and comment.user != null}"
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/like(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
-              <button class="comment__btn" type="submit">Like</button>
+              <button class="comment__btn" type="submit" aria-label="Like" title="Like"
+                      th:text="'👍 ' + ${comment.thumbsup}">👍 0</button>
             </form>
-            <form th:if="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}"
+            <form th:if="${currentUser != null and comment.user != null}"
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/dislike(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
-              <button class="comment__btn" type="submit">Dislike</button>
+              <button class="comment__btn" type="submit" aria-label="Dislike" title="Dislike"
+                      th:text="'👎 ' + ${comment.thumbsdown}">👎 0</button>
             </form>
+            <th:block th:if="${currentUser == null or comment.user == null}">
+              <span class="comment__count" th:text="'👍 ' + ${comment.thumbsup}">👍 0</span>
+              <span class="comment__count" th:text="'👎 ' + ${comment.thumbsdown}">👎 0</span>
+            </th:block>
             <form th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}"
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
               <button class="comment__btn comment__btn--danger" type="submit">Delete</button>
             </form>
           </div>
-          <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
-            <summary class="comment__btn">Edit</summary>
-            <form class="comments__form"
-                  th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
-              <div class="field">
-                <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
-                <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
-                          th:text="${comment.message}" required></textarea>
-              </div>
-              <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
-            </form>
-          </details>
         </li>
       </ul>
     </section>
   </main>
+  <script th:src="@{/js/comment-emoji-picker.js}" defer></script>
 </body>
 </html>

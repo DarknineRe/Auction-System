@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -41,6 +42,58 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Test
+    void adminCanRemoveCommentFromAuctionPageAndModerationPageIsGone() throws Exception {
+        UserFixture admin = createRoleAdmin(User.Role.ADMIN);
+        UserFixture seller = registerUser("Comment Moderation Seller");
+        UserFixture commenter = registerUser("Comment Moderation User");
+        createSellerProfile(seller);
+        long biddingId = createAuction(seller, 60_000);
+
+        MvcResult commentResult = mockMvc.perform(post("/api/v1/biddings/{id}/comments", biddingId)
+                        .with(httpBasic(commenter.email(), commenter.password()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"message":"Comment to remove"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long commentId = objectMapper.readTree(commentResult.getResponse().getContentAsString())
+                .path("id").asLong();
+
+        mockMvc.perform(get("/admin/moderation")
+                        .with(httpBasic(admin.email(), admin.password())))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/biddings/{id}", biddingId)
+                        .with(httpBasic(admin.email(), admin.password())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Comment to remove")))
+                .andExpect(content().string(containsString(">Remove</button>")));
+
+        mockMvc.perform(get("/biddings/{id}", biddingId)
+                        .with(httpBasic(seller.email(), seller.password())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString(">Remove</button>"))));
+
+        mockMvc.perform(post("/biddings/{biddingId}/comments/{commentId}/delete",
+                        biddingId, commentId)
+                        .with(httpBasic(seller.email(), seller.password()))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/biddings/{biddingId}/comments/{commentId}/delete",
+                        biddingId, commentId)
+                        .with(httpBasic(admin.email(), admin.password()))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        mockMvc.perform(get("/api/v1/biddings/{id}/comments", biddingId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
 
     @Test
     void superAdminCanListUsersAndDisableRegularUser() throws Exception {
@@ -101,6 +154,41 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
                         .with(httpBasic(admin.email(), admin.password())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("USER"));
+    }
+
+    @Test
+    void onlySuperAdminCanDemoteAnAdmin() throws Exception {
+        UserFixture superAdmin = createAdmin();
+        UserFixture regularAdmin = createRoleAdmin(User.Role.ADMIN);
+        MvcResult adminLogin = mockMvc.perform(post("/login")
+                        .with(csrf())
+                        .param("email", regularAdmin.email())
+                        .param("password", regularAdmin.password()))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+        MockHttpSession adminSession =
+                (MockHttpSession) adminLogin.getRequest().getSession(false);
+
+        mockMvc.perform(get("/admin/users")
+                        .with(httpBasic(superAdmin.email(), superAdmin.password())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Demote to User")));
+
+        mockMvc.perform(post("/admin/users/{userId}/demote", regularAdmin.id())
+                        .with(httpBasic(regularAdmin.email(), regularAdmin.password()))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/admin/users/{userId}/demote", regularAdmin.id())
+                        .with(httpBasic(superAdmin.email(), superAdmin.password()))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        org.junit.jupiter.api.Assertions.assertEquals(User.Role.USER,
+                userRepository.findById(regularAdmin.id()).orElseThrow().getRole());
+
+        mockMvc.perform(get("/admin").session(adminSession))
+                .andExpect(status().isForbidden());
     }
 
     @Test
