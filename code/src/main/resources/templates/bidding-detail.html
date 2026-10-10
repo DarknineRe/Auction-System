@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Auction | BidHub</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/bidding-detail.css}">
+</head>
+<body>
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <main class="detail">
+    <a class="detail__back" th:href="@{/}">&larr; All auctions</a>
+    <div th:if="${param.success}" class="alert alert--success" role="status">Your auction was created.</div>
+    <div th:if="${param.bidPlaced}" class="alert alert--success" role="status">Your bid was placed.</div>
+    <div th:if="${param.commentPosted}" class="alert alert--success" role="status">Your comment was posted.</div>
+    <div th:if="${param.ratingSubmitted}" class="alert alert--success" role="status">Your seller rating was submitted.</div>
+
+    <!-- Winner still has to pay: one button straight to the payment page -->
+    <aside class="pay-banner" role="status"
+           th:if="${payment != null and currentUser.id == payment.buyer.id and payment.status.name() == 'AWAITING_PAYMENT'}">
+      <div>
+        <p class="pay-banner__title">You won this auction!</p>
+        <p class="pay-banner__text"
+           th:text="'Pay ' + ${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB before ' + ${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')} + ' to keep your item.'">
+          Pay before the due date to keep your item.
+        </p>
+      </div>
+      <a class="btn" th:href="@{/payments/{id}(id=${payment.id})}">Pay now</a>
+    </aside>
+    <aside class="detail__payment"
+           th:if="${payment != null and !(currentUser.id == payment.buyer.id and payment.status.name() == 'AWAITING_PAYMENT')}">
+      <p>
+        <strong th:text="${currentUser.id == payment.buyer.id ? 'Your payment for this auction' : 'Payment from the winning bidder'}">Payment</strong>
+        <span th:replace="~{fragments/status :: badge(${payment.status})}"></span>
+      </p>
+      <a class="btn btn--secondary btn--sm" th:href="@{/payments/{id}(id=${payment.id})}"
+         th:text="${currentUser.id != payment.buyer.id and payment.status.name() == 'PAYMENT_SUBMITTED' ? 'Review slip'
+             : (currentUser.id != payment.buyer.id and payment.status.name() == 'PAID' ? 'Add shipping details' : 'View payment')}">View payment</a>
+    </aside>
+
+    <div class="detail__layout">
+      <section class="gallery" aria-label="Item photos">
+        <div class="gallery__main" th:if="${!artworks.isEmpty() and artworks[0].imageUrl != null}">
+          <button class="gallery__nav gallery__nav--prev" type="button" aria-label="Previous image" th:if="${artworks.size() > 1}">&lsaquo;</button>
+          <img id="gallery-main-image" th:src="${artworks[0].imageUrl}" th:alt="${artworks[0].title}">
+          <button class="gallery__nav gallery__nav--next" type="button" aria-label="Next image" th:if="${artworks.size() > 1}">&rsaquo;</button>
+        </div>
+        <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="gallery__empty">No image available.</p>
+
+        <div class="gallery__thumbs-wrap" th:if="${artworks.size() > 1}">
+          <button class="gallery__nav gallery__nav--thumb gallery__nav--thumb-prev" type="button" aria-label="Scroll thumbnails left">&lsaquo;</button>
+          <div class="gallery__thumbs" id="gallery-thumbs" role="listbox" aria-label="Select image">
+            <button type="button" class="gallery__thumb" th:each="artwork, iter : ${artworks}"
+                    th:attr="data-index=${iter.index}, aria-current=${iter.index == 0 ? 'true' : 'false'}"
+                    th:if="${artwork.imageUrl != null}">
+              <img th:src="${artwork.imageUrl}" th:alt="${artwork.title}" loading="lazy">
+            </button>
+          </div>
+          <button class="gallery__nav gallery__nav--thumb gallery__nav--thumb-next" type="button" aria-label="Scroll thumbnails right">&rsaquo;</button>
+        </div>
+      </section>
+
+      <script th:if="${artworks.size() > 1}">
+        const galleryMainImage = document.getElementById('gallery-main-image');
+        const galleryThumbs = Array.from(document.querySelectorAll('.gallery__thumb'));
+        const galleryPrev = document.querySelector('.gallery__nav--prev');
+        const galleryNext = document.querySelector('.gallery__nav--next');
+        let galleryIndex = 0;
+
+        function syncGallery(index) {
+          galleryIndex = index;
+
+          const activeThumb = galleryThumbs[index];
+          if (!activeThumb) return;
+
+          galleryThumbs.forEach((thumb, position) => {
+            const isActive = position === index;
+            thumb.setAttribute('aria-current', isActive ? 'true' : 'false');
+            thumb.classList.toggle('is-active', isActive);
+          });
+
+          const activeImage = activeThumb.querySelector('img');
+          if (galleryMainImage && activeImage) {
+            galleryMainImage.src = activeImage.src;
+            galleryMainImage.alt = activeImage.alt;
+          }
+
+          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        galleryThumbs.forEach((thumb) => {
+          thumb.addEventListener('click', () => {
+            syncGallery(Number(thumb.dataset.index));
+          });
+        });
+
+        if (galleryPrev && galleryNext) {
+          galleryPrev.addEventListener('click', () => {
+            const nextIndex = (galleryIndex - 1 + galleryThumbs.length) % galleryThumbs.length;
+            syncGallery(nextIndex);
+          });
+
+          galleryNext.addEventListener('click', () => {
+            const nextIndex = (galleryIndex + 1) % galleryThumbs.length;
+            syncGallery(nextIndex);
+          });
+        }
+
+        const scrollThumbs = document.getElementById('gallery-thumbs');
+        const thumbPrev = document.querySelector('.gallery__nav--thumb-prev');
+        const thumbNext = document.querySelector('.gallery__nav--thumb-next');
+
+        if (scrollThumbs && thumbPrev && thumbNext) {
+          thumbPrev.addEventListener('click', () => {
+            scrollThumbs.scrollBy({ left: -180, behavior: 'smooth' });
+          });
+
+          thumbNext.addEventListener('click', () => {
+            scrollThumbs.scrollBy({ left: 180, behavior: 'smooth' });
+          });
+        }
+      </script>
+
+      <section class="info" aria-label="Auction details">
+        <span th:replace="~{fragments/status :: badge(${bidding.status})}"></span>
+        <h1 th:text="${artworks.isEmpty() ? 'Auction #' + bidding.id : (artworks.size() > 1 ? artworks[0].title + ' +' + (artworks.size() - 1) + ' more' : artworks[0].title)}">
+          Auction item
+        </h1>
+
+        <p class="info__label" th:text="${bidding.lastBid == null ? 'Starting price' : 'Current bid'}">Current bid</p>
+        <p class="info__price"
+           th:text="${#numbers.formatDecimal(bidding.lastBid == null ? bidding.startingPrice : bidding.lastBid, 1, 'COMMA', 2, 'POINT')} + ' THB'">
+          0 THB
+        </p>
+
+        <form class="bid" th:if="${bidding.status.name() == 'ACTIVE' and bidding.startDate.before(now) and bidding.endDate.after(now) and (currentUser == null or currentUser.id != bidding.owner.id)}"
+              th:action="@{/biddings/{id}/bids(id=${bidding.id})}" method="post">
+          <div class="field">
+            <label for="amount">Your bid (THB)</label>
+            <input type="number" id="amount" name="amount" min="0.01" step="0.01"
+                   th:attr="min=${bidding.lastBid == null ? bidding.startingPrice : bidding.lastBid + bidding.minimumBidIncrement}" required>
+            <p class="field__hint" th:text="${bidding.lastBid == null
+                ? 'Your first bid must be at least ' + #numbers.formatDecimal(bidding.startingPrice, 1, 'COMMA', 2, 'POINT') + ' THB.'
+                : 'Your bid must exceed the current bid by at least ' + #numbers.formatDecimal(bidding.minimumBidIncrement, 1, 'COMMA', 2, 'POINT') + ' THB.'}">
+              Your bid must meet the auction minimum.
+            </p>
+          </div>
+          <button type="submit" class="btn btn--primary btn--block" sec:authorize="isAuthenticated()">Place bid</button>
+          <a class="btn btn--primary btn--block" th:href="@{/login}" sec:authorize="!isAuthenticated()">Log in to bid</a>
+        </form>
+        <p class="bid__note" th:if="${bidding.status.name() != 'ACTIVE'}">This auction is not accepting bids.</p>
+        <p class="bid__note" th:if="${bidding.status.name() == 'ACTIVE' and bidding.startDate.after(now)}">This auction has not started yet.</p>
+        <p class="bid__note" th:if="${bidding.status.name() == 'ACTIVE' and bidding.endDate.before(now)}">This auction has ended and is no longer accepting bids.</p>
+        <p class="bid__note" th:if="${currentUser != null and currentUser.id == bidding.owner.id}">You cannot bid on your own auction.</p>
+
+        <dl class="info__facts">
+          <div class="info__row"><dt>Starting price</dt><dd th:text="${#numbers.formatDecimal(bidding.startingPrice, 1, 'COMMA', 2, 'POINT')} + ' THB'"></dd></div>
+          <div class="info__row"><dt>Minimum bid increment</dt><dd th:text="${#numbers.formatDecimal(bidding.minimumBidIncrement, 1, 'COMMA', 2, 'POINT')} + ' THB'"></dd></div>
+          <div class="info__row"><dt>Starts</dt><dd th:text="${#dates.format(bidding.startDate, 'dd MMM yyyy HH:mm')}"></dd></div>
+          <div class="info__row"><dt>Ends</dt><dd th:text="${#dates.format(bidding.endDate, 'dd MMM yyyy HH:mm')}"></dd></div>
+          <div class="info__row"><dt>Seller</dt><dd><a th:href="@{/sellers/{id}(id=${bidding.owner.id})}" th:text="${bidding.owner.name}"></a></dd></div>
+        </dl>
+        <ul class="info__items" th:if="${artworks.size() > 1}">
+          <li th:each="artwork : ${artworks}" th:text="${artwork.title}"></li>
+        </ul>
+
+        <form th:if="${currentUser != null and bidding.status.name() == 'CLOSED' and bidding.winner != null and currentUser.id == bidding.winner.id and bidding.sellerRating == null}"
+              th:action="@{/biddings/{id}/seller-rating(id=${bidding.id})}" method="post" class="rating">
+          <div class="field">
+            <label for="score">Rate your seller</label>
+            <select id="score" name="score" required>
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Good</option>
+              <option value="3">3 - Average</option>
+              <option value="2">2 - Poor</option>
+              <option value="1">1 - Very poor</option>
+            </select>
+          </div>
+          <button class="btn btn--secondary" type="submit">Submit rating</button>
+        </form>
+      </section>
+    </div>
+
+    <section class="history" aria-labelledby="history-title">
+      <h2 id="history-title">Bid history <span class="history__count" th:text="'(' + ${bids.size()} + ')'"></span></h2>
+      <p class="history__empty" th:if="${bids.isEmpty()}">No bids yet. Be the first to bid!</p>
+      <ol class="history__list" th:unless="${bids.isEmpty()}">
+        <li class="history__row" th:each="bid, iter : ${bids}">
+          <div class="history__who">
+            <span class="history__name" th:text="${bid.user.name}">Bidder</span>
+            <span class="history__time" th:text="${#dates.format(bid.timestamp, 'dd MMM yyyy HH:mm')}"></span>
+          </div>
+          <div class="history__amount">
+            <span class="badge badge--success" th:if="${iter.first}">Highest</span>
+            <span class="history__price" th:text="${#numbers.formatDecimal(bid.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></span>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="comments" id="comments" aria-labelledby="comments-title">
+      <h2 id="comments-title">Comments <span class="comments__count" th:text="'(' + ${comments.size()} + ')'"></span></h2>
+      <form class="comments__form" th:if="${currentUser != null}"
+            th:action="@{/biddings/{id}/comments(id=${bidding.id})}" method="post">
+        <div class="field">
+          <label for="message">Write a comment</label>
+          <textarea id="message" name="message" rows="3" maxlength="2000" required
+                    placeholder="Ask the seller a question or share your thoughts..."></textarea>
+          <details class="comment-emoji-picker">
+            <summary>😊 Add emoji</summary>
+            <div class="comment-emoji-picker__grid" aria-label="Choose an emoji">
+              <button type="button" data-emoji="😀" aria-label="Add grinning face">😀</button>
+              <button type="button" data-emoji="😂" aria-label="Add face with tears of joy">😂</button>
+              <button type="button" data-emoji="😍" aria-label="Add heart eyes">😍</button>
+              <button type="button" data-emoji="🥰" aria-label="Add smiling face with hearts">🥰</button>
+              <button type="button" data-emoji="😊" aria-label="Add smiling face">😊</button>
+              <button type="button" data-emoji="👍" aria-label="Add thumbs up">👍</button>
+              <button type="button" data-emoji="👏" aria-label="Add clapping hands">👏</button>
+              <button type="button" data-emoji="❤️" aria-label="Add red heart">❤️</button>
+              <button type="button" data-emoji="🔥" aria-label="Add fire">🔥</button>
+              <button type="button" data-emoji="🎉" aria-label="Add party popper">🎉</button>
+              <button type="button" data-emoji="🤔" aria-label="Add thinking face">🤔</button>
+              <button type="button" data-emoji="🙏" aria-label="Add folded hands">🙏</button>
+            </div>
+          </details>
+        </div>
+        <button type="submit" class="btn btn--primary">Post comment</button>
+      </form>
+      <p class="comments__empty" sec:authorize="!isAuthenticated()">
+        <a th:href="@{/login}">Log in</a> to post a comment or react.
+      </p>
+      <p class="comments__empty" th:if="${comments.isEmpty()}">No comments yet.</p>
+      <ul class="comments__list">
+        <li class="comment" th:each="comment : ${comments}">
+          <div class="comment__head">
+            <div class="comment__meta">
+              <span class="comment__author" th:text="${comment.user == null ? 'Member' : comment.user.name}">User</span>
+              <span class="badge badge--info" th:if="${comment.user != null and comment.user.id == bidding.owner.id}">Seller</span>
+            </div>
+            <form class="comment__moderate" sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}"
+                  method="post" onsubmit="return confirm('Delete this comment? This cannot be undone.')">
+              <button class="comment__trash" type="submit" aria-label="Delete comment as admin" title="Delete comment">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3"></path>
+                </svg>
+              </button>
+            </form>
+            <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
+              <summary class="comment__btn">Edit</summary>
+              <form class="comments__form"
+                    th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+                <div class="field">
+                  <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
+                  <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
+                            th:text="${comment.message}" required></textarea>
+                  <details class="comment-emoji-picker">
+                    <summary>😊 Add emoji</summary>
+                    <div class="comment-emoji-picker__grid" aria-label="Choose an emoji">
+                      <button type="button" data-emoji="😀" aria-label="Add grinning face">😀</button>
+                      <button type="button" data-emoji="😂" aria-label="Add face with tears of joy">😂</button>
+                      <button type="button" data-emoji="😍" aria-label="Add heart eyes">😍</button>
+                      <button type="button" data-emoji="🥰" aria-label="Add smiling face with hearts">🥰</button>
+                      <button type="button" data-emoji="😊" aria-label="Add smiling face">😊</button>
+                      <button type="button" data-emoji="👍" aria-label="Add thumbs up">👍</button>
+                      <button type="button" data-emoji="👏" aria-label="Add clapping hands">👏</button>
+                      <button type="button" data-emoji="❤️" aria-label="Add red heart">❤️</button>
+                      <button type="button" data-emoji="🔥" aria-label="Add fire">🔥</button>
+                      <button type="button" data-emoji="🎉" aria-label="Add party popper">🎉</button>
+                      <button type="button" data-emoji="🤔" aria-label="Add thinking face">🤔</button>
+                      <button type="button" data-emoji="🙏" aria-label="Add folded hands">🙏</button>
+                    </div>
+                  </details>
+                </div>
+                <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
+              </form>
+            </details>
+          </div>
+          <p class="comment__text" th:text="${comment.message}"></p>
+          <div class="comment__actions">
+            <!-- Other users: clickable reaction buttons (count inside the button) -->
+            <form th:if="${currentUser != null and comment.user != null}"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/like(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+              <button class="comment__btn" type="submit" aria-label="Like" title="Like"
+                      th:text="'👍 ' + ${comment.thumbsup}">👍 0</button>
+            </form>
+            <form th:if="${currentUser != null and comment.user != null}"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/dislike(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+              <button class="comment__btn" type="submit" aria-label="Dislike" title="Dislike"
+                      th:text="'👎 ' + ${comment.thumbsdown}">👎 0</button>
+            </form>
+            <th:block th:if="${currentUser == null or comment.user == null}">
+              <span class="comment__count" th:text="'👍 ' + ${comment.thumbsup}">👍 0</span>
+              <span class="comment__count" th:text="'👎 ' + ${comment.thumbsdown}">👎 0</span>
+            </th:block>
+            <form th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+              <button class="comment__btn comment__btn--danger" type="submit">Delete</button>
+            </form>
+          </div>
+        </li>
+      </ul>
+    </section>
+  </main>
+  <script th:src="@{/js/comment-emoji-picker.js}" defer></script>
+</body>
+</html>

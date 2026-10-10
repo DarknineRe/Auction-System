@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My profile | BidHub</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/profile.css}">
+</head>
+<body>
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <main class="profile">
+    <div th:if="${param.profileUpdated}" class="alert alert--success" role="status">Your profile has been updated.</div>
+    <div th:if="${param.passwordUpdated}" class="alert alert--success" role="status">Your password has been updated.</div>
+
+    <section class="profile__card">
+      <header class="profile__header">
+        <div class="profile__avatar" aria-hidden="true"
+             th:text="${#strings.isEmpty(user.name) ? '?' : #strings.substring(user.name, 0, 1)}">B</div>
+        <div>
+          <h1 class="profile__name" th:text="${user.name}">Name</h1>
+          <p class="profile__email" th:text="${user.email}">Email</p>
+          <span class="badge badge--neutral" th:text="${user.role}">Member</span>
+        </div>
+      </header>
+
+      <form class="profile__form" th:action="@{/profile}" method="post">
+        <h2 class="profile__section-title">Personal information</h2>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" autocomplete="name" maxlength="255"
+                 th:value="${user.name}" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" autocomplete="email" th:value="${user.email}"
+                 readonly aria-describedby="email-hint">
+          <p class="field__hint" id="email-hint">Your email is your login and cannot be changed.</p>
+        </div>
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="100"
+                 th:value="${user.phone}">
+        </div>
+        <div class="field">
+          <label for="address">Address</label>
+          <input type="text" id="address" name="address" autocomplete="street-address" maxlength="1000"
+                 th:value="${user.address}">
+        </div>
+        <button type="submit" class="btn btn--primary">Save changes</button>
+      </form>
+    </section>
+
+    <section class="profile__card">
+      <form class="profile__form" th:action="@{/profile/password}" method="post">
+        <h2 class="profile__section-title">Change password</h2>
+        <div class="field">
+          <label for="current-password">Current password</label>
+          <div class="field__input-wrapper">
+            <input type="password" id="current-password" name="currentPassword"
+                   autocomplete="current-password" required>
+            <button class="field__password-toggle" type="button" aria-controls="current-password" aria-pressed="false">Show</button>
+          </div>
+        </div>
+        <div class="field">
+          <label for="new-password">New password</label>
+          <div class="field__input-wrapper">
+            <input type="password" id="new-password" name="newPassword" minlength="8" maxlength="72"
+                   autocomplete="new-password" required>
+            <button class="field__password-toggle" type="button" aria-controls="new-password" aria-pressed="false">Show</button>
+          </div>
+          <p class="field__hint">8-72 characters</p>
+        </div>
+        <div class="field">
+          <label for="confirm-password">Confirm new password</label>
+          <div class="field__input-wrapper">
+            <input type="password" id="confirm-password" name="confirmPassword"
+                   autocomplete="new-password" required>
+            <button class="field__password-toggle" type="button" aria-controls="confirm-password" aria-pressed="false">Show</button>
+          </div>
+        </div>
+        <button type="submit" class="btn btn--primary">Update password</button>
+      </form>
+    </section>
+  </main>
+  <script th:src="@{/js/password-toggle.js}" defer></script>
+</body>
+</html>

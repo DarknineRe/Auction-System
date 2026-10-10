@@ -1,0 +1,6 @@
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP(6) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+
+UPDATE users
+SET password_changed_at = CURRENT_TIMESTAMP
+WHERE password_changed_at IS NULL;

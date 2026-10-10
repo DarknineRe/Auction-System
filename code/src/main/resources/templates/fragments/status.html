@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Coloured label for any status enum (Bidding, Payment, BidAction).
+       Usage:  <span th:replace="~{fragments/status :: badge(${payment.status})}"></span> -->
+  <span class="badge" th:fragment="badge(status)" th:with="name=${status.name()}"
+        th:classappend="${name == 'ACTIVE' or name == 'PAID' or name == 'COMPLETED' or name == 'VALID'} ? 'badge--success'
+            : (${name == 'AWAITING_PAYMENT'} ? 'badge--warning'
+            : (${name == 'PAYMENT_SUBMITTED'} ? 'badge--info'
+            : (${name == 'CANCELLED' or name == 'EXPIRED' or name == 'VOIDED'} ? 'badge--danger' : 'badge--neutral')))"
+        th:text="${#strings.replace(name, '_', ' ')}">Status</span>
+</body>
+</html>

@@ -1,0 +1,52 @@
+:root {
+    /* Brand: navy and gold */
+    --ink: #14213d;
+    --ink-deep: #0d1629;
+    --ink-light: #1f3460;
+    --primary: #e0a526;
+    --primary-dark: #c78f12;
+    --on-primary: #0d1629;
+    --primary-soft: #eef1f6;
+    --primary-soft-dark: #dfe5ee;
+    --accent: #e0a526;
+    --accent-dark: #c78f12;
+    --link: #14213d;
+
+    /* Surfaces and text */
+    --text: #1f2937;
+    --muted: #6b7280;
+    --on-dark-muted: #cbd5e1;
+    --border: #d1d5db;
+    --bg: #f4f6fa;
+    --surface: #ffffff;
+    --surface-alt: #f8fafc;
+
+    /* Status */
+    --success: #166534;
+    --success-bg: #dcfce7;
+    --success-border: #bbf7d0;
+    --warning: #92400e;
+    --warning-bg: #fef3c7;
+    --warning-border: #fde68a;
+    --info: #1e40af;
+    --info-bg: #dbeafe;
+    --info-border: #bfdbfe;
+    --danger: #dc2626;
+    --danger-bg: #fef2f2;
+    --danger-border: #fecaca;
+
+    /* Shape and depth */
+    --radius: 8px;
+    --radius-lg: 12px;
+    --shadow-sm: 0 1px 2px rgb(20 33 61 / 6%), 0 2px 8px rgb(20 33 61 / 4%);
+    --shadow-md: 0 10px 24px rgb(20 33 61 / 12%);
+    --ring: 0 0 0 3px rgb(224 165 38 / 50%);
+    --font: "Segoe UI", "Noto Sans Thai", system-ui, -apple-system, Roboto, Arial, sans-serif;
+
+    /* Original names, used by older rules */
+    --navy: var(--ink);
+    --navy-dark: var(--ink-deep);
+    --gold: var(--accent);
+    --gold-dark: var(--accent-dark);
+    --white: var(--surface);
+}

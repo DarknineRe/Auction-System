@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign up | BidHub</title>
+  <link rel="stylesheet" th:href="@{/css/main.css}">
+  <link rel="stylesheet" th:href="@{/css/pages/register.css}">
+</head>
+<body>
+  <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+  <main class="register">
+    <div class="register__card">
+      <h1>Create your account</h1>
+      <p class="register__sub">Join BidHub and start bidding today.</p>
+
+      <form th:action="@{/register}" method="post">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" autocomplete="name" maxlength="255" required>
+        </div>
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" placeholder="you@example.com"
+                 autocomplete="email" maxlength="320" required>
+        </div>
+        <div class="register__row">
+          <div class="field">
+            <label for="password">Password</label>
+            <div class="field__input-wrapper">
+              <input type="password" id="password" name="password" minlength="8" maxlength="72"
+                     autocomplete="new-password" required>
+              <button class="field__password-toggle" type="button" aria-controls="password" aria-pressed="false">Show</button>
+            </div>
+            <p class="field__hint">8-72 characters</p>
+          </div>
+          <div class="field">
+            <label for="confirmPassword">Confirm password</label>
+            <div class="field__input-wrapper">
+              <input type="password" id="confirmPassword" name="confirmPassword"
+                     autocomplete="new-password" required>
+              <button class="field__password-toggle" type="button" aria-controls="confirmPassword" aria-pressed="false">Show</button>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="phone">Phone <span class="field__hint">(optional)</span></label>
+          <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="100">
+        </div>
+        <div class="field">
+          <label for="address">Address <span class="field__hint">(optional)</span></label>
+          <input type="text" id="address" name="address" autocomplete="street-address" maxlength="1000">
+        </div>
+        <button type="submit" class="btn btn--primary btn--block">Sign up</button>
+        <p class="register__footer">
+          Already have an account? <a th:href="@{/login}">Log in</a>
+        </p>
+      </form>
+    </div>
+  </main>
+  <script th:src="@{/js/password-toggle.js}" defer></script>
+</body>
+</html>

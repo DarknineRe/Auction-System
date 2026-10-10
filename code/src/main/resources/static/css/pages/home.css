@@ -1,0 +1,48 @@
+/* Home page (auction listing) only */
+.hero {
+  color: #fff;
+  background:
+    radial-gradient(600px 240px at 85% 0%, rgb(224 165 38 / 14%), transparent 70%),
+    linear-gradient(120deg, var(--ink-deep), var(--ink) 45%, var(--ink-light));
+}
+
+.hero__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 24px 88px;
+}
+
+.hero__eyebrow {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.hero h1 { margin: 0 0 8px; font-size: clamp(2rem, 5vw, 3rem); line-height: 1.1; }
+.hero__text { margin: 0; max-width: 460px; font-size: 1.05rem; color: var(--on-dark-muted); }
+
+.hero__actions { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; }
+.hero__count { margin: 0; font-size: 0.9rem; color: var(--on-dark-muted); }
+.hero .btn--primary { color: var(--ink-deep); background: var(--accent); box-shadow: 0 6px 18px rgb(224 165 38 / 30%); }
+.hero .btn--primary:hover { background: var(--accent-dark); }
+.hero .btn:focus-visible { box-shadow: 0 0 0 3px rgb(255 255 255 / 55%); }
+
+/* The listing overlaps the hero so the first row of cards sits on the gradient */
+.home {
+  max-width: 1200px;
+  margin: -48px auto 0;
+  padding: 0 24px 64px;
+}
+
+@media (max-width: 520px) {
+  .hero__inner { padding: 36px 16px 76px; }
+  .hero__actions { align-items: flex-start; }
+  .home { padding: 0 16px 48px; }
+}

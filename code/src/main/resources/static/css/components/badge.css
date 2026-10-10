@@ -1,0 +1,33 @@
+/* Small status label. Usage: <span class="badge badge--success">Active</span>
+   Variants are semantic so any status (bidding, payment) can map onto them:
+   success = ACTIVE / PAID, warning = AWAITING_*, info = *_SUBMITTED,
+   danger = CANCELLED / rejected, neutral = CLOSED / unknown.
+   fragments/status.html picks the variant from a status enum. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.6;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: #374151;
+  background: #e5e7eb;
+}
+.badge::before {
+  width: 6px;
+  height: 6px;
+  background: currentColor;
+  border-radius: 50%;
+  content: "";
+}
+
+.badge--success { color: var(--success); background: var(--success-bg); }
+.badge--warning { color: var(--warning); background: var(--warning-bg); }
+.badge--info    { color: var(--info); background: var(--info-bg); }
+.badge--danger  { color: var(--danger); background: var(--danger-bg); }
+.badge--neutral { color: #374151; background: #e5e7eb; }

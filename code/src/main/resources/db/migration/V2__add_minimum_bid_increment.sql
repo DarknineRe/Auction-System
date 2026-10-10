@@ -1,0 +1,2 @@
+ALTER TABLE biddings
+    ADD COLUMN IF NOT EXISTS minimum_bid_increment NUMERIC(19, 4) NOT NULL DEFAULT 1.00;

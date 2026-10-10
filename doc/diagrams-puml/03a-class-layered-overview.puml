@@ -1,0 +1,171 @@
+@startuml
+title Class Diagram - Layered Architecture (flow ประมูล และ ชำระเงิน)
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+
+package "Presentation Layer (MVC Controller)" #E8F1FF {
+  class BiddingController <<Controller>> {
+    +createBidding()
+    +getBiddings()
+    +placeBid()
+    +cancelBidding()
+    +rateSeller()
+  }
+  class PaymentController <<Controller>> {
+    +getPurchases()
+    +getSales()
+    +submitSlip()
+    +confirmPayment()
+    +rejectPayment()
+    +ship()
+  }
+  class AdminBiddingController <<Controller>> {
+    +cancelBidding()
+    +closeBidding()
+  }
+}
+
+package "DTO Layer" #FFF4E0 {
+  class PlaceBidRequest <<DTO>>
+  class BiddingResponse <<DTO>>
+  class PaymentResponse <<DTO>>
+  class BiddingMapper <<Mapper>> {
+    +toResponse(Bidding)
+    +toResponse(BidAction)
+  }
+  class PaymentMapper <<Mapper>> {
+    +toResponse(Payment)
+  }
+}
+
+package "Service Layer (Service Layer Pattern)" #E9F7EC {
+  interface BiddingService <<Service>> {
+    +createBidding()
+    +placeBid()
+    +cancelBidding()
+  }
+  interface PaymentService <<Service>> {
+    +createForClosedBidding()
+    +submitSlip()
+    +confirmPayment()
+    +rejectPayment()
+    +ship()
+    +expireOverduePayments()
+  }
+  interface BiddingClosingService <<Service>> {
+    +close()
+    +closeExpiredBiddings()
+  }
+  interface AdminBiddingService <<Service>> {
+    +cancelBidding()
+    +closeBidding()
+  }
+  class BiddingServiceImpl {
+    -MIN_BID_INCREMENT
+    +placeBid()
+  }
+  class PaymentServiceImpl {
+    +submitSlip()
+    +ship()
+  }
+  class BiddingClosingServiceImpl
+  class AdminBiddingServiceImpl
+}
+
+package "Builder Pattern (GoF Creational)" #E8FFF8 {
+  class PaymentBuilder <<Builder>> {
+    +bidding(Bidding) : PaymentBuilder
+    +buyer(User) : PaymentBuilder
+    +sellerprofile(Sellerprofile) : PaymentBuilder
+    +amount(BigDecimal) : PaymentBuilder
+    +dueInDays(int) : PaymentBuilder
+    +build() : Payment
+  }
+}
+
+package "State Pattern (GoF Behavioral)" #F3E8FF {
+  class BiddingStateResolver <<Registry>> {
+    +resolve(Status) : BiddingState
+  }
+  class PaymentStateResolver <<Registry>> {
+    +resolve(Status) : PaymentState
+  }
+  interface BiddingState <<State>>
+  interface PaymentState <<State>>
+}
+
+package "Scheduler" #F5F5F5 {
+  class BiddingExpiryScheduler
+  class PaymentExpiryScheduler
+}
+
+package "Repository Layer (Repository Pattern)" #FFE8E8 {
+  interface BiddingRepository <<Repository>> {
+    +findByIdForUpdate()
+  }
+  interface BidActionRepository <<Repository>>
+  interface PaymentRepository <<Repository>>
+  interface SellerprofileRepository <<Repository>>
+}
+
+package "Domain Layer" #FFFFE0 {
+  class Bidding <<Entity>>
+  class BidAction <<Entity>>
+  class Payment <<Entity>>
+  class Sellerprofile <<Entity>>
+}
+
+BiddingController ..> BiddingService
+BiddingController ..> BiddingMapper
+BiddingController ..> PlaceBidRequest
+PaymentController ..> PaymentService
+PaymentController ..> PaymentMapper
+AdminBiddingController ..> AdminBiddingService
+BiddingMapper ..> BiddingResponse
+PaymentMapper ..> PaymentResponse
+
+BiddingServiceImpl ..|> BiddingService
+PaymentServiceImpl ..|> PaymentService
+BiddingClosingServiceImpl ..|> BiddingClosingService
+AdminBiddingServiceImpl ..|> AdminBiddingService
+
+BiddingServiceImpl ..> BiddingStateResolver
+BiddingServiceImpl ..> BiddingRepository
+BiddingServiceImpl ..> BidActionRepository
+PaymentServiceImpl ..> PaymentStateResolver
+PaymentServiceImpl ..> PaymentRepository
+PaymentServiceImpl ..> SellerprofileRepository
+PaymentServiceImpl ..> PaymentBuilder : creates Payment via
+PaymentBuilder ..> Payment : builds
+BiddingClosingServiceImpl ..> PaymentService
+BiddingClosingServiceImpl ..> BiddingRepository
+BiddingClosingServiceImpl ..> BidActionRepository
+AdminBiddingServiceImpl ..> BiddingClosingService
+AdminBiddingServiceImpl ..> BiddingStateResolver
+
+BiddingExpiryScheduler ..> BiddingClosingService
+PaymentExpiryScheduler ..> PaymentService
+
+BiddingStateResolver o-- BiddingState
+PaymentStateResolver o-- PaymentState
+
+BiddingRepository ..> Bidding
+BidActionRepository ..> BidAction
+PaymentRepository ..> Payment
+SellerprofileRepository ..> Sellerprofile
+
+note right of BiddingStateResolver
+  State Pattern: กฎการย้ายสถานะอยู่ใน
+  ConcreteState ไม่ใช่ if/switch ใน Service
+end note
+note right of PaymentBuilder
+  Builder Pattern: ประกอบ Payment และคำนวณ
+  createdAt / dueDate ที่จุดเดียว, build() ตรวจค่าที่จำเป็น
+end note
+note bottom of BiddingServiceImpl
+  Dependency Injection:
+  constructor injection ผ่าน interface (DIP)
+end note
+@enduml

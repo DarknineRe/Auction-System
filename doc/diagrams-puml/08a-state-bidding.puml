@@ -1,0 +1,20 @@
+@startuml
+title State Diagram - Bidding (Bidding.Status)
+skinparam shadowing false
+
+[*] --> ACTIVE : Seller เปิดประมูล (createBidding)
+
+ACTIVE --> CLOSED : endDate ผ่านแล้ว (BiddingExpiryScheduler)\nหรือ Admin ปิดประมูล
+ACTIVE --> CANCELLED : Seller ยกเลิก (เฉพาะยังไม่มี bid)\nหรือ Admin ยกเลิก
+
+CLOSED --> [*]
+CANCELLED --> [*]
+
+ACTIVE : acceptsBids = true
+ACTIVE : รับ bid, แก้ไขได้ถ้ายังไม่มี bid
+CLOSED : acceptsBids = false
+CLOSED : ตั้งผู้ชนะ + lastBid และสร้าง Payment
+CLOSED : ย้ายต่อไม่ได้
+CANCELLED : acceptsBids = false
+CANCELLED : ย้ายต่อไม่ได้
+@enduml

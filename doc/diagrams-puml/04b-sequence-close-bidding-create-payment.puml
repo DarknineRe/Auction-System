@@ -1,0 +1,58 @@
+@startuml
+title Sequence 4.2 - ปิดประมูลอัตโนมัติ และสร้างรายการชำระเงิน
+skinparam shadowing false
+autonumber
+
+participant "BiddingExpiryScheduler\n(@Scheduled 60s)" as Sch
+participant "BiddingClosingService\n(BiddingClosingServiceImpl)" as CS
+participant "BiddingRepository" as BR
+participant "BidActionRepository" as AR
+participant "PaymentService\n(PaymentServiceImpl)" as PS
+participant "SellerprofileRepository" as SPR
+participant "PaymentRepository" as PR
+database "PostgreSQL" as DB
+
+loop ทุก 60 วินาที (app.bidding.expiry-check-ms)
+  Sch -> CS : closeExpiredBiddings()
+  activate CS
+  note right of CS : @Transactional
+  CS -> BR : findByStatusAndEndDateBefore(ACTIVE, now)
+  BR -> DB : SELECT expired ACTIVE biddings
+  DB --> BR : List<Bidding>
+  BR --> CS : expired list
+
+  loop แต่ละ Bidding ที่หมดเวลา
+    CS -> AR : findTopByBidding_IdAndStatusOrderByAmountDesc(id, VALID)
+    AR --> CS : Optional top bid
+    opt มี bid VALID
+      CS -> CS : bidding.winner = topBid.user\nbidding.lastBid = topBid.amount
+    end
+    CS -> CS : bidding.status = CLOSED
+    CS -> BR : save(bidding)
+    BR -> DB : UPDATE biddings
+    CS -> PS : createForClosedBidding(bidding)
+    activate PS
+    alt ไม่มีผู้ชนะ หรือมี Payment อยู่แล้ว
+      PS --> CS : return (ไม่สร้าง)
+    else มีผู้ชนะ
+      PS -> SPR : findByUser_Id(owner.id)
+      SPR --> PS : Sellerprofile
+      alt ไม่มี Seller Profile
+        PS -> PS : log.warn (ไม่สร้าง Payment)
+      else มี Seller Profile
+        PS -> PS : new PaymentBuilder().bidding().buyer(winner)\n.sellerprofile().amount(lastBid).dueInDays(dueDays).build()\n(Builder: สร้าง Payment AWAITING_PAYMENT,\ncreatedAt = now, dueDate = now + dueDays)
+        PS -> PR : save(payment)
+        PR -> DB : INSERT payments
+      end
+    end
+    deactivate PS
+  end
+  CS --> Sch : จำนวนที่ปิด
+  deactivate CS
+end
+
+note over CS
+  BiddingClosingService.close ถูกใช้ซ้ำโดย
+  AdminBiddingServiceImpl.closeBidding (Admin ปิดก่อนเวลา)
+end note
+@enduml

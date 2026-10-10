@@ -1,0 +1,57 @@
+@startuml
+title Sequence 4.3 - ชำระเงิน และจัดส่ง (ส่งสลิป > ยืนยัน > จัดส่ง)
+skinparam shadowing false
+autonumber
+
+actor "User (Buyer / Winner)" as Buyer
+actor "Seller" as Seller
+participant "PaymentController" as PC
+participant "PaymentService\n(PaymentServiceImpl)" as PS
+participant "PaymentStateResolver" as SR
+participant "PaymentRepository" as PR
+participant "SellerprofileRepository" as SPR
+participant "PaymentMapper" as PM
+database "PostgreSQL" as DB
+
+== ขั้นที่ 1: Buyer ส่งสลิป (AWAITING_PAYMENT -> PAYMENT_SUBMITTED) ==
+Buyer -> PC : POST /api/v1/payments/{id}/slip {slipUrl}
+PC -> PS : submitSlip(id, buyerId, slipUrl)
+PS -> PR : findByIdForUpdate(id)
+PR -> DB : SELECT ... FOR UPDATE
+DB --> PS : Payment
+PS -> PS : isBuyer? (else 403)
+PS -> SR : resolve(AWAITING_PAYMENT).canMoveTo(PAYMENT_SUBMITTED)
+SR --> PS : true (else 409)
+PS -> PS : ตรวจ dueDate (else 409) และที่อยู่ของ Buyer (else 400)
+PS -> PR : save(slipUrl, paidAt, snapshot shippingAddress,\nstatus = PAYMENT_SUBMITTED)
+PR -> DB : UPDATE payments
+PC -> PM : toResponse(payment)
+PC --> Buyer : 200 OK (PaymentResponse)
+
+== ขั้นที่ 2: Seller ตรวจสลิป (PAYMENT_SUBMITTED -> PAID) ==
+Seller -> PC : POST /api/v1/payments/{id}/confirm
+PC -> PS : confirmPayment(id, sellerUserId)
+PS -> PR : findByIdForUpdate(id)
+PS -> PS : isSeller? (else 403)
+PS -> SR : resolve(PAYMENT_SUBMITTED).canMoveTo(PAID)
+SR --> PS : true
+PS -> PR : save(confirmedAt, status = PAID)
+PC --> Seller : 200 OK
+note right of Seller
+  ถ้าสลิปไม่ถูกต้อง: POST .../reject {reason}
+  ล้างสลิป, ต่อ dueDate อย่างน้อย 1 วัน
+  กลับเป็น AWAITING_PAYMENT
+end note
+
+== ขั้นที่ 3: Seller จัดส่ง (PAID -> COMPLETED) ==
+Seller -> PC : POST /api/v1/payments/{id}/ship\n{carrier, trackingNumber, trackingUrl, note}
+PC -> PS : ship(id, sellerUserId, ...)
+PS -> PR : findByIdForUpdate(id)
+PS -> SR : resolve(PAID).canMoveTo(COMPLETED)
+SR --> PS : true
+PS -> PR : save(shipping info, shippedAt, completedAt,\nstatus = COMPLETED)
+PR -> DB : UPDATE payments
+PS -> SPR : addToSalecount(sellerProfileId, +1)
+SPR -> DB : UPDATE seller_profiles SET salecount = salecount + 1
+PC --> Seller : 200 OK (PaymentResponse)
+@enduml

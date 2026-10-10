@@ -1,0 +1,11 @@
+FROM eclipse-temurin:26-jdk AS build
+WORKDIR /app
+COPY . .
+RUN chmod +x mvnw && ./mvnw -B -DskipTests package
+
+FROM eclipse-temurin:26-jre
+WORKDIR /app
+ENV TZ=Asia/Bangkok
+COPY --from=build /app/target/project-0.0.1-SNAPSHOT.jar app.jar
+EXPOSE 8080
+ENTRYPOINT ["java", "-Duser.timezone=Asia/Bangkok", "-jar", "app.jar"]
