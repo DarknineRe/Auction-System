@@ -97,9 +97,6 @@ public class CommentServiceImpl implements CommentService {
     // One reaction per user: the same type again removes it, the other type switches it.
     private Comment react(Long biddingID, Long commentID, Long userID, CommentReaction.Type type) {
         Comment comment = findCommentInBidding(biddingID, commentID);
-        if (comment.getUser() != null && comment.getUser().getId().equals(userID)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You cannot react to your own comment");
-        }
 
         Optional<CommentReaction> existing = commentReactionRepository.findByComment_IdAndUser_Id(commentID, userID);
         if (existing.isEmpty()) {

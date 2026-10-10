@@ -170,18 +170,17 @@
           <p class="comment__text" th:text="${comment.message}"></p>
           <div class="comment__actions">
             <!-- Other users: clickable reaction buttons (count inside the button) -->
-            <form th:if="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}"
+            <form th:if="${currentUser != null and comment.user != null}"
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/like(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
               <button class="comment__btn" type="submit" aria-label="Like" title="Like"
                       th:text="'👍 ' + ${comment.thumbsup}">👍 0</button>
             </form>
-            <form th:if="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}"
+            <form th:if="${currentUser != null and comment.user != null}"
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/dislike(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
               <button class="comment__btn" type="submit" aria-label="Dislike" title="Dislike"
                       th:text="'👎 ' + ${comment.thumbsdown}">👎 0</button>
             </form>
-            <!-- Own comment or logged out: counts only, clearly not clickable -->
-            <th:block th:unless="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}">
+            <th:block th:if="${currentUser == null or comment.user == null}">
               <span class="comment__count" th:text="'👍 ' + ${comment.thumbsup}">👍 0</span>
               <span class="comment__count" th:text="'👎 ' + ${comment.thumbsdown}">👎 0</span>
             </th:block>
