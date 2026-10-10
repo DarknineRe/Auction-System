@@ -1,7 +1,9 @@
 package com.example.project.service.implementation;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -94,6 +96,21 @@ public class PaymentServiceImpl implements PaymentService {
         return status == null
                 ? paymentRepository.findByBuyer_Id(buyerID, pageable)
                 : paymentRepository.findByBuyer_IdAndStatus(buyerID, status, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Payment> getPurchasesForBiddings(Long buyerID, Collection<Long> biddingIDs) {
+        return biddingIDs.isEmpty()
+                ? List.of()
+                : paymentRepository.findByBuyer_IdAndBidding_IdIn(buyerID, biddingIDs);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Payment> findPaymentForParticipant(Long biddingID, Long userID) {
+        return paymentRepository.findByBidding_Id(biddingID)
+                .filter(payment -> isBuyer(payment, userID) || isSeller(payment, userID));
     }
 
     @Override

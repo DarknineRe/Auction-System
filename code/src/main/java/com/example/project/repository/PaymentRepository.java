@@ -1,5 +1,6 @@
 package com.example.project.repository;
 
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -25,6 +26,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     Page<Payment> findByBuyer_Id(Long buyerID, Pageable pageable);
 
     Page<Payment> findByBuyer_IdAndStatus(Long buyerID, Payment.Status status, Pageable pageable);
+
+    List<Payment> findByBuyer_IdAndBidding_IdIn(Long buyerID, Collection<Long> biddingIDs);
 
     Page<Payment> findBySellerprofile_User_Id(Long sellerUserID, Pageable pageable);
 
