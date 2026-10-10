@@ -30,7 +30,7 @@ import jakarta.validation.constraints.Size;
 /** Back-office pages. Every handler requires ADMIN or SUPER_ADMIN unless a method narrows it further. */
 @Controller
 @Validated
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("@webSupport.hasAnyCurrentRole(authentication, 'ADMIN', 'SUPER_ADMIN')")
 public class AdminPageController {
 
     private final AdminUserService adminUserService;
@@ -77,14 +77,14 @@ public class AdminPageController {
     }
 
     @PostMapping("/admin/users/{userId}/promote")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("@webSupport.hasCurrentRole(authentication, 'SUPER_ADMIN')")
     public String promoteUserToAdmin(@PathVariable Long userId, Authentication authentication) {
         adminUserService.promoteToAdmin(authentication.getName(), userId);
         return "redirect:/admin/users?success";
     }
 
     @PostMapping("/admin/users/{userId}/demote")
-    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    @PreAuthorize("@webSupport.hasCurrentRole(authentication, 'SUPER_ADMIN')")
     public String demoteAdminToUser(@PathVariable Long userId, Authentication authentication) {
         adminUserService.demoteAdminToUser(authentication.getName(), userId);
         return "redirect:/admin/users?success";

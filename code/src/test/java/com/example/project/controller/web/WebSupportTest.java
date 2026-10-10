@@ -18,6 +18,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.dto.request.CancelPaymentRequest;
+import com.example.project.model.User;
 import com.example.project.service.UserService;
 
 import jakarta.validation.ConstraintViolation;
@@ -44,6 +45,20 @@ class WebSupportTest {
 
         assertTrue(web.hasAnyRole(admin, "ROLE_ADMIN", "ROLE_SUPER_ADMIN"));
         assertFalse(web.hasAnyRole(admin, "ROLE_SUPER_ADMIN"));
+    }
+
+    @Test
+    void currentRoleChecksUseThePersistedUserRole() {
+        UserService userService = mock(UserService.class);
+        WebSupport support = new WebSupport(userService, validator);
+        var admin = UsernamePasswordAuthenticationToken.authenticated(
+                "a@example.test", null, List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        var persistedUser = new User();
+        persistedUser.setRole(User.Role.USER);
+        when(userService.getCurrentUser("a@example.test")).thenReturn(persistedUser);
+
+        assertFalse(support.hasAnyCurrentRole(admin, "ADMIN", "SUPER_ADMIN"));
+        assertFalse(support.hasCurrentRole(admin, "SUPER_ADMIN"));
     }
 
     @Test

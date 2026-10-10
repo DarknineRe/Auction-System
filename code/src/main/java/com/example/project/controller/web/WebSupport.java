@@ -57,6 +57,23 @@ public class WebSupport {
                 .anyMatch(authority -> wanted.contains(authority.getAuthority()));
     }
 
+    public boolean hasCurrentRole(Authentication authentication, String role) {
+        if (!isAuthenticated(authentication)) {
+            return false;
+        }
+        User user = currentUser(authentication);
+        return user.getRole() != null && user.getRole().name().equals(role);
+    }
+
+    public boolean hasAnyCurrentRole(Authentication authentication, String... roles) {
+        if (!isAuthenticated(authentication)) {
+            return false;
+        }
+        Set<String> wanted = Set.of(roles);
+        User user = currentUser(authentication);
+        return user.getRole() != null && wanted.contains(user.getRole().name());
+    }
+
     public Date toDate(LocalDateTime value) {
         return Date.from(value.atZone(ZoneId.systemDefault()).toInstant());
     }
