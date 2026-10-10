@@ -176,7 +176,7 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
                 .andExpect(content().string(containsString("Demote to User")));
 
         mockMvc.perform(post("/admin/users/{userId}/demote", regularAdmin.id())
-                        .with(httpBasic(regularAdmin.email(), regularAdmin.password()))
+                        .session(adminSession)
                         .with(csrf()))
                 .andExpect(status().isForbidden());
 
