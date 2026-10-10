@@ -71,12 +71,12 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
                         .with(httpBasic(admin.email(), admin.password())))
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Comment to remove")))
-                .andExpect(content().string(containsString(">Remove</button>")));
+                .andExpect(content().string(containsString("Delete comment as admin")));
 
         mockMvc.perform(get("/biddings/{id}", biddingId)
                         .with(httpBasic(seller.email(), seller.password())))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.not(containsString(">Remove</button>"))));
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString("Delete comment as admin"))));
 
         mockMvc.perform(post("/biddings/{biddingId}/comments/{commentId}/delete",
                         biddingId, commentId)
@@ -175,7 +175,7 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
                 .andExpect(content().string(containsString("Demote to User")));
 
         mockMvc.perform(post("/admin/users/{userId}/demote", regularAdmin.id())
-                        .with(httpBasic(regularAdmin.email(), regularAdmin.password()))
+                        .session(adminSession)
                         .with(csrf()))
                 .andExpect(status().isForbidden());
 
