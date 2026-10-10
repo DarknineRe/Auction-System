@@ -129,6 +129,8 @@
 
 /* Comments */
 .comments__form .field { margin-bottom: 12px; }
+.comments__form .field textarea,
+.comments__form textarea { resize: none; }
 .comments__form .btn { width: auto; padding: 10px 24px; }
 .comments__msg { margin: 12px 0 0; }
 .comments__empty { margin: 16px 0 0; color: var(--muted); }
@@ -150,6 +152,14 @@
   border: 1px solid var(--border);
   border-radius: 999px;
   cursor: pointer;
+}
+.comment__count {
+  padding: 4px 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: default;
 }
 .comment__btn:hover { color: var(--navy); border-color: var(--navy); }
 .comment__btn--danger:hover { color: var(--danger); border-color: var(--danger); }
