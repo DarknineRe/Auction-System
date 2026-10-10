@@ -1,8 +1,11 @@
 # Auction-System
 
-ระบบสำหรับประมูลสินค้า พัฒนาด้วย Spring Boot, PostgreSQL ตาม Layered Architecture
+ระบบประมูลสินค้าออนไลน์สำหรับลงประกาศและเข้าร่วมประมูลผลงาน
+ผู้ใช้สามารถสมัครสมาชิก สร้างการประมูล เสนอราคา และจัดการการชำระเงินได้
+ระบบพัฒนาด้วย Spring Boot และ PostgreSQL โดยแบ่งโครงสร้างตาม Layered Architecture
+มีหน้าเว็บด้วย Thymeleaf พร้อม REST API ที่เปิดดูเอกสารผ่าน Swagger UI ได้
 
-## สมาชิกและ Branch
+## สมาชิกกลุ่ม
 
 | สมาชิก | รหัสนักศึกษา | Section | Branch | Feature Owner |
 |---|---:|---:|---|---|
@@ -12,44 +15,7 @@
 | ชนิณทร์ ใจช่วง | 673380264-0 | 01 | `chanin_6733802640_01` | **Lead, DevOps, Testing & Thymeleaf Integration**<br>- Project Structure & Layered Architecture Setup<br>- Code Reviewer & PR Merge Management<br>- Bidding Controller & REST API DTOs<br>- Thymeleaf Web Integration & Workspace Dashboard<br>- CI/CD (GitHub Actions), Dockerization & Render Deployment |
 | จิณณวัตร โพธิ์ศรีทอง | 673380263-2 | 01 | `jinnawat_6733801632_01` | **Frontend & UI/UX Development**<br>- Design System, Color Theme & Responsive Layout<br>- Shared Components (Navbar, Buttons, Forms, Cards, Badges)<br>- Authentication UI (Login & Register Pages)<br>- Bidding Detail Page (Countdown, Bid Form, History, Comments)<br>- User Profile & Change Password UI |
 
-### รายละเอียดภาระงานและ Feature Ownership (อ้างอิงจาก Git Commit Log)
-
-1. **ปุณยวีร์ แทนคำ (`poonywee_6733802828-01` / Git: `punya-wee`)**
-   - **Entity Models & Security:** สร้าง Model พื้นฐาน (User, SellerProfile, Artwork, Bidding, BidAction, Comment), ตั้งค่า Spring Security ให้เชื่อมโยงกับฐานข้อมูล User, จัดการ User Service/Controller, สร้าง `AdminInitializer` เพื่อ seed Super Admin อัตโนมัติจาก Environment Variables
-   - **Profile & Comment Subsystem:** พัฒนา SellerProfile Service/Controller/DTO/Mapper, พัฒนา Comment Service/Controller/DTO/Mapper และระบบ Reaction (Like/Dislike)
-   - **Admin Management System:** พัฒนาโมดูลผู้ดูแลระบบ ได้แก่ AdminUserService (เปิด/ปิดการใช้งานผู้ใช้), AdminBiddingService (ยกเลิกและปิดประมูล), AdminModerationService (ลบ artwork และ comment ที่ไม่เหมาะสม), AdminBidActionService (ตรวจสอบและย้อนประมูล / Rollback bid)
-   - **Bidding Concurrency & Business Rules:** ออกแบบ State Pattern สำหรับสถานะการประมูล (ACTIVE, CLOSED, CANCELLED), ป้องกันปัญหา Concurrency ด้วย Database Row-level Locking (Pessimistic Lock), ระบบ Auto-close การประมูลที่หมดเวลาและบันทึกผู้ชนะ, ระบบแบ่งหน้าและเรียงลำดับการประมูล (Pagination & Sorting)
-   - **Payment Subsystem:** พัฒนาระบบชำระเงินเต็มรูปแบบ (Payment Entity, Repository, Service, Controller, AdminPaymentService/Controller), ใช้ State Pattern ในการจัดการสถานะการจ่ายเงิน (Awaiting, Submitted, Paid, Completed, Expired, Cancelled) และสร้าง `PaymentExpiryScheduler` สำหรับจัดการรายการที่หมดเวลาชำระเงิน
-
-2. **ปริญญ์นกร อยู่แท้กูล (`parinnakorn_6733802771_02` / Git: `parinnakorn`)**
-   - **Artwork Subsystem (CRUD):** พัฒนาโมดูลจัดการผลงานศิลปะครบวงจร ได้แก่ `ArtworkService`, `ArtworkServiceImpl`, `ArtworkController`, `ArtworkMapper` และ DTOs (`CreateArtworkRequest`, `UpdateArtworkRequest`, `ArtworkResponse`)
-   - **BidAction History & Tracking:** พัฒนาโมดูลประวัติการเคาะประมูล ได้แก่ `BidActionService`, `BidActionServiceImpl`, `BidActionController`, `BidActionRepository`
-   - **Global Error Handling:** วางโครงสร้างการจัดการ Error ของระบบ REST API ด้วย `GlobalExceptionHandler` และสร้างมาตรฐานการตอบกลับด้วย `ErrorResponse` (จัดการ HTTP status 400, 401, 403, 404 อย่างเป็นระบบ)
-   - **API Documentation & OpenAPI:** ติดตั้ง Dependency `springdoc-openapi`, พัฒนา `OpenApiConfig` เพื่อสร้างเอกสาร Swagger UI พร้อมการยืนยันตัวตน (Basic Auth) และเปิด path ใน SecurityConfig
-   - **Database & Entity Constraints:** ปรับปรุงความสัมพันธ์และ Constraints ของ Entity ให้ถูกต้องตามหลัก Relational Model (Unique/Nullable ของ SellerProfile, User Role เป็น EnumType.STRING, ManyToOne สำหรับ Comment, และแก้ไข Cascade)
-   - **SOLID Principles Documentation:** วิเคราะห์และจัดทำเอกสารหลักการออกแบบระบบตาม SOLID Principles พร้อมอ้างอิงไฟล์และบรรทัดโค้ด (`doc/solid-analysis.md`)
-
-3. **พงศพัศ เลบ้านแท่น (`pongsapat_6733802836_01` / Git: `zeemongteng`)**
-   - **Core Bidding Architecture:** ริเริ่มและออกแบบอินเทอร์เฟซ `BiddingService`, พัฒนาโครงร่าง `BiddingServiceImpl` และฟังก์ชันหลัก เช่น `placeBid`
-   - **Financial Precision Refactoring:** ตรวจสอบและ Refactor ระบบตัวเลขการเงินจากการใช้ Double มาเป็น `BigDecimal` ทั้งระบบ (Entities, DTOs, Services) เพื่อความแม่นยำทางธุรกรรม ป้องกันปัญหา floating-point error
-   - **Super Admin & Security Authorization:** พัฒนาระบบสิทธิ์ `SUPER_ADMIN` เพื่อให้มีเพียงผู้ดูแลระดับสูงเท่านั้นที่สามารถระงับสิทธิ์แอดมินคนอื่นได้, ปรับปรุงการตรวจสอบสิทธิ์ผ่านอีเมลแทน ID จาก client, ป้องกันปัญหา access control และ input constraints (จำกัดความยาวฟิลด์ password, URL, ข้อความ เพื่อป้องกัน crash)
-   - **Database Migration & Localization:** ตั้งค่าระบบ Database Migration ด้วย Flyway (`db/migration/`) เพื่อรองรับการย้ายฐานข้อมูลอัตโนมัติ, กำหนดการตั้งค่าเวลาของระบบให้เป็น Bangkok Timezone (UTC+7 / ICT)
-   - **System Architecture & Documentation:** ออกแบบและเขียนไดอะแกรมระบบทั้งหมด (PlantUML `.puml`, SVG, PNG: ER Diagram, Class Diagram, Sequence Diagram, Activity Diagram, Component & Deployment, State Diagram), จัดทำเอกสาร REST API Specification (`doc/api-spec.md`), เอกสาร Design Patterns (`doc/design-patterns.md`), Presentation Slides และดูแล `README.md`
-
-4. **ชนิณทร์ ใจช่วง (`chanin_6733802640_01` / Git: `DarknineRe`)**
-   - **Project Architecture & Code Review:** วางรากฐานและโครงสร้างโปรเจกต์ Spring Boot ตาม Layered Architecture, ปรับปรุงโครงสร้างโฟลเดอร์ของ Repository, รับผิดชอบเป็น Code Reviewer ตรวจสอบและ Merge Pull Requests ของทีมทั้งหมดเข้าสู่ `develop` และ `main`
-   - **Bidding Controller & DTOs:** พัฒนา `BiddingController` สำหรับ REST API และสร้าง DTOs ที่เกี่ยวข้อง (`CreateBiddingRequest`, `PlaceBidRequest`, `BidActionResponse`, `BiddingResponse`, `BiddingMapper`)
-   - **Thymeleaf Web Integration & Workspace Dashboard:** พัฒนา `PageController`, `WebPageExceptionHandler`, `AuctionListingService`, และหน้า `workspace.html` เพื่อเป็นแดชบอร์ดจัดการระบบสำหรับผู้ซื้อ ผู้ขาย และแอดมิน พร้อมเชื่อมโยง Pagination ร่วมกับ Backend
-   - **DevOps, Testing & Cloud Deployment:** ตั้งค่า GitHub Actions CI Workflow (`.github/workflows/ci.yml`), เขียนสคริปต์รันเทสต์ `aw`, สร้าง Dockerfile และ `docker-compose.yml`, ติดตั้งและ Deploy ระบบขึ้น Cloud บน Render Web Service ร่วมกับ Neon PostgreSQL
-
-5. **จิณณวัตร โพธิ์ศรีทอง (`jinnawat_6733801632_01` / Git: `WaffleXL`)**
-   - **Frontend Design System & Styling:** ออกแบบและวางมาตรฐาน CSS Design System ทั้งระบบ (ชุดสี `variables.css`, Base styles, Responsive typography)
-   - **Shared UI Components:** พัฒนาคอมโพเนนต์ส่วนกลางสำหรับใช้งานซ้ำ ได้แก่ Navbar (`navbar.html`, `navbar.css`), Buttons, Form inputs & Textarea, Cards, Badges, Pagination UI, และ State indicators
-   - **Authentication Pages:** พัฒนาหน้าเว็บลงชื่อเข้าใช้ (Login) และสมัครสมาชิก (Register) พร้อมระบบตรวจสอบฟอร์มและเชื่อมต่อกับ Spring Security Routes
-   - **Auction / Bidding Detail Page:** พัฒนาหน้าแสดงรายละเอียดการประมูล (`bidding-detail.html`) พร้อมระบบนับเวลาถอยหลังแบบเรียลไทม์ (Live Countdown Timer), ฟอร์มเคาะประมูล, แถบประวัติการเคาะราคา (Bid History Timeline), และส่วนแสดงความคิดเห็น (Comment Section)
-   - **User Profile UI:** พัฒนาหน้าดูและแก้ไขข้อมูลส่วนตัว (`profile.html`), ประวัติของผู้ใช้ และฟอร์มเปลี่ยนรหัสผ่าน (Change Password)
-
-##  Tech Stack
+## Tech Stack
 
 - **Backend:** Spring Boot 4.1.1, Java 26, Spring MVC, Spring Security, Bean Validation
 - **Build Tool:** Maven (Maven Wrapper)
@@ -60,18 +26,18 @@
 - **Deployment:** Render Web Service (Hybrid)
 - **Containerization:** Docker
 
-##  System Architecture
+## System Architecture
 
 - **Presentation Layer:** Controller / RestController / Views
 - **Service Layer:** Business Logic & Transactions
 - **Repository Layer:** Data Access Layer (Spring Data JPA)
 - **Domain / Entity:** Entities, Value Objects, Enums & DTOs
 
-##  Database Design (ER Diagram)
+## Database Design (ER Diagram)
 
+ดู ER Diagram ได้ที่ [doc/diagrams/06-er-diagram.md](doc/diagrams/06-er-diagram.md)
 
-##  Installation & Setup (LOCAL)
-
+## Installation & Setup
 1. **Clone repository:**
    ```bash
    git clone https://github.com/DarknineRe/Auction-System.git
@@ -109,7 +75,7 @@
    $env:ADMIN_PASSWORD="adminpassword123"
    ```
 
-##  How to Run
+## How to Run
 
 ###  Docker
 
@@ -160,7 +126,7 @@
 | verity@gmail.com | 67ihatemylife | SUPER ADMIN |
 
 
-##  API Documentation
+## API Documentation
 
 > 📖 **[ดูรายละเอียด REST API Specification ฉบับเต็มได้ที่นี่ (doc/api-spec.md)](doc/api-spec.md)**
 
@@ -170,11 +136,78 @@
 | Swagger UI (production) | https://auction-system-68vk.onrender.com/swagger-ui/index.html |
 | REST API | อยู่ใน Swagger UI ทุก endpoint ขึ้นต้นด้วย /api/v1 |
 
-##  How to Run Tests
+## วิธีรันทดสอบ
 
-`@Darknine` all yours buddy
+โปรเจกต์ใช้ Maven Wrapper, JUnit 5, Mockito, Spring Boot Test และ MockMvc ปัจจุบันมี automated test 20 รายการ ครอบคลุมการเริ่มระบบ, การสมัครและยืนยันตัวตนบางกรณี, การกำหนดสิทธิ์และ CSRF, การเลื่อนผู้ใช้เป็น admin, การจัดการ auction และ payment, API ของ artwork และ seller profile, bidding และ comment, กฎการประมูล, การ login อัตโนมัติหลังสมัครผ่านหน้าเว็บ และหน้า Thymeleaf บางส่วน
 
-##  Deployment URL
+ผลทดสอบนี้ยังไม่ครอบคลุมทุก endpoint ของระบบ แอปใช้ PostgreSQL และ Flyway จึงต้องใช้ฐานข้อมูลทดสอบแยกต่างหาก **ห้ามใช้ฐานข้อมูล Neon ที่ใช้งานจริงในการทดสอบ**
+
+### สิ่งที่ต้องเตรียมและฐานข้อมูลทดสอบ
+
+- Java 26
+- PostgreSQL ที่ `localhost:5432`
+- ฐานข้อมูลทดสอบชื่อ `auction_test`
+
+หากยังไม่มี role และฐานข้อมูลทดสอบ ให้สร้างใน PostgreSQL ด้วย `psql` หรือ pgAdmin:
+
+```sql
+CREATE ROLE auction WITH LOGIN PASSWORD 'auction';
+CREATE DATABASE auction_test OWNER auction;
+```
+
+ฐานข้อมูลนี้ต้องว่างหรือเป็นฐานข้อมูลที่ลบและสร้างใหม่ได้ เพราะ Flyway จะรัน database migration ของโปรเจกต์เมื่อเริ่ม Spring application context
+
+### รันทดสอบทั้งหมดบน Windows (PowerShell)
+
+เปิด PowerShell ที่โฟลเดอร์หลักของ repository แล้วรัน:
+
+```powershell
+Set-Location .\code
+$env:DB_URL="jdbc:postgresql://localhost:5432/auction_test"
+$env:DB_USERNAME="auction"
+$env:DB_PASSWORD="auction"
+$env:REMEMBER_ME_KEY="ci-only-remember-me-key"
+.\mvnw.cmd --batch-mode verify
+```
+
+คำสั่ง `verify` จะ build แอปและรัน automated test ทั้งหมด หากต้องการรันเฉพาะ test ให้ใช้ `.\mvnw.cmd test`
+
+ระบบเปิด CSRF protection สำหรับ API ที่เปลี่ยนแปลงข้อมูลด้วย หากเรียก API ผ่าน client ให้เรียก `GET /register` ก่อนและเก็บ session cookie จากนั้นอ่านค่า `_csrf` ที่ซ่อนอยู่ใน form แล้วส่งค่านั้นใน header `X-CSRF-TOKEN` พร้อม cookie เดิมเมื่อเรียก POST, PUT, PATCH หรือ DELETE ส่วน browser form จะส่ง token ให้อัตโนมัติ
+
+รายการ automated test ปัจจุบัน:
+
+| Test class | ทดสอบเรื่อง |
+|---|---|
+| `ProjectApplicationTests` | เริ่ม Spring application context ด้วยฐานข้อมูลทดสอบได้ |
+| `BiddingServiceImplTest` | กฎการเพิ่มราคา, bid แรก, เจ้าของ auction และ auction ที่ไม่รับ bid โดยใช้ Mockito |
+| `UserApiIntegrationTest` | สมัครบัญชี, validation, email ซ้ำ, authentication, แก้ profile/รหัสผ่าน, ปฏิเสธผู้ใช้ทั่วไปเมื่อเข้า admin และปฏิเสธ request ที่ไม่มี CSRF token |
+| `ArtworkApiIntegrationTest` | ตั้งค่า seller profile, สร้าง/อ่าน/แก้ไข/ลบ artwork, validation และตรวจสิทธิ์เจ้าของ |
+| `SellerprofileApiIntegrationTest` | อ่าน/แก้ seller profile, เรียกโดยไม่ login และตรวจว่า public profile ไม่เปิดเผยเลขบัญชี |
+| `BiddingApiIntegrationTest` | สร้าง/อ่าน auction, กฎ bid, bid สูงสุด, ตรวจสิทธิ์ และสร้าง/โต้ตอบ/แก้ไข/ลบ comment |
+| `AdminApiIntegrationTest` | ดูรายชื่อผู้ใช้, เลื่อน `USER` เป็น `ADMIN` โดย `SUPER_ADMIN`, ปฏิเสธการเลื่อนโดย `ADMIN`, ปิดบัญชี, ยกเลิก/ปิด auction และตรวจสิทธิ์ payment |
+| `PageControllerIntegrationTest` | แสดงหน้า home/login/register ด้วย Thymeleaf และ login อัตโนมัติหลังสมัครผ่านหน้าเว็บ |
+
+Maven บันทึกผลทดสอบโดยละเอียดไว้ที่ `code/target/surefire-reports/`
+
+ดูวิธีตรวจ PASS/FAIL และรายการ manual test ที่ยังเหลือได้ที่ [คู่มือทดสอบ](test/TESTING-GUIDE.md) และ [รายงานผลทดสอบ](test/test-report.md)
+
+### ดูผลทดสอบบน GitHub Actions
+
+Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอบโปรเจกต์อัตโนมัติเมื่อ push code ไปที่ `main` หรือ `develop` หรือเปิด pull request โดยมี base เป็น `main` หรือ `develop` workflow จะสร้าง PostgreSQL ชั่วคราวสำหรับทดสอบ ไม่ได้ใช้ Neon
+
+ก่อนรัน workflow ให้ตั้ง GitHub repository secrets ที่ **Settings → Secrets and variables → Actions**:
+
+| Secret | ค่าที่ต้องใส่ |
+|---|---|
+| `DOCKERHUB_USERNAME` | Docker Hub username |
+| `DOCKERHUB_TOKEN` | Docker Hub access token (แนะนำให้ใช้ token แทนรหัสผ่านบัญชี) |
+| `RENDER_DEPLOY_HOOK` | Render deploy hook URL สำหรับ deploy หลัง test ผ่าน |
+
+`DOCKERHUB_USERNAME` และ `DOCKERHUB_TOKEN` ช่วยให้ GitHub Actions login ก่อน pull image `postgres:16` และลดโอกาสติด unauthenticated pull rate limit
+
+ดูผลได้โดยเปิด repository บน GitHub → แท็บ **Actions** → เลือก **Build, test, and deploy** → เปิด job `build-and-test` การ push ไป `develop` จะเริ่ม job deploy ไป Render ต่อเมื่อ test ผ่านเท่านั้น ส่วน `main` จะ build และทดสอบ แต่ไม่ deploy ไป Render อัตโนมัติ
+
+## Deployment URL
 
  Service | URL |
 |---|---|
@@ -182,4 +215,30 @@
 | Swagger UI | https://auction-system-68vk.onrender.com/swagger-ui/index.html |
 | PostgreSQL | Neon PostgreSQL |
 
-##  Project Structure
+## Project Structure
+
+```text
+Auction-System/
+├── code/ ← แอป Spring Boot (Maven)
+│ ├── pom.xml · Dockerfile · mvnw
+│ └── src/
+│ ├── main/java/com/example/project/
+│ │ ├── ProjectApplication.java จุดเริ่มต้น (@EnableScheduling)
+│ │ ├── config/ (5) SecurityConfig, OpenApiConfig, AdminInitializer, 401/403 handler
+│ │ ├── controller/api/(12) REST controller ภายใต้ /api/v1
+│ │ ├── controller/web/(2) PageController (Thymeleaf) + WebPageExceptionHandler
+│ │ ├── dto/request/ (18) record สําหรับ request
+│ │ ├── dto/response/ (10) record สําหรับ response
+│ │ ├── exception/ (2) ErrorResponse, GlobalExceptionHandler
+│ │ ├── mapper/ (7) Entity → Response
+│ │ ├── model/ (8) JPA Entity
+│ │ ├── repository/ (8) Spring Data JPA
+│ │ ├── scheduler/ (2) ปิดประมูลหมดเวลา / หมดอายุการชําระเงิน
+│ │ └── service/ interface (14) + implementation (14) + state (13)
+│ ├── main/resources/ templates/ static/ db/migration/ application.properties
+│ └── test/java/… 9 คลาส / 20 test
+├── doc/ api-spec.md, design-patterns.md, solid-analysis.md, diagrams, slides
+├── test/ TESTING-GUIDE.md, test-report.md
+├── .github/workflows/ci.yml
+└── docker-compose.yml
+```
