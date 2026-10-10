@@ -28,14 +28,20 @@
         <div class="register__row">
           <div class="field">
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" minlength="8" maxlength="72"
-                   autocomplete="new-password" required>
+            <div class="field__input-wrapper">
+              <input type="password" id="password" name="password" minlength="8" maxlength="72"
+                     autocomplete="new-password" required>
+              <button class="field__password-toggle" type="button" aria-controls="password" aria-pressed="false">Show</button>
+            </div>
             <p class="field__hint">8-72 characters</p>
           </div>
           <div class="field">
             <label for="confirmPassword">Confirm password</label>
-            <input type="password" id="confirmPassword" name="confirmPassword"
-                   autocomplete="new-password" required>
+            <div class="field__input-wrapper">
+              <input type="password" id="confirmPassword" name="confirmPassword"
+                     autocomplete="new-password" required>
+              <button class="field__password-toggle" type="button" aria-controls="confirmPassword" aria-pressed="false">Show</button>
+            </div>
           </div>
         </div>
         <div class="field">
@@ -53,5 +59,6 @@
       </form>
     </div>
   </main>
+  <script th:src="@{/js/password-toggle.js}" defer></script>
 </body>
 </html>

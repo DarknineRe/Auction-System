@@ -31,7 +31,6 @@ import com.example.project.service.state.BiddingStateResolver;
 @Service
 public class BiddingServiceImpl implements BiddingService {
 
-    private static final BigDecimal MIN_BID_INCREMENT = new BigDecimal("1.00");
     private static final Set<String> SORTABLE_FIELDS = Set.of("id", "startingPrice", "lastBid", "startDate", "endDate", "status", "owner.id", "owner.name", "owner.email");
 
     private final BiddingRepository biddingRepository;
@@ -53,7 +52,9 @@ public class BiddingServiceImpl implements BiddingService {
     }
 
     @Override
-    public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate) {
+    public Bidding createBidding(List<Long> artworkIDs, Long ownerID, BigDecimal startingPrice,
+            BigDecimal minimumBidIncrement, Date startDate, Date endDate) {
+        validateBidPrices(startingPrice, minimumBidIncrement);
         if (artworkIDs == null || artworkIDs.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "A bidding needs at least one artwork.");
         }
@@ -102,6 +103,7 @@ public class BiddingServiceImpl implements BiddingService {
         bidding.setArtworks(artworks);
         bidding.setOwner(owner);
         bidding.setStartingPrice(startingPrice);
+        bidding.setMinimumBidIncrement(minimumBidIncrement);
         bidding.setStartDate(startDate);
         bidding.setEndDate(endDate);
 
@@ -143,11 +145,14 @@ public class BiddingServiceImpl implements BiddingService {
 
     @Override
     @Transactional
-    public Bidding updateBidding(Long biddingID, Long ownerID, BigDecimal startingPrice, Date startDate, Date endDate) {
+    public Bidding updateBidding(Long biddingID, Long ownerID, BigDecimal startingPrice,
+            BigDecimal minimumBidIncrement, Date startDate, Date endDate) {
+        validateBidPrices(startingPrice, minimumBidIncrement);
         validateDates(startDate, endDate);
         Bidding bidding = findOwnBiddingWithoutBids(biddingID, ownerID, "edited");
 
         bidding.setStartingPrice(startingPrice);
+        bidding.setMinimumBidIncrement(minimumBidIncrement);
         bidding.setStartDate(startDate);
         bidding.setEndDate(endDate);
         return biddingRepository.save(bidding);
@@ -195,6 +200,15 @@ public class BiddingServiceImpl implements BiddingService {
         }
     }
 
+    private void validateBidPrices(BigDecimal startingPrice, BigDecimal minimumBidIncrement) {
+        if (startingPrice == null || startingPrice.signum() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Starting price must be positive.");
+        }
+        if (minimumBidIncrement == null || minimumBidIncrement.signum() <= 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Minimum bid increment must be positive.");
+        }
+    }
+
     private void validateSort(Pageable pageable) {
         for (Sort.Order order : pageable.getSort()) {
             if (!SORTABLE_FIELDS.contains(order.getProperty())) {
@@ -238,9 +252,9 @@ public class BiddingServiceImpl implements BiddingService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "You are already the highest bidder.");
         }
 
-        // The first bid may match the starting price; later bids must raise the highest bid by MIN_BID_INCREMENT.
+        // The first bid may match the starting price; later bids must raise the highest bid by the seller's increment.
         BigDecimal minimumBid = highestBid
-            .map(bid -> bid.getAmount().add(MIN_BID_INCREMENT))
+            .map(bid -> bid.getAmount().add(bidding.getMinimumBidIncrement()))
                 .orElse(bidding.getStartingPrice());
         if (amount.compareTo(minimumBid) < 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Bid must be at least " + minimumBid);

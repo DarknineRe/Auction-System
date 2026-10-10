@@ -14,6 +14,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.annotation.Validated;
@@ -22,6 +26,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.security.web.context.SecurityContextRepository;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 import com.example.project.dto.request.CancelPaymentRequest;
 import com.example.project.dto.request.SellerprofileRequest;
@@ -78,6 +86,8 @@ public class PageController {
     private final AuctionListingService auctionListingService;
     private final CommentService commentService;
     private final Validator validator;
+    private final AuthenticationManager authenticationManager;
+    private final SecurityContextRepository securityContextRepository;
 
     public PageController(
             UserService userService,
@@ -93,7 +103,9 @@ public class PageController {
             AdminBidActionService adminBidActionService,
             AuctionListingService auctionListingService,
             CommentService commentService,
-            Validator validator) {
+            Validator validator,
+            AuthenticationManager authenticationManager,
+            SecurityContextRepository securityContextRepository) {
         this.userService = userService;
         this.artworkService = artworkService;
         this.biddingService = biddingService;
@@ -108,6 +120,8 @@ public class PageController {
         this.auctionListingService = auctionListingService;
         this.commentService = commentService;
         this.validator = validator;
+        this.authenticationManager = authenticationManager;
+        this.securityContextRepository = securityContextRepository;
     }
 
     @GetMapping({ "/", "/home" })
@@ -136,12 +150,20 @@ public class PageController {
             @RequestParam @NotBlank @Size(min = 8, max = 72) String password,
             @RequestParam @NotBlank String confirmPassword,
             @RequestParam(required = false) @Size(max = 100) String phone,
-            @RequestParam(required = false) @Size(max = 1000) String address) {
+            @RequestParam(required = false) @Size(max = 1000) String address,
+            HttpServletRequest request,
+            HttpServletResponse response) {
         if (!password.equals(confirmPassword)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Passwords do not match");
         }
         userService.registerUser(name, email, password, phone, address);
-        return "redirect:/login?registered";
+        Authentication authentication = authenticationManager.authenticate(
+                UsernamePasswordAuthenticationToken.unauthenticated(email, password));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+        securityContextRepository.saveContext(context, request, response);
+        return "redirect:/";
     }
 
     @GetMapping("/profile")
@@ -301,11 +323,12 @@ public class PageController {
             @RequestParam @NotBlank @Size(max = 255) String title,
             @RequestParam(required = false) @Size(max = 2048) String imageUrl,
             @RequestParam @Positive BigDecimal startingPrice,
+            @RequestParam @Positive BigDecimal minimumBidIncrement,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         User owner = currentUser(authentication);
         Bidding bidding = auctionListingService.createListing(
-                owner.getId(), title.trim(), imageUrl, startingPrice,
+                owner.getId(), title.trim(), imageUrl, startingPrice, minimumBidIncrement,
                 toDate(startDate), toDate(endDate));
         return "redirect:/biddings/" + bidding.getId() + "?success";
     }
@@ -329,12 +352,13 @@ public class PageController {
             @PathVariable Long biddingId,
             Authentication authentication,
             @RequestParam @Positive BigDecimal startingPrice,
+            @RequestParam @Positive BigDecimal minimumBidIncrement,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
         User owner = currentUser(authentication);
-        validate(new UpdateBiddingRequest(startingPrice, toDate(startDate), toDate(endDate)));
+        validate(new UpdateBiddingRequest(startingPrice, minimumBidIncrement, toDate(startDate), toDate(endDate)));
         biddingService.updateBidding(
-                biddingId, owner.getId(), startingPrice, toDate(startDate), toDate(endDate));
+                biddingId, owner.getId(), startingPrice, minimumBidIncrement, toDate(startDate), toDate(endDate));
         return "redirect:/my-auctions?success";
     }
 
@@ -457,17 +481,23 @@ public class PageController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminDashboard(Model model, Authentication authentication) {
         model.addAttribute("canManagePayments", authentication.getAuthorities().stream()
-                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")));
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN")));
         return workspace(model, "admin-dashboard", "Administration");
     }
 
     @GetMapping("/admin/users")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String adminUsers(@RequestParam(defaultValue = "0") int page, Model model) {
+    public String adminUsers(
+            @RequestParam(defaultValue = "0") int page,
+            Authentication authentication,
+            Model model) {
         Page<User> users = adminUserService.getUsers(
                 null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
         model.addAttribute("users", users.getContent());
         model.addAttribute("tablePage", users);
+        model.addAttribute("isSuperAdmin", authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_SUPER_ADMIN")));
         return workspace(model, "admin-users", "Manage users");
     }
 
@@ -479,6 +509,13 @@ public class PageController {
             @RequestParam boolean enabled) {
         validate(new UpdateUserStatusRequest(enabled));
         adminUserService.setEnabled(authentication.getName(), userId, enabled);
+        return "redirect:/admin/users?success";
+    }
+
+    @PostMapping("/admin/users/{userId}/promote")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String promoteUserToAdmin(@PathVariable Long userId, Authentication authentication) {
+        adminUserService.promoteToAdmin(authentication.getName(), userId);
         return "redirect:/admin/users?success";
     }
 
@@ -507,7 +544,7 @@ public class PageController {
     }
 
     @GetMapping("/admin/payments")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminPayments(@RequestParam(defaultValue = "0") int page, Model model) {
         Page<Payment> payments = adminPaymentService.getPayments(
                 null, PageRequest.of(Math.max(0, page), PAGE_SIZE, NEWEST_FIRST));
@@ -517,7 +554,7 @@ public class PageController {
     }
 
     @PostMapping("/admin/payments/{paymentId}/cancel")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public String adminCancelPayment(
             @PathVariable Long paymentId,
             @RequestParam @NotBlank @Size(max = 500) String reason) {

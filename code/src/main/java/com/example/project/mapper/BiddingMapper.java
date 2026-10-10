@@ -25,6 +25,7 @@ public class BiddingMapper {
                 artworkIds,
                 ownerId,
                 bidding.getStartingPrice(),
+                bidding.getMinimumBidIncrement(),
                 bidding.getLastBid(),
                 bidding.getStartDate(),
                 bidding.getEndDate(),

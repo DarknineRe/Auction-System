@@ -11,6 +11,7 @@ public record BiddingResponse(
         List<Long> artworkIds,
         Long ownerId,
         BigDecimal startingPrice,
+        BigDecimal minimumBidIncrement,
         BigDecimal lastBid,
         Date startDate,
         Date endDate,
