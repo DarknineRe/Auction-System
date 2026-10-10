@@ -7,13 +7,13 @@
 
 ## สมาชิกกลุ่ม
 
-| ลำดับ | ชื่อ-นามสกุล | รหัสนักศึกษา | Section | Branch | หน้าที่รับผิดชอบ |
-|---:|---|---:|---:|---|---|
-| 1 | ปุณยวีร์ แทนคำ | 673380282-8 | 01 | `poonywee_6733802828-01` | backend#1 |
-| 2 | ปริญญ์นกร อยู่แท้กูล | 673380277-1 | 02 | `parinnakorn_6733802771_02` |  |
-| 3 | พงศพัศ เลบ้านแท่น | 673380283-6 | 01 | `poonywee_6733802828_01` | README และ presentation |
-| 4 | ชนิณทร์ ใจช่วง | 673380264-0 | 01 | `chanin_6733802640_01` | Reviewer, testing และ deployment |
-| 5 | จิณณวัตร โพธิ์ศรีทอง | 673380263-2 | 01 | `jinnawat_6733801632_01` | Frontend |
+| สมาชิก | รหัสนักศึกษา | Section | Branch | Feature Owner |
+|---|---:|---:|---|---|
+| ปุณยวีร์ แทนคำ | 673380282-8 | 01 | `poonywee_6733802828-01` | **Backend Core & Payment System**<br>- Security & User Authentication<br>- Comment System & Seller Profile<br>- Admin Management (User, Bidding, Moderation, Bid Action)<br>- Bidding Concurrency (Row Lock) & State Pattern<br>- Payment System (State Pattern, Scheduler, Admin) |
+| ปริญญ์นกร อยู่แท้กูล | 673380277-1 | 02 | `parinnakorn_6733802771_02` | **Artwork, Bid Tracking & API Doc**<br>- Artwork Management (Service, Controller, DTOs, Mapper)<br>- BidAction Service & Controller<br>- Global Exception Handler & ErrorResponse<br>- OpenAPI / Swagger UI Configuration<br>- Database Constraints & JPA Relations Fixes<br>- SOLID Principles Analysis |
+| พงศพัศ เลบ้านแท่น | 673380283-6 | 01 | `pongsapat_6733802836_01` | **Architecture, Financial Precision & System Design**<br>- Bidding Service Architecture & Core Logic<br>- Monetary Precision (Double to BigDecimal Migration)<br>- Super Admin Role & Security / Validation Logic<br>- Database Migration (Flyway) & Timezone Setup (ICT)<br>- System Architecture, Diagrams (.puml/SVG), Design Patterns & Slides |
+| ชนิณทร์ ใจช่วง | 673380264-0 | 01 | `chanin_6733802640_01` | **Lead, DevOps, Testing & Thymeleaf Integration**<br>- Project Structure & Layered Architecture Setup<br>- Code Reviewer & PR Merge Management<br>- Bidding Controller & REST API DTOs<br>- Thymeleaf Web Integration & Workspace Dashboard<br>- CI/CD (GitHub Actions), Dockerization & Render Deployment |
+| จิณณวัตร โพธิ์ศรีทอง | 673380263-2 | 01 | `jinnawat_6733801632_01` | **Frontend & UI/UX Development**<br>- Design System, Color Theme & Responsive Layout<br>- Shared Components (Navbar, Buttons, Forms, Cards, Badges)<br>- Authentication UI (Login & Register Pages)<br>- Bidding Detail Page (Countdown, Bid Form, History, Comments)<br>- User Profile & Change Password UI |
 
 ## Tech Stack
 
@@ -193,7 +193,7 @@ Maven บันทึกผลทดสอบโดยละเอียดไ�
 
 ### ดูผลทดสอบบน GitHub Actions
 
-Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอบโปรเจกต์อัตโนมัติเมื่อ push code ไปที่ `develop` หรือเปิด pull request โดยมี base เป็น `develop` workflow จะสร้าง PostgreSQL ชั่วคราวสำหรับทดสอบ ไม่ได้ใช้ Neon
+Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอบโปรเจกต์อัตโนมัติเมื่อ push code ไปที่ `main` หรือ `develop` หรือเปิด pull request โดยมี base เป็น `main` หรือ `develop` workflow จะสร้าง PostgreSQL ชั่วคราวสำหรับทดสอบ ไม่ได้ใช้ Neon
 
 ก่อนรัน workflow ให้ตั้ง GitHub repository secrets ที่ **Settings → Secrets and variables → Actions**:
 
@@ -205,7 +205,7 @@ Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอ
 
 `DOCKERHUB_USERNAME` และ `DOCKERHUB_TOKEN` ช่วยให้ GitHub Actions login ก่อน pull image `postgres:16` และลดโอกาสติด unauthenticated pull rate limit
 
-ดูผลได้โดยเปิด repository บน GitHub → แท็บ **Actions** → เลือก **Build, test, and deploy** → เปิด job `build-and-test` การ push ไป `develop` จะเริ่ม job deploy ไป Render ต่อเมื่อ test ผ่านเท่านั้น
+ดูผลได้โดยเปิด repository บน GitHub → แท็บ **Actions** → เลือก **Build, test, and deploy** → เปิด job `build-and-test` การ push ไป `develop` จะเริ่ม job deploy ไป Render ต่อเมื่อ test ผ่านเท่านั้น ส่วน `main` จะ build และทดสอบ แต่ไม่ deploy ไป Render อัตโนมัติ
 
 ## Deployment URL
 
@@ -219,10 +219,26 @@ Workflow ที่ `.github/workflows/ci.yml` จะ build และทดสอ
 
 ```text
 Auction-System/
-├── code/       # Spring Boot application, tests, and configuration
-├── doc/        # API specification, design documents, diagrams, and slides
-├── img/        # Project images and media
-├── test/       # Test report and test documentation
-├── docker-compose.yml
-└── README.md
+├── code/ ← แอป Spring Boot (Maven)
+│ ├── pom.xml · Dockerfile · mvnw
+│ └── src/
+│ ├── main/java/com/example/project/
+│ │ ├── ProjectApplication.java จุดเริ่มต้น (@EnableScheduling)
+│ │ ├── config/ (5) SecurityConfig, OpenApiConfig, AdminInitializer, 401/403 handler
+│ │ ├── controller/api/(12) REST controller ภายใต้ /api/v1
+│ │ ├── controller/web/(2) PageController (Thymeleaf) + WebPageExceptionHandler
+│ │ ├── dto/request/ (18) record สําหรับ request
+│ │ ├── dto/response/ (10) record สําหรับ response
+│ │ ├── exception/ (2) ErrorResponse, GlobalExceptionHandler
+│ │ ├── mapper/ (7) Entity → Response
+│ │ ├── model/ (8) JPA Entity
+│ │ ├── repository/ (8) Spring Data JPA
+│ │ ├── scheduler/ (2) ปิดประมูลหมดเวลา / หมดอายุการชําระเงิน
+│ │ └── service/ interface (14) + implementation (14) + state (13)
+│ ├── main/resources/ templates/ static/ db/migration/ application.properties
+│ └── test/java/… 9 คลาส / 20 test
+├── doc/ api-spec.md, design-patterns.md, solid-analysis.md, diagrams, slides
+├── test/ TESTING-GUIDE.md, test-report.md
+├── .github/workflows/ci.yml
+└── docker-compose.yml
 ```
