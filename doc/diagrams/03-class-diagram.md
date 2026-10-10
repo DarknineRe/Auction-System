@@ -1,7 +1,7 @@
 # 3. Class Diagram (พร้อมตำแหน่ง Design Pattern)
 
 path ทุกไฟล์อยู่ใต้ `code/src/main/java/com/example/project/`
-เพื่อให้อ่านได้ แยกเป็น 3 รูป: (A) ภาพรวมทุก Layer ของ flow ประมูล/ชำระเงิน, (B) State Pattern, (C) Entity และความสัมพันธ์
+เพื่อให้อ่านได้ แยกเป็น 4 รูป: (A) ภาพรวมทุก Layer ของ flow ประมูล/ชำระเงิน, (B) State Pattern, (C) Entity และความสัมพันธ์, (D) GoF Creational Patterns (Singleton / Factory Method / Builder)
 
 ## 3.0 สัญลักษณ์ Pattern ที่ใช้ในแผนภาพ
 
@@ -15,6 +15,9 @@ path ทุกไฟล์อยู่ใต้ `code/src/main/java/com/example/
 | `<<Mapper>>` | Mapper | `mapper/*` |
 | `<<State>>` / `<<ConcreteState>>` | **State** (GoF – Behavioral) | `service/state/*` |
 | `<<Registry>>` | ตัวเลือก State ตาม enum (Lookup ผ่าน `EnumMap`) | `*StateResolver` |
+| `<<Builder>>` | **Builder** (GoF – Creational, เขียนเอง) | `model/PaymentBuilder` (ใช้โดย `PaymentServiceImpl.createForClosedBidding`) |
+| `<<Factory Method>>` | **Factory Method** (GoF – Creational, static factory) | `exception/ErrorResponse.of(...)` (ใช้โดย `GlobalExceptionHandler`) |
+| `<<Singleton>>` | **Singleton** (GoF – Creational, ผ่าน Spring IoC) | ทุก `@Service` / `@Component` / `@RestController` เช่น `BiddingServiceImpl` |
 
 `*Service`, `*Repository`, `BiddingState`, `PaymentState` ในรูปเป็น **interface** (Mermaid ใส่ stereotype ได้ทีละอัน จึงแสดงเฉพาะชื่อ pattern); ส่วน `*ServiceImpl` และ `*StateResolver` เป็น class จริง
 
@@ -111,6 +114,17 @@ classDiagram
     class BiddingClosingServiceImpl
     class AdminBiddingServiceImpl
 
+    %% ---------- Builder pattern (Creational) ----------
+    class PaymentBuilder {
+        <<Builder>>
+        +bidding(Bidding) PaymentBuilder
+        +buyer(User) PaymentBuilder
+        +sellerprofile(Sellerprofile) PaymentBuilder
+        +amount(BigDecimal) PaymentBuilder
+        +dueInDays(int) PaymentBuilder
+        +build() Payment
+    }
+
     %% ---------- State pattern ----------
     class BiddingStateResolver {
         <<Registry>>
@@ -187,6 +201,8 @@ classDiagram
     PaymentServiceImpl ..> PaymentStateResolver
     PaymentServiceImpl ..> PaymentRepository
     PaymentServiceImpl ..> SellerprofileRepository
+    PaymentServiceImpl ..> PaymentBuilder : creates Payment via
+    PaymentBuilder ..> Payment : builds
     BiddingClosingServiceImpl ..> PaymentService
     BiddingClosingServiceImpl ..> BiddingRepository
     BiddingClosingServiceImpl ..> BidActionRepository
@@ -217,6 +233,7 @@ classDiagram
 | DTO + Mapper | `PlaceBidRequest`, `BiddingResponse`, `BiddingMapper` | ไม่ส่ง Entity ออก API |
 | Dependency Injection / DIP | `BiddingController ..> BiddingService` (interface) | Controller รู้จักแค่ interface; ใช้ constructor injection |
 | State (GoF Behavioral) | `BiddingState`, `PaymentState` + `*StateResolver` | ดูรูป B |
+| Builder (GoF Creational) | `PaymentBuilder` ← `PaymentServiceImpl.createForClosedBidding` | รวมการประกอบ `Payment` (bidding, buyer, seller, amount) และคำนวณ `createdAt`/`dueDate` ไว้ที่เดียว ตรวจความครบถ้วนใน `build()` — ดูรูป D |
 
 ## 3.B State Pattern (Bidding และ Payment)
 
@@ -440,3 +457,82 @@ classDiagram
 ```
 
 ในโค้ดจริง enum เหล่านี้เป็น nested enum (`User.Role`, `Bidding.Status`, `BidAction.Status`, `Payment.Status`, `CommentReaction.Type`) — รูปนี้แยกเป็นกล่องเพื่อให้อ่านง่าย
+
+## 3.D GoF Creational Patterns (Singleton, Factory Method, Builder)
+
+```mermaid
+classDiagram
+    direction LR
+
+    %% ---------- Singleton (Spring IoC) ----------
+    class SpringIoCContainer {
+        <<Container>>
+        singleton scope (default)
+    }
+    class BiddingServiceImpl {
+        <<Singleton>>
+        -BiddingRepository biddingRepository
+        -BiddingStateResolver stateResolver
+        +placeBid()
+    }
+    class PaymentServiceImpl {
+        <<Singleton>>
+        -PaymentRepository paymentRepository
+        -int dueDays
+        +createForClosedBidding(Bidding)
+    }
+    SpringIoCContainer ..> BiddingServiceImpl : one shared instance
+    SpringIoCContainer ..> PaymentServiceImpl : one shared instance
+
+    %% ---------- Factory Method (static factory) ----------
+    class ErrorResponse {
+        <<Factory Method>>
+        -Instant timestamp
+        -int status
+        -String error
+        -String message
+        -String path
+        -List~String~ details
+        +of(HttpStatus, String, String, List~String~) ErrorResponse$
+    }
+    class GlobalExceptionHandler {
+        <<RestControllerAdvice>>
+        -build(HttpStatus, String, HttpServletRequest, List~String~)
+    }
+    GlobalExceptionHandler ..> ErrorResponse : ErrorResponse.of(...)
+
+    %% ---------- Builder ----------
+    class PaymentBuilder {
+        <<Builder>>
+        -Bidding bidding
+        -User buyer
+        -Sellerprofile sellerprofile
+        -BigDecimal amount
+        -int dueDays
+        +bidding(Bidding) PaymentBuilder
+        +buyer(User) PaymentBuilder
+        +sellerprofile(Sellerprofile) PaymentBuilder
+        +amount(BigDecimal) PaymentBuilder
+        +dueInDays(int) PaymentBuilder
+        +build() Payment
+    }
+    class Payment {
+        <<Entity / Product>>
+        -Bidding bidding
+        -User buyer
+        -Sellerprofile sellerprofile
+        -BigDecimal amount
+        -Date createdAt
+        -Date dueDate
+    }
+    PaymentServiceImpl ..> PaymentBuilder : new PaymentBuilder()...build()
+    PaymentBuilder ..> Payment : creates (sets createdAt, dueDate)
+```
+
+| Pattern | Role ในรูป | ปัญหาที่แก้ |
+|---|---|---|
+| Singleton | `BiddingServiceImpl`, `PaymentServiceImpl` (และทุก `@Service`/`@Component`) | มี instance เดียวต่อ Spring context ไม่ต้องเขียน `getInstance()` เอง และ inject ผ่าน constructor ได้ |
+| Factory Method | `ErrorResponse.of(...)` | จัดรูปแบบ error body (timestamp, status, reason phrase) ที่จุดเดียว `GlobalExceptionHandler` ไม่ต้องเรียก constructor 6 พารามิเตอร์เอง |
+| Builder | `PaymentBuilder` → `Payment` | `Payment` ต้องมีหลายค่าและคำนวณ `createdAt`/`dueDate`; Builder ทำให้อ่านง่ายและโยน `IllegalStateException` ถ้าลืมตั้งค่าที่จำเป็น (`bidding`, `buyer`, `sellerprofile`, `amount`) |
+
+หมายเหตุ: `PaymentBuilder` เป็น Builder ที่เขียนเอง (ไม่ใช้ Lombok `@Builder`) และ `status` เริ่มต้นเป็น `AWAITING_PAYMENT` จากค่า default ของ `Payment`

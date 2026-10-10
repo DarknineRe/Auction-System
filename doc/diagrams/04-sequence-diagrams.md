@@ -5,7 +5,7 @@ path ทุกไฟล์อยู่ใต้ `code/src/main/java/com/example/
 | # | Scenario | โค้ดหลัก |
 |---|---|---|
 | 4.1 | ผู้ใช้ลงราคาประมูล (Place Bid) | `BiddingController.placeBid`, `BiddingServiceImpl.placeBid` |
-| 4.2 | ระบบปิดประมูลอัตโนมัติและสร้างรายการชำระเงิน | `BiddingExpiryScheduler`, `BiddingClosingServiceImpl`, `PaymentServiceImpl.createForClosedBidding` |
+| 4.2 | ระบบปิดประมูลอัตโนมัติและสร้างรายการชำระเงิน | `BiddingExpiryScheduler`, `BiddingClosingServiceImpl`, `PaymentServiceImpl.createForClosedBidding`, `PaymentBuilder` |
 | 4.3 | ชำระเงินและจัดส่ง (ส่งสลิป → ยืนยัน → จัดส่ง) | `PaymentController`, `PaymentServiceImpl` |
 | 4.4 | Admin ยกเลิก (Void) bid | `AdminBidActionController`, `AdminBidActionServiceImpl.voidBid` |
 
@@ -116,7 +116,7 @@ sequenceDiagram
                 alt ไม่มี Seller Profile
                     PS->>PS: log.warn (ไม่สร้าง Payment)
                 else
-                    PS->>PS: new Payment(AWAITING_PAYMENT,<br/>buyer = winner, amount = lastBid,<br/>dueDate = now + dueDays)
+                    PS->>PS: new PaymentBuilder().bidding().buyer(winner)<br/>.sellerprofile().amount(lastBid).dueInDays(dueDays).build()<br/>(Builder: สร้าง Payment AWAITING_PAYMENT,<br/>createdAt = now, dueDate = now + dueDays)
                     PS->>PR: save(payment)
                     PR->>DB: INSERT payments
                 end

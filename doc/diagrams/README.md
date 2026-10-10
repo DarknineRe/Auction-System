@@ -7,7 +7,7 @@
 |---|---|
 | Use Case Diagram + Use Case Description | [01-use-case.md](01-use-case.md) |
 | Domain Model / Conceptual Class Diagram | [02-domain-model.md](02-domain-model.md) |
-| Class Diagram (แสดงตำแหน่ง Design Pattern) | [03-class-diagram.md](03-class-diagram.md) |
+| Class Diagram (แสดงตำแหน่ง Design Pattern: State, Builder, Factory Method, Singleton) | [03-class-diagram.md](03-class-diagram.md) |
 | Sequence Diagram (4 scenario) | [04-sequence-diagrams.md](04-sequence-diagrams.md) |
 | Activity Diagram (2 รูป) | [05-activity-diagram.md](05-activity-diagram.md) |
 | ER Diagram / Database Schema | [06-er-diagram.md](06-er-diagram.md) |

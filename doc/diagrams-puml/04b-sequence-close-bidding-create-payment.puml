@@ -40,7 +40,7 @@ loop ทุก 60 วินาที (app.bidding.expiry-check-ms)
       alt ไม่มี Seller Profile
         PS -> PS : log.warn (ไม่สร้าง Payment)
       else มี Seller Profile
-        PS -> PS : new Payment(AWAITING_PAYMENT,\nbuyer = winner, amount = lastBid,\ndueDate = now + dueDays)
+        PS -> PS : new PaymentBuilder().bidding().buyer(winner)\n.sellerprofile().amount(lastBid).dueInDays(dueDays).build()\n(Builder: สร้าง Payment AWAITING_PAYMENT,\ncreatedAt = now, dueDate = now + dueDays)
         PS -> PR : save(payment)
         PR -> DB : INSERT payments
       end
