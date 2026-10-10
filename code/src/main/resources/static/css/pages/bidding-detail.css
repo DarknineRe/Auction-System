@@ -17,17 +17,67 @@
 
 /* Gallery */
 .gallery__main {
+  position: relative;
   aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #e5e7eb;
   border: 1px solid var(--border);
   border-radius: 12px;
 }
-.gallery__main img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.gallery__main img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-.gallery__thumbs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.gallery__nav {
+  position: absolute;
+  top: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  color: var(--navy);
+  font-size: 2rem;
+  line-height: 1;
+  background: rgb(255 255 255 / 78%);
+  border: 1px solid rgb(148 163 184 / 50%);
+  border-radius: 50%;
+  box-shadow: 0 6px 18px rgb(15 23 42 / 10%);
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.gallery__nav:hover { background: rgb(255 255 255 / 92%); }
+.gallery__nav:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.5); outline-offset: 2px; }
+.gallery__nav--prev { left: 12px; }
+.gallery__nav--next { right: 12px; }
+
+.gallery__thumbs-wrap {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.gallery__thumbs {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.gallery__thumbs::-webkit-scrollbar { height: 6px; }
+.gallery__thumbs::-webkit-scrollbar-thumb {
+  background: rgb(148 163 184 / 60%);
+  border-radius: 999px;
+}
 
 .gallery__thumb {
+  display: block;
+  flex: 0 0 72px;
   width: 72px;
   height: 72px;
   padding: 0;
@@ -38,8 +88,17 @@
   cursor: pointer;
 }
 .gallery__thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
-.gallery__thumb[aria-current="true"] { border-color: var(--gold); }
+.gallery__thumb[aria-current="true"],
+.gallery__thumb.is-active { border-color: var(--gold); }
 .gallery__thumb:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.6); outline-offset: 2px; }
+
+.gallery__nav--thumb {
+  position: static;
+  width: 30px;
+  height: 30px;
+  font-size: 1.5rem;
+  transform: none;
+}
 
 /* Info panel */
 .info {

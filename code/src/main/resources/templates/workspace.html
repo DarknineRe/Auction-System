@@ -112,8 +112,16 @@
     </section>
 
     <form th:if="${page == 'new-auction'}" class="workspace__form workspace__panel" th:action="@{/auctions}" method="post">
-      <label>Artwork title<input name="title" maxlength="255" required></label>
-      <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
+      <div class="workspace__artwork-list" id="artwork-list">
+        <div class="workspace__artwork-row">
+          <label>Artwork title<input name="title" maxlength="255" required></label>
+          <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
+          <button class="btn btn--secondary btn--sm workspace__remove-artwork" type="button" data-remove-artwork>Remove</button>
+        </div>
+      </div>
+      <div class="workspace__actions">
+        <button class="btn btn--secondary btn--sm" type="button" id="add-artwork-row">Add another artwork</button>
+      </div>
       <div class="workspace__form-row">
         <label>Starting price / minimum first bid (THB)<input name="startingPrice" type="number" min="0.01" step="0.01" required></label>
         <label>Minimum bid increment (THB)<input name="minimumBidIncrement" type="number" min="0.01" step="0.01" value="1.00" required></label>
@@ -127,6 +135,34 @@
         <a class="btn btn--secondary" th:href="@{/my-auctions}">Cancel</a>
       </div>
     </form>
+
+    <script th:if="${page == 'new-auction'}">
+      const artworkList = document.getElementById('artwork-list');
+      const addArtworkRowButton = document.getElementById('add-artwork-row');
+
+      function addArtworkRow() {
+        const row = document.createElement('div');
+        row.className = 'workspace__artwork-row';
+        row.innerHTML = `
+          <label>Artwork title<input name="title" maxlength="255" required></label>
+          <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
+          <button class="btn btn--secondary btn--sm workspace__remove-artwork" type="button" data-remove-artwork>Remove</button>
+        `;
+        artworkList.appendChild(row);
+      }
+
+      addArtworkRowButton.addEventListener('click', addArtworkRow);
+      artworkList.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('[data-remove-artwork]');
+        if (!removeButton) {
+          return;
+        }
+        const row = removeButton.closest('.workspace__artwork-row');
+        if (row && artworkList.querySelectorAll('.workspace__artwork-row').length > 1) {
+          row.remove();
+        }
+      });
+    </script>
 
     <form th:if="${page == 'edit-auction'}" class="workspace__form workspace__panel"
           th:action="@{/auctions/{id}/edit(id=${bidding.id})}" method="post">

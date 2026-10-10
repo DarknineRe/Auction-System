@@ -42,18 +42,86 @@
 
     <div class="detail__layout">
       <section class="gallery" aria-label="Item photos">
-        <div class="gallery__main">
-          <img th:if="${!artworks.isEmpty() and artworks[0].imageUrl != null}"
-               th:src="${artworks[0].imageUrl}" th:alt="${artworks[0].title}">
-          <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="gallery__empty">No image available.</p>
+        <div class="gallery__main" th:if="${!artworks.isEmpty() and artworks[0].imageUrl != null}">
+          <button class="gallery__nav gallery__nav--prev" type="button" aria-label="Previous image" th:if="${artworks.size() > 1}">&lsaquo;</button>
+          <img id="gallery-main-image" th:src="${artworks[0].imageUrl}" th:alt="${artworks[0].title}">
+          <button class="gallery__nav gallery__nav--next" type="button" aria-label="Next image" th:if="${artworks.size() > 1}">&rsaquo;</button>
         </div>
-        <div class="gallery__thumbs" th:if="${artworks.size() > 1}">
-          <div class="gallery__thumb" th:each="artwork : ${artworks}">
-            <img th:if="${artwork.imageUrl != null}" th:src="${artwork.imageUrl}"
-                 th:alt="${artwork.title}" loading="lazy">
+        <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="gallery__empty">No image available.</p>
+
+        <div class="gallery__thumbs-wrap" th:if="${artworks.size() > 1}">
+          <button class="gallery__nav gallery__nav--thumb gallery__nav--thumb-prev" type="button" aria-label="Scroll thumbnails left">&lsaquo;</button>
+          <div class="gallery__thumbs" id="gallery-thumbs" role="listbox" aria-label="Select image">
+            <button type="button" class="gallery__thumb" th:each="artwork, iter : ${artworks}"
+                    th:attr="data-index=${iter.index}, aria-current=${iter.index == 0 ? 'true' : 'false'}"
+                    th:if="${artwork.imageUrl != null}">
+              <img th:src="${artwork.imageUrl}" th:alt="${artwork.title}" loading="lazy">
+            </button>
           </div>
+          <button class="gallery__nav gallery__nav--thumb gallery__nav--thumb-next" type="button" aria-label="Scroll thumbnails right">&rsaquo;</button>
         </div>
       </section>
+
+      <script th:if="${artworks.size() > 1}">
+        const galleryMainImage = document.getElementById('gallery-main-image');
+        const galleryThumbs = Array.from(document.querySelectorAll('.gallery__thumb'));
+        const galleryPrev = document.querySelector('.gallery__nav--prev');
+        const galleryNext = document.querySelector('.gallery__nav--next');
+        let galleryIndex = 0;
+
+        function syncGallery(index) {
+          galleryIndex = index;
+
+          const activeThumb = galleryThumbs[index];
+          if (!activeThumb) return;
+
+          galleryThumbs.forEach((thumb, position) => {
+            const isActive = position === index;
+            thumb.setAttribute('aria-current', isActive ? 'true' : 'false');
+            thumb.classList.toggle('is-active', isActive);
+          });
+
+          const activeImage = activeThumb.querySelector('img');
+          if (galleryMainImage && activeImage) {
+            galleryMainImage.src = activeImage.src;
+            galleryMainImage.alt = activeImage.alt;
+          }
+
+          activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }
+
+        galleryThumbs.forEach((thumb) => {
+          thumb.addEventListener('click', () => {
+            syncGallery(Number(thumb.dataset.index));
+          });
+        });
+
+        if (galleryPrev && galleryNext) {
+          galleryPrev.addEventListener('click', () => {
+            const nextIndex = (galleryIndex - 1 + galleryThumbs.length) % galleryThumbs.length;
+            syncGallery(nextIndex);
+          });
+
+          galleryNext.addEventListener('click', () => {
+            const nextIndex = (galleryIndex + 1) % galleryThumbs.length;
+            syncGallery(nextIndex);
+          });
+        }
+
+        const scrollThumbs = document.getElementById('gallery-thumbs');
+        const thumbPrev = document.querySelector('.gallery__nav--thumb-prev');
+        const thumbNext = document.querySelector('.gallery__nav--thumb-next');
+
+        if (scrollThumbs && thumbPrev && thumbNext) {
+          thumbPrev.addEventListener('click', () => {
+            scrollThumbs.scrollBy({ left: -180, behavior: 'smooth' });
+          });
+
+          thumbNext.addEventListener('click', () => {
+            scrollThumbs.scrollBy({ left: 180, behavior: 'smooth' });
+          });
+        }
+      </script>
 
       <section class="info" aria-label="Auction details">
         <span th:replace="~{fragments/status :: badge(${bidding.status})}"></span>
