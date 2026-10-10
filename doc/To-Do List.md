@@ -7,5 +7,5 @@ The items below describe work to add, fix, or update. Ownership is intentionally
 1. [] Rereading diagrams
 2. [] Finishing slides
 3. [] Testing web with multiple people at the same time
-4. [] ต้องมี Migration Script (Flyway หรือ Liquibase) หรืออย่างน้อย schema.sql + data.sql
+4. [x] ต้องมี Migration Script (Flyway หรือ Liquibase) หรืออย่างน้อย schema.sql + data.sql
 5. [] 
