@@ -71,8 +71,8 @@ public class SecurityConfig {
                 .addFilterBefore(new EnabledAccountFilter(userRepository, sessionRegistry), AuthorizationFilter.class)
                 .httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
                 .sessionManagement(session -> session
-                        .sessionRegistry(sessionRegistry)
                         .maximumSessions(1)
+                        .sessionRegistry(sessionRegistry)
                         .maxSessionsPreventsLogin(false))
                 .formLogin(form -> form
                         .loginPage("/login")

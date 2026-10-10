@@ -16,7 +16,7 @@ import org.springframework.web.servlet.ModelAndView;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 
-@ControllerAdvice(assignableTypes = PageController.class)
+@ControllerAdvice(basePackages = "com.example.project.controller.web")
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class WebPageExceptionHandler {
 
