@@ -140,6 +140,23 @@
           <label for="message">Write a comment</label>
           <textarea id="message" name="message" rows="3" maxlength="2000" required
                     placeholder="Ask the seller a question or share your thoughts..."></textarea>
+          <details class="comment-emoji-picker">
+            <summary>😊 Add emoji</summary>
+            <div class="comment-emoji-picker__grid" aria-label="Choose an emoji">
+              <button type="button" data-emoji="😀" aria-label="Add grinning face">😀</button>
+              <button type="button" data-emoji="😂" aria-label="Add face with tears of joy">😂</button>
+              <button type="button" data-emoji="😍" aria-label="Add heart eyes">😍</button>
+              <button type="button" data-emoji="🥰" aria-label="Add smiling face with hearts">🥰</button>
+              <button type="button" data-emoji="😊" aria-label="Add smiling face">😊</button>
+              <button type="button" data-emoji="👍" aria-label="Add thumbs up">👍</button>
+              <button type="button" data-emoji="👏" aria-label="Add clapping hands">👏</button>
+              <button type="button" data-emoji="❤️" aria-label="Add red heart">❤️</button>
+              <button type="button" data-emoji="🔥" aria-label="Add fire">🔥</button>
+              <button type="button" data-emoji="🎉" aria-label="Add party popper">🎉</button>
+              <button type="button" data-emoji="🤔" aria-label="Add thinking face">🤔</button>
+              <button type="button" data-emoji="🙏" aria-label="Add folded hands">🙏</button>
+            </div>
+          </details>
         </div>
         <button type="submit" class="btn btn--primary">Post comment</button>
       </form>
@@ -154,6 +171,15 @@
               <span class="comment__author" th:text="${comment.user == null ? 'Member' : comment.user.name}">User</span>
               <span class="badge badge--info" th:if="${comment.user != null and comment.user.id == bidding.owner.id}">Seller</span>
             </div>
+            <form class="comment__moderate" sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}"
+                  method="post" onsubmit="return confirm('Delete this comment? This cannot be undone.')">
+              <button class="comment__trash" type="submit" aria-label="Delete comment as admin" title="Delete comment">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 7h16M10 11v6m4-6v6M5 7l1 14h12l1-14M9 7V4h6v3"></path>
+                </svg>
+              </button>
+            </form>
             <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
               <summary class="comment__btn">Edit</summary>
               <form class="comments__form"
@@ -162,6 +188,23 @@
                   <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
                   <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
                             th:text="${comment.message}" required></textarea>
+                  <details class="comment-emoji-picker">
+                    <summary>😊 Add emoji</summary>
+                    <div class="comment-emoji-picker__grid" aria-label="Choose an emoji">
+                      <button type="button" data-emoji="😀" aria-label="Add grinning face">😀</button>
+                      <button type="button" data-emoji="😂" aria-label="Add face with tears of joy">😂</button>
+                      <button type="button" data-emoji="😍" aria-label="Add heart eyes">😍</button>
+                      <button type="button" data-emoji="🥰" aria-label="Add smiling face with hearts">🥰</button>
+                      <button type="button" data-emoji="😊" aria-label="Add smiling face">😊</button>
+                      <button type="button" data-emoji="👍" aria-label="Add thumbs up">👍</button>
+                      <button type="button" data-emoji="👏" aria-label="Add clapping hands">👏</button>
+                      <button type="button" data-emoji="❤️" aria-label="Add red heart">❤️</button>
+                      <button type="button" data-emoji="🔥" aria-label="Add fire">🔥</button>
+                      <button type="button" data-emoji="🎉" aria-label="Add party popper">🎉</button>
+                      <button type="button" data-emoji="🤔" aria-label="Add thinking face">🤔</button>
+                      <button type="button" data-emoji="🙏" aria-label="Add folded hands">🙏</button>
+                    </div>
+                  </details>
                 </div>
                 <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
               </form>
@@ -188,15 +231,11 @@
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
               <button class="comment__btn comment__btn--danger" type="submit">Delete</button>
             </form>
-            <form th:if="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}"
-                  sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')"
-                  th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
-              <button class="comment__btn comment__btn--danger" type="submit">Remove</button>
-            </form>
           </div>
         </li>
       </ul>
     </section>
   </main>
+  <script th:src="@{/js/comment-emoji-picker.js}" defer></script>
 </body>
 </html>

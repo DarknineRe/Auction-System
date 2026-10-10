@@ -103,3 +103,12 @@
   border-color: var(--success-border);
 }
 .alert--success::before { content: "\2713"; background: var(--success); }
+.alert--info {
+  display: block;
+  color: var(--info);
+  background: var(--info-bg);
+  border-color: var(--info-border);
+}
+.alert--info::before { content: "i"; background: var(--info); }
+.alert--info p { margin: 0; }
+.alert--info p + p { margin-top: .25rem; }

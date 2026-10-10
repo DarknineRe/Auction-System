@@ -164,6 +164,23 @@
 }
 
 .comment__actions { display: flex; gap: 8px; }
+.comment__moderate { display: flex; margin-left: auto; }
+.comment__trash {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  place-items: center;
+}
+.comment__trash svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 1.8; }
+.comment__trash:hover { color: var(--danger); background: var(--danger-bg); border-color: var(--danger-border); }
+.comment__trash:focus-visible { outline: none; box-shadow: var(--ring); }
+
 .comment__btn {
   padding: 4px 12px;
   font: inherit;
@@ -185,6 +202,51 @@
 .comment__btn:hover { color: var(--navy); border-color: var(--navy); }
 .comment__btn--danger:hover { color: var(--danger); border-color: var(--danger); }
 .comment__btn:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.5); outline-offset: 2px; }
+
+.comment-emoji-picker { position: relative; margin-top: .5rem; }
+.comment-emoji-picker summary {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: .35rem .65rem;
+  color: var(--muted);
+  font-size: .84rem;
+  font-weight: 650;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+}
+.comment-emoji-picker summary::-webkit-details-marker { display: none; }
+.comment-emoji-picker summary:hover { color: var(--link); border-color: var(--primary); }
+.comment-emoji-picker summary:focus-visible { outline: none; box-shadow: var(--ring); }
+.comment-emoji-picker__grid {
+  display: grid;
+  width: min(100%, 250px);
+  grid-template-columns: repeat(6, 1fr);
+  gap: .25rem;
+  margin-top: .4rem;
+  padding: .45rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.comment-emoji-picker__grid button {
+  display: grid;
+  min-width: 34px;
+  min-height: 34px;
+  padding: .25rem;
+  font-size: 1.2rem;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius);
+  cursor: pointer;
+  place-items: center;
+}
+.comment-emoji-picker__grid button:hover { background: var(--surface-alt); }
+.comment-emoji-picker__grid button:focus-visible { outline: none; box-shadow: var(--ring); }
 
 @media (max-width: 800px) {
   .detail { padding: 20px 16px 48px; }
