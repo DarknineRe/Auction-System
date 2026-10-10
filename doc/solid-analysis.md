@@ -4,7 +4,7 @@
 
 | หลักการ | ตัวอย่างหลักในระบบ |
 |---|---|
-| **S**RP | `GlobalExceptionHandler`, `ArtworkMapper`, `AdminInitializer`, `ArtworkController`, `ArtworkServiceImpl`, `NotificationServiceImpl` |
+| **S**RP | `GlobalExceptionHandler`, `ArtworkMapper`, `AdminInitializer`, `ArtworkController`, `ArtworkServiceImpl`, `NotificationServiceImpl`, `BiddingExpiryProcessor`, `AuthPageController` |
 | **O**CP | `BiddingStateResolver` และ `PaymentStateResolver` + คลาส State (เพิ่มสถานะใหม่โดยไม่แก้ Service) |
 | **L**SP | `ActiveBiddingState`, `ClosedBiddingState`, `CancelledBiddingState` แทนที่ `BiddingState` ได้ และชุด `PaymentState` ทั้ง 6 คลาส |
 | **I**SP | Interface ของ Service แยกตามบทบาท (`BidActionService`, `AdminBiddingService`, `AdminModerationService`, `PaymentService`, `AdminPaymentService`, `NotificationService`) |
@@ -20,18 +20,20 @@ path ทุกไฟล์อยู่ใต้ `code/src/main/java/com/example/
 
 - `exception/GlobalExceptionHandler.java` บรรทัด 22-90: แปลง exception เป็น response รูปแบบ `ErrorResponse` อย่างเดียว
 - `mapper/ArtworkMapper.java` บรรทัด 12-23: แปลง `Artwork` เป็น `ArtworkResponse` อย่างเดียว
-- `config/AdminInitializer.java` บรรทัด 30-39: สร้างบัญชี admin ตอนแอปเริ่มทำงานอย่างเดียว
+- `config/AdminInitializer.java` บรรทัด 30-40: สร้างบัญชี admin ตอนแอปเริ่มทำงานอย่างเดียว
 - `controller/api/ArtworkController.java` บรรทัด 48-59: รับ request แล้วส่งต่อให้ Service ไม่มี logic ธุรกิจ
 - `service/implementation/ArtworkServiceImpl.java` บรรทัด 25 และ 128-129: กฎธุรกิจของผลงาน เช่น จำกัดฟิลด์ที่ใช้ sort ได้ ไม่ยุ่งกับ HTTP
 - `service/implementation/NotificationServiceImpl.java` บรรทัด 19-58: สร้างรายการแจ้งเตือนจากสถานะการชำระเงินอย่างเดียว
+- `service/implementation/BiddingExpiryProcessor.java` บรรทัด 15-49 และ `PaymentExpiryProcessor.java` บรรทัด 12-31: ปิดประมูล/หมดอายุการชำระเงินทีละรายการใน transaction ของตัวเอง ส่วน `scheduler/BiddingExpiryScheduler.java` บรรทัด 10-28 และ `PaymentExpiryScheduler.java` บรรทัด 10-28 มีหน้าที่แค่ตั้งเวลาแล้วเรียก Service
+- `controller/web/AuthPageController.java` บรรทัด 18-58: หน้า login และ register อย่างเดียว หน้าเว็บอื่นแยกเป็น `HomePageController`, `BiddingPageController`, `PaymentPageController` ฯลฯ ไม่รวมใน controller ตัวเดียว
 
 เหตุผล: แยก Controller / Service / Repository แล้ว แก้ส่วนไหนก็ไม่กระทบส่วนอื่น
 
 ## O - Open/Closed (เพิ่มได้ ไม่ต้องแก้ของเดิม)
 
 - `service/state/BiddingStateResolver.java` บรรทัด 16-20: รับ `List<BiddingState>` ที่ Spring รวบรวมมาให้ แล้วเก็บเป็น Map ตามสถานะ
-- `service/implementation/BiddingServiceImpl.java` บรรทัด 237 (`acceptsBids()` ตอน `placeBid`) และบรรทัด 165 (`canMoveTo()` ตอนยกเลิก) กับ `AdminBiddingServiceImpl.java` บรรทัด 51: เรียกผ่าน resolver ไม่มี if/switch เช็กชื่อสถานะ
-- `service/state/PaymentStateResolver.java` บรรทัด 16-20: รูปแบบเดียวกันสำหรับสถานะการชำระเงิน ใช้ที่ `PaymentServiceImpl.java` บรรทัด 224 และ `AdminPaymentServiceImpl.java` บรรทัด 68
+- `service/implementation/BiddingServiceImpl.java` บรรทัด 246 (`acceptsBids()` ตอน `placeBid`), บรรทัด 191 (`acceptsBids()` ตอนแก้ไข/ยกเลิก) และบรรทัด 174 (`canMoveTo()` ตอนยกเลิก) กับ `AdminBiddingServiceImpl.java` บรรทัด 51: เรียกผ่าน resolver ไม่มี if/switch เช็กชื่อสถานะ
+- `service/state/PaymentStateResolver.java` บรรทัด 16-20: รูปแบบเดียวกันสำหรับสถานะการชำระเงิน ใช้ที่ `PaymentServiceImpl.java` บรรทัด 235 และ `AdminPaymentServiceImpl.java` บรรทัด 68
 
 เหตุผล: ถ้าจะเพิ่มสถานะใหม่ แค่สร้างคลาสที่ implement `BiddingState` (หรือ `PaymentState`) โดยไม่ต้องแก้ Service (ต้องเพิ่มค่าใน enum `Bidding.Status` / `Payment.Status` ด้วย)
 
