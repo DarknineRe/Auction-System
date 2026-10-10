@@ -20,6 +20,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.example.project.model.Bidding;
 import com.example.project.model.Payment;
+import com.example.project.model.PaymentBuilder;
 import com.example.project.model.Sellerprofile;
 import com.example.project.repository.PaymentRepository;
 import com.example.project.repository.SellerprofileRepository;
@@ -69,14 +70,13 @@ public class PaymentServiceImpl implements PaymentService {
             return;
         }
 
-        Date now = new Date();
-        Payment payment = new Payment();
-        payment.setBidding(bidding);
-        payment.setBuyer(bidding.getWinner());
-        payment.setSellerprofile(seller);
-        payment.setAmount(bidding.getLastBid());
-        payment.setCreatedAt(now);
-        payment.setDueDate(new Date(now.getTime() + TimeUnit.DAYS.toMillis(dueDays)));
+        Payment payment = new PaymentBuilder()
+                .bidding(bidding)
+                .buyer(bidding.getWinner())
+                .sellerprofile(seller)
+                .amount(bidding.getLastBid())
+                .dueInDays(dueDays)
+                .build();
         paymentRepository.save(payment);
     }
 
