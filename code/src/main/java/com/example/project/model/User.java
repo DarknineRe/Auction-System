@@ -1,5 +1,7 @@
 package com.example.project.model;
 
+import java.time.Instant;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -35,6 +37,9 @@ public class User {
     }
     @Column(nullable = false, columnDefinition = "boolean not null default true")
     private boolean enabled = true;
+    @Column(nullable = false)
+    private Instant passwordChangedAt = Instant.now();
+
     public User(){}
     public Long getId() {
         return this.id;
@@ -94,5 +99,12 @@ public class User {
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
-    
+
+    public Instant getPasswordChangedAt() {
+        return this.passwordChangedAt;
+    }
+
+    public void setPasswordChangedAt(Instant passwordChangedAt) {
+        this.passwordChangedAt = passwordChangedAt;
+    }
 }

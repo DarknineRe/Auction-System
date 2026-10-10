@@ -12,6 +12,8 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -38,6 +40,7 @@ public class SecurityConfig {
             SecurityContextRepository securityContextRepository,
             UserRepository userRepository,
             UserDetailsService userDetailsService,
+            SessionRegistry sessionRegistry,
             @Value("${app.remember-me.key:}") String rememberMeKey) throws Exception {
         http
                 .csrf(Customizer.withDefaults())
@@ -65,8 +68,12 @@ public class SecurityConfig {
                                 "/api/v1/seller-profiles/users/*")
                         .permitAll()
                         .anyRequest().authenticated())
-                .addFilterBefore(new EnabledAccountFilter(userRepository), AuthorizationFilter.class)
+                .addFilterBefore(new EnabledAccountFilter(userRepository, sessionRegistry), AuthorizationFilter.class)
                 .httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
+                .sessionManagement(session -> session
+                        .sessionRegistry(sessionRegistry)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogin(false))
                 .formLogin(form -> form
                         .loginPage("/login")
                         .usernameParameter("email")
@@ -80,6 +87,11 @@ public class SecurityConfig {
                         // Without a configured key, tokens stop working after a restart.
                         .key(rememberMeKey.isBlank() ? UUID.randomUUID().toString() : rememberMeKey))
                 .logout(logout -> logout.logoutSuccessUrl("/login?logout"))
+                .headers(headers -> headers
+                        .httpStrictTransportSecurity(hsts -> hsts
+                                .includeSubDomains(true)
+                                .preload(true)
+                                .maxAgeInSeconds(31536000)))
                 .exceptionHandling(ex -> ex
                         // API clients get a JSON 401; browser pages are redirected to the login form.
                         .defaultAuthenticationEntryPointFor(authenticationEntryPoint,
@@ -94,6 +106,11 @@ public class SecurityConfig {
     @Bean
     SecurityContextRepository securityContextRepository() {
         return new HttpSessionSecurityContextRepository();
+    }
+
+    @Bean
+    SessionRegistry sessionRegistry() {
+        return new SessionRegistryImpl();
     }
 
     @Bean
