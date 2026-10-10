@@ -43,6 +43,58 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
     private PasswordEncoder passwordEncoder;
 
     @Test
+    void adminCanRemoveCommentFromAuctionPageAndModerationPageIsGone() throws Exception {
+        UserFixture admin = createRoleAdmin(User.Role.ADMIN);
+        UserFixture seller = registerUser("Comment Moderation Seller");
+        UserFixture commenter = registerUser("Comment Moderation User");
+        createSellerProfile(seller);
+        long biddingId = createAuction(seller, 60_000);
+
+        MvcResult commentResult = mockMvc.perform(post("/api/v1/biddings/{id}/comments", biddingId)
+                        .with(httpBasic(commenter.email(), commenter.password()))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"message":"Comment to remove"}
+                                """))
+                .andExpect(status().isCreated())
+                .andReturn();
+        long commentId = objectMapper.readTree(commentResult.getResponse().getContentAsString())
+                .path("id").asLong();
+
+        mockMvc.perform(get("/admin/moderation")
+                        .with(httpBasic(admin.email(), admin.password())))
+                .andExpect(status().isNotFound());
+
+        mockMvc.perform(get("/biddings/{id}", biddingId)
+                        .with(httpBasic(admin.email(), admin.password())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Comment to remove")))
+                .andExpect(content().string(containsString(">Remove</button>")));
+
+        mockMvc.perform(get("/biddings/{id}", biddingId)
+                        .with(httpBasic(seller.email(), seller.password())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.not(containsString(">Remove</button>"))));
+
+        mockMvc.perform(post("/biddings/{biddingId}/comments/{commentId}/delete",
+                        biddingId, commentId)
+                        .with(httpBasic(seller.email(), seller.password()))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/biddings/{biddingId}/comments/{commentId}/delete",
+                        biddingId, commentId)
+                        .with(httpBasic(admin.email(), admin.password()))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        mockMvc.perform(get("/api/v1/biddings/{id}/comments", biddingId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
     void superAdminCanListUsersAndDisableRegularUser() throws Exception {
         UserFixture admin = createAdmin();
         UserFixture user = registerUser("Admin Status Target");

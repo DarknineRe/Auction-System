@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.example.project.model.Comment;
 import com.example.project.repository.CommentRepository;
 import com.example.project.service.AdminModerationService;
 import com.example.project.service.ArtworkService;
@@ -30,9 +31,22 @@ public class AdminModerationServiceImpl implements AdminModerationService {
     @Override
     @Transactional
     public void deleteComment(Long commentId) {
-        if (!commentRepository.existsById(commentId)) {
+        commentRepository.delete(findComment(commentId));
+    }
+
+    @Override
+    @Transactional
+    public void deleteComment(Long biddingId, Long commentId) {
+        Comment comment = findComment(commentId);
+        if (comment.getBidding() == null || !biddingId.equals(comment.getBidding().getId())) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Comment not found: " + commentId);
         }
-        commentRepository.deleteById(commentId);
+        commentRepository.delete(comment);
+    }
+
+    private Comment findComment(Long commentId) {
+        return commentRepository.findById(commentId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Comment not found: " + commentId));
     }
 }

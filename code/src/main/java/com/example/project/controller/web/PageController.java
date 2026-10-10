@@ -274,8 +274,15 @@ public class PageController {
             @PathVariable Long biddingId,
             @PathVariable Long commentId,
             Authentication authentication) {
-        User user = currentUser(authentication);
-        commentService.deleteComment(biddingId, commentId, user.getId());
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN")
+                        || authority.getAuthority().equals("ROLE_SUPER_ADMIN"));
+        if (isAdmin) {
+            adminModerationService.deleteComment(biddingId, commentId);
+        } else {
+            User user = currentUser(authentication);
+            commentService.deleteComment(biddingId, commentId, user.getId());
+        }
         return "redirect:/biddings/" + biddingId + "#comments";
     }
 
@@ -585,27 +592,6 @@ public class PageController {
         validate(new CancelPaymentRequest(reason));
         adminPaymentService.cancelPayment(paymentId, reason.trim());
         return "redirect:/admin/payments?success";
-    }
-
-    @GetMapping("/admin/moderation")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String adminModeration(Model model) {
-        return workspace(model, "admin-moderation", "Content moderation");
-    }
-
-    @PostMapping("/admin/moderation")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
-    public String moderate(
-            @RequestParam @NotBlank String type,
-            @RequestParam @Positive Long contentId) {
-        if ("artworks".equals(type)) {
-            adminModerationService.deleteArtwork(contentId);
-        } else if ("comments".equals(type)) {
-            adminModerationService.deleteComment(contentId);
-        } else {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unsupported content type");
-        }
-        return "redirect:/admin/moderation?success";
     }
 
     @GetMapping("/admin/bids")

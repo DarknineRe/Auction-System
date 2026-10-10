@@ -150,8 +150,22 @@
       <ul class="comments__list">
         <li class="comment" th:each="comment : ${comments}">
           <div class="comment__head">
-            <span class="comment__author" th:text="${comment.user == null ? 'Member' : comment.user.name}">User</span>
-            <span class="badge badge--info" th:if="${comment.user != null and comment.user.id == bidding.owner.id}">Seller</span>
+            <div class="comment__meta">
+              <span class="comment__author" th:text="${comment.user == null ? 'Member' : comment.user.name}">User</span>
+              <span class="badge badge--info" th:if="${comment.user != null and comment.user.id == bidding.owner.id}">Seller</span>
+            </div>
+            <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
+              <summary class="comment__btn">Edit</summary>
+              <form class="comments__form"
+                    th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+                <div class="field">
+                  <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
+                  <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
+                            th:text="${comment.message}" required></textarea>
+                </div>
+                <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
+              </form>
+            </details>
           </div>
           <p class="comment__text" th:text="${comment.message}"></p>
           <div class="comment__actions">
@@ -175,19 +189,12 @@
                   th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
               <button class="comment__btn comment__btn--danger" type="submit">Delete</button>
             </form>
-          </div>
-          <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
-            <summary class="comment__btn">Edit</summary>
-            <form class="comments__form"
-                  th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
-              <div class="field">
-                <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
-                <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
-                          th:text="${comment.message}" required></textarea>
-              </div>
-              <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
+            <form th:if="${currentUser != null and comment.user != null and currentUser.id != comment.user.id}"
+                  sec:authorize="hasAnyRole('ADMIN', 'SUPER_ADMIN')"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}/delete(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+              <button class="comment__btn comment__btn--danger" type="submit">Remove</button>
             </form>
-          </details>
+          </div>
         </li>
       </ul>
     </section>
