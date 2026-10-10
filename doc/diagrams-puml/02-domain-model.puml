@@ -1,0 +1,70 @@
+@startuml
+title Domain Model / Conceptual Class Diagram
+left to right direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+
+class User {
+  name
+  email
+  phone
+  address
+  role : USER / ADMIN / SUPER_ADMIN
+  enabled
+}
+class SellerProfile {
+  bankAccount
+  rating
+  saleCount
+}
+class Artwork {
+  title
+  imageUrl
+}
+class Bidding {
+  startingPrice
+  lastBid
+  startDate
+  endDate
+  status : ACTIVE / CLOSED / CANCELLED
+  sellerRating
+}
+class Bid {
+  amount
+  timestamp
+  status : VALID / VOIDED
+  voidReason
+}
+class Comment {
+  message
+  thumbsUp
+  thumbsDown
+}
+class Reaction {
+  type : LIKE / DISLIKE
+}
+class Payment {
+  amount
+  status
+  dueDate
+  slipUrl
+  shippingAddress
+  carrier
+  trackingNumber
+}
+
+User "1" -- "0..1" SellerProfile : may become
+SellerProfile "1" -- "0..*" Artwork : owns
+Bidding "0..*" -- "1..*" Artwork : auctions
+User "1" -- "0..*" Bidding : opens (owner)
+User "0..1" -- "0..*" Bidding : wins
+User "1" -- "0..*" Bid : places
+Bidding "1" *-- "0..*" Bid : receives
+Bidding "1" *-- "0..*" Comment : has
+User "1" -- "0..*" Comment : writes
+Comment "1" *-- "0..*" Reaction : gets
+User "1" -- "0..*" Reaction : gives
+Bidding "1" -- "0..1" Payment : settled by
+User "1" -- "0..*" Payment : pays (buyer)
+SellerProfile "1" -- "0..*" Payment : receives
+@enduml

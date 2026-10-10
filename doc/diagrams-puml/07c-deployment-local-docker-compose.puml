@@ -1,0 +1,30 @@
+@startuml
+title Deployment Diagram - Local (docker-compose)
+skinparam shadowing false
+left to right direction
+
+node "Developer Machine" as Dev {
+  artifact "Browser\nlocalhost:8080" as Br
+}
+
+node "Docker Host (docker compose)" as Host {
+  node "Container: app\n(build ./code/Dockerfile)" as AppC {
+    artifact "Spring Boot app.jar\n:8080" as J
+  }
+  node "Container: database\n(postgres:16-alpine)" as DbC {
+    database "PostgreSQL\ndb: auction" as P
+  }
+  storage "Volume: postgres_data" as Vol
+}
+
+Br --> J : HTTP :8080 (APP_PORT)
+J --> P : JDBC :5432\njdbc:postgresql://database:5432/auction
+P -- Vol
+
+note bottom of AppC
+  Dockerfile multi-stage:
+  eclipse-temurin:26-jdk build (Maven Wrapper)
+  -> eclipse-temurin:26-jre run
+  app depends_on database (service_healthy)
+end note
+@enduml

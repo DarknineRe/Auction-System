@@ -14,20 +14,6 @@ permissions:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: auction_test
-          POSTGRES_USER: auction
-          POSTGRES_PASSWORD: auction
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U auction -d auction_test"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     env:
       DB_URL: jdbc:postgresql://localhost:5432/auction_test
       DB_USERNAME: auction
@@ -36,6 +22,65 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+
+      - name: Log in to Docker Hub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          for attempt in 1 2 3; do
+            echo "Docker Hub login attempt $attempt of 3..."
+            if printf '%s' "$DOCKERHUB_TOKEN" | docker login \
+              --username "$DOCKERHUB_USERNAME" \
+              --password-stdin; then
+              exit 0
+            fi
+
+            if [ "$attempt" -lt 3 ]; then
+              sleep $((attempt * 5))
+            fi
+          done
+
+          echo "Docker Hub login failed after 3 attempts." >&2
+          exit 1
+
+      - name: Start PostgreSQL
+        run: |
+          for attempt in 1 2 3; do
+            echo "PostgreSQL image pull attempt $attempt of 3..."
+            if docker pull postgres:16; then
+              break
+            fi
+
+            if [ "$attempt" -eq 3 ]; then
+              echo "Failed to pull postgres:16 after 3 attempts." >&2
+              exit 1
+            fi
+            sleep $((attempt * 5))
+          done
+
+          docker run --detach --name auction-test-postgres \
+            --env POSTGRES_DB=auction_test \
+            --env POSTGRES_USER=auction \
+            --env POSTGRES_PASSWORD=auction \
+            --publish 5432:5432 \
+            --health-cmd "pg_isready -U auction -d auction_test" \
+            --health-interval 10s \
+            --health-timeout 5s \
+            --health-retries 5 \
+            postgres:16
+
+          for attempt in {1..30}; do
+            status="$(docker inspect --format='{{.State.Health.Status}}' auction-test-postgres)"
+            if [ "$status" = "healthy" ]; then
+              exit 0
+            fi
+            sleep 2
+          done
+
+          docker logs auction-test-postgres
+          echo "PostgreSQL did not become healthy in time." >&2
+          exit 1
 
       - name: Set up Java
         uses: actions/setup-java@v4

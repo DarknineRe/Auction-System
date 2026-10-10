@@ -99,6 +99,25 @@ public class AdminUserServiceImpl implements AdminUserService {
         return userRepository.save(target);
     }
 
+    @Override
+    @Transactional
+    public User promoteToAdmin(String actorEmail, Long userId) {
+        User actor = userRepository.findByEmail(actorEmail.trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.FORBIDDEN, "Super admin access required"));
+        if (actor.getRole() != User.Role.SUPER_ADMIN) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Super admin access required");
+        }
+
+        User target = findUserById(userId);
+        rejectSelfChange(actorEmail, target);
+        if (target.getRole() != User.Role.USER) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only regular users can be promoted to admin");
+        }
+
+        target.setRole(User.Role.ADMIN);
+        return userRepository.save(target);
+    }
+
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(
