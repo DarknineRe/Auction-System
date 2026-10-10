@@ -17,6 +17,8 @@ public record PaymentResponse(
         Date createdAt,
         Date dueDate,
         String slipUrl,
+        String qrImageUrl,
+        Date qrExpiresAt,
         Date paidAt,
         Date confirmedAt,
         String rejectReason,

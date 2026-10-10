@@ -82,6 +82,25 @@ public class PaymentController {
                 paymentService.submitSlip(paymentId, buyer.getId(), request.slipUrl())));
     }
 
+    @PostMapping("/{paymentId}/qr")
+    public ResponseEntity<PaymentResponse> startQrPayment(
+            @PathVariable Long paymentId,
+            Authentication authentication) {
+        User buyer = userService.getCurrentUser(authentication.getName());
+        return ResponseEntity.ok(paymentMapper.toResponse(
+                paymentService.startQrPayment(paymentId, buyer.getId())));
+    }
+
+    // Polled by the payment page while a QR code is shown; checks the provider before answering.
+    @GetMapping("/{paymentId}/qr/status")
+    public ResponseEntity<PaymentResponse> getQrPaymentStatus(
+            @PathVariable Long paymentId,
+            Authentication authentication) {
+        User user = userService.getCurrentUser(authentication.getName());
+        return ResponseEntity.ok(paymentMapper.toResponse(
+                paymentService.refreshQrPayment(paymentId, user.getId())));
+    }
+
     @PostMapping("/{paymentId}/confirm")
     public ResponseEntity<PaymentResponse> confirmPayment(
             @PathVariable Long paymentId,

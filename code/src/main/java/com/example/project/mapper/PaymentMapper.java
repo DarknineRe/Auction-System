@@ -24,6 +24,8 @@ public class PaymentMapper {
                 payment.getCreatedAt(),
                 payment.getDueDate(),
                 payment.getSlipUrl(),
+                payment.getQrImageUrl(),
+                payment.getQrExpiresAt(),
                 payment.getPaidAt(),
                 payment.getConfirmedAt(),
                 payment.getRejectReason(),

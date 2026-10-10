@@ -197,7 +197,28 @@
           <p class="paybox__amount" th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'">0.00 THB</p>
           <p class="paybox__due" th:text="'Pay before ' + ${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')}">Pay before the due date</p>
         </div>
-        <div class="paybox__pay">
+        <div class="paybox__pay" th:if="${qrPaymentEnabled}">
+          <h2>Pay with PromptPay</h2>
+          <th:block th:if="${qrActive}">
+            <div class="paybox__qr" th:attr="data-status-url=@{/api/v1/payments/{id}/qr/status(id=${payment.id})}">
+              <img th:src="${payment.qrImageUrl}" alt="PromptPay QR code" width="240" height="240">
+            </div>
+            <ol class="paybox__how">
+              <li>Open your banking app and scan the QR code.</li>
+              <li>Check that the amount is
+                <strong class="paybox__account" th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'">0.00 THB</strong>
+                and confirm the transfer.</li>
+            </ol>
+            <p class="paybox__hint" role="status"
+               th:text="'Waiting for your payment. This page updates by itself once it arrives. The QR code expires on ' + ${#dates.format(payment.qrExpiresAt, 'dd MMM yyyy HH:mm')} + '.'">Waiting for your payment.</p>
+          </th:block>
+          <form class="workspace__form" th:unless="${qrActive}" th:action="@{/payments/{id}/qr(id=${payment.id})}" method="post">
+            <p>Get a QR code for the exact amount and pay it from any Thai banking app. Your payment is confirmed automatically.</p>
+            <button class="btn btn--primary" type="submit">Show PromptPay QR code</button>
+            <p class="paybox__hint">Your item ships to the address on <a th:href="@{/profile}">your profile</a>, so make sure it is filled in first.</p>
+          </form>
+        </div>
+        <div class="paybox__pay" th:unless="${qrPaymentEnabled}">
           <h2>How to pay</h2>
           <ol class="paybox__how">
             <li>Transfer the amount to bank account
@@ -436,5 +457,6 @@
       <a class="workspace__link" th:if="${page == 'payment-detail'}" th:href="@{/sales}">Sales</a>
     </nav>
   </main>
+  <script th:if="${page == 'payment-detail'}" th:src="@{/js/payment-qr.js}" defer></script>
 </body>
 </html>

@@ -378,6 +378,15 @@ section.workspace__panel > h2:not(:first-child) { margin-top: 1.5rem; }
   overflow-wrap: anywhere;
 }
 .paybox .paybox__hint { margin: 0; font-size: .85rem; }
+.paybox__qr { margin-top: .75rem; }
+.paybox__qr img {
+  display: block;
+  width: min(240px, 100%);
+  height: auto;
+  padding: .5rem;
+  background: #fff;
+  border-radius: 8px;
+}
 
 .workspace--error {
   max-width: 640px;

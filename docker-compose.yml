@@ -29,6 +29,7 @@ services:
       DB_USERNAME: auction
       DB_PASSWORD: ${DB_PASSWORD:-auction_local_only}
       REMEMBER_ME_KEY: ${REMEMBER_ME_KEY:-local-compose-only-change-before-production}
+      OMISE_SECRET_KEY: ${OMISE_SECRET_KEY:-}
 
 volumes:
   postgres_data:

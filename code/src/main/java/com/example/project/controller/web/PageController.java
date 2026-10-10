@@ -413,9 +413,19 @@ public class PageController {
             Authentication authentication,
             Model model) {
         User user = currentUser(authentication);
-        model.addAttribute("payment", paymentService.getPayment(paymentId, user.getId()));
+        Payment payment = paymentService.getPayment(paymentId, user.getId());
+        model.addAttribute("payment", payment);
         model.addAttribute("currentUserId", user.getId());
+        model.addAttribute("qrPaymentEnabled", paymentService.isQrPaymentAvailable(payment));
+        model.addAttribute("qrActive", payment.hasActiveQr(new Date()));
         return workspace(model, "payment-detail", "Payment details");
+    }
+
+    @PostMapping("/payments/{paymentId}/qr")
+    public String startQrPayment(@PathVariable Long paymentId, Authentication authentication) {
+        User buyer = currentUser(authentication);
+        paymentService.startQrPayment(paymentId, buyer.getId());
+        return "redirect:/payments/" + paymentId;
     }
 
     @PostMapping("/payments/{paymentId}/slip")

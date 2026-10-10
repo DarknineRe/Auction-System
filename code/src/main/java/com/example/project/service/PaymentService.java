@@ -26,6 +26,18 @@ public interface PaymentService {
 
     Payment submitSlip(Long paymentID, Long buyerID, String slipUrl);
 
+    // False when no gateway is configured or the amount is too small for it; the buyer then pays by slip.
+    boolean isQrPaymentAvailable(Payment payment);
+
+    // Creates the PromptPay QR code for the buyer, or returns the one that is still valid.
+    Payment startQrPayment(Long paymentID, Long buyerID);
+
+    // Asks the payment provider whether the QR code has been paid and updates the payment.
+    Payment refreshQrPayment(Long paymentID, Long userID);
+
+    // Called for provider webhooks; the charge is re-read from the provider before it is trusted.
+    void handleGatewayCharge(String chargeId);
+
     Payment confirmPayment(Long paymentID, Long sellerUserID);
 
     Payment rejectPayment(Long paymentID, Long sellerUserID, String reason);

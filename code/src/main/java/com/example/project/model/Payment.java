@@ -63,6 +63,16 @@ public class Payment {
     @Column(length = 2048)
     private String slipUrl;
 
+    // Set when the buyer pays by PromptPay QR through the payment gateway instead of a slip.
+    @Column(length = 100)
+    private String gatewayChargeId;
+
+    @Column(length = 2048)
+    private String qrImageUrl;
+
+    @Column
+    private Date qrExpiresAt;
+
     @Column
     private Date paidAt;
 
@@ -173,6 +183,35 @@ public class Payment {
 
     public void setSlipUrl(String slipUrl) {
         this.slipUrl = slipUrl;
+    }
+
+    public String getGatewayChargeId() {
+        return this.gatewayChargeId;
+    }
+
+    public void setGatewayChargeId(String gatewayChargeId) {
+        this.gatewayChargeId = gatewayChargeId;
+    }
+
+    public String getQrImageUrl() {
+        return this.qrImageUrl;
+    }
+
+    public void setQrImageUrl(String qrImageUrl) {
+        this.qrImageUrl = qrImageUrl;
+    }
+
+    public Date getQrExpiresAt() {
+        return this.qrExpiresAt;
+    }
+
+    public void setQrExpiresAt(Date qrExpiresAt) {
+        this.qrExpiresAt = qrExpiresAt;
+    }
+
+    // True while the buyer can still scan the QR code that was generated for this payment.
+    public boolean hasActiveQr(Date now) {
+        return this.qrImageUrl != null && this.qrExpiresAt != null && this.qrExpiresAt.after(now);
     }
 
     public Date getPaidAt() {
