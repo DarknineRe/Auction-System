@@ -1,0 +1,61 @@
+@startuml
+title Sequence 4.1 - Place Bid
+skinparam shadowing false
+autonumber
+
+actor "User (Bidder)" as Bidder
+participant "Spring Security" as Sec
+participant "BiddingController" as BC
+participant "UserService" as US
+participant "BiddingService\n(BiddingServiceImpl)" as BS
+participant "BiddingStateResolver" as SR
+participant "BiddingRepository" as BR
+participant "BidActionRepository" as AR
+participant "BiddingMapper" as BM
+database "PostgreSQL" as DB
+
+Bidder -> Sec : POST /api/v1/biddings/{id}/bids {amount}
+Sec -> Sec : authenticate (HTTP Basic / session)
+Sec -> BC : placeBid(id, authentication, PlaceBidRequest)
+note right of BC : @Valid ตรวจ amount ก่อนเข้า method
+BC -> US : getCurrentUser(email)
+US --> BC : User
+BC -> BS : placeBid(id, email, amount)
+activate BS
+note right of BS : @Transactional
+BS -> BR : findByIdForUpdate(id)
+BR -> DB : SELECT ... FOR UPDATE (pessimistic lock)
+DB --> BR : Bidding
+BR --> BS : Bidding
+BS -> BS : load bidder by email (UserRepository)
+
+alt ผู้ประมูลเป็นเจ้าของ
+  BS --> BC : throw 409 "Cannot bid on your own auction"
+else ผ่านเงื่อนไขแรก
+  BS -> SR : resolve(bidding.status)
+  SR --> BS : BiddingState
+  BS -> BS : state.acceptsBids() ?
+  BS -> BS : ตรวจ startDate / endDate
+  BS -> AR : findTopByBidding_IdAndStatusOrderByAmountDesc(id, VALID)
+  AR -> DB : SELECT top valid bid
+  DB --> AR : highest bid or empty
+  AR --> BS : Optional<BidAction>
+  BS -> BS : ไม่ใช่ highest bidder อยู่แล้ว
+  BS -> BS : amount >= (highest + 1.00) หรือ startingPrice
+  BS -> AR : save(new BidAction)
+  AR -> DB : INSERT bidactions
+  BS -> BR : save(bidding with lastBid = amount)
+  BR -> DB : UPDATE biddings
+  BS --> BC : BidAction
+end
+deactivate BS
+
+BC -> BM : toResponse(bidAction)
+BM --> BC : BidActionResponse
+BC --> Bidder : 201 Created (BidActionResponse)
+
+note over BC, Bidder
+  ถ้า service throw ResponseStatusException
+  GlobalExceptionHandler แปลงเป็น ErrorResponse (404 / 409 / 400)
+end note
+@enduml

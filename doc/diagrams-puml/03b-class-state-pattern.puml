@@ -1,0 +1,74 @@
+@startuml
+title State Pattern - Bidding และ Payment
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+
+interface BiddingState <<State>> {
+  +getStatus() : Bidding.Status
+  +acceptsBids() : boolean
+  +canMoveTo(Bidding.Status) : boolean
+}
+class ActiveBiddingState <<ConcreteState>> {
+  acceptsBids = true
+  canMoveTo CLOSED or CANCELLED
+}
+class ClosedBiddingState <<ConcreteState>> {
+  acceptsBids = false
+  canMoveTo none
+}
+class CancelledBiddingState <<ConcreteState>> {
+  acceptsBids = false
+  canMoveTo none
+}
+class BiddingStateResolver <<Registry>> {
+  -EnumMap states
+  +BiddingStateResolver(List<BiddingState>)
+  +resolve(Bidding.Status) : BiddingState
+}
+
+ActiveBiddingState ..|> BiddingState
+ClosedBiddingState ..|> BiddingState
+CancelledBiddingState ..|> BiddingState
+BiddingStateResolver o-- BiddingState : collects all beans
+
+interface PaymentState <<State>> {
+  +getStatus() : Payment.Status
+  +canMoveTo(Payment.Status) : boolean
+}
+class AwaitingPaymentState <<ConcreteState>>
+class PaymentSubmittedState <<ConcreteState>>
+class PaidPaymentState <<ConcreteState>>
+class CompletedPaymentState <<ConcreteState>>
+class ExpiredPaymentState <<ConcreteState>>
+class CancelledPaymentState <<ConcreteState>>
+class PaymentStateResolver <<Registry>> {
+  -EnumMap states
+  +resolve(Payment.Status) : PaymentState
+}
+
+AwaitingPaymentState ..|> PaymentState
+PaymentSubmittedState ..|> PaymentState
+PaidPaymentState ..|> PaymentState
+CompletedPaymentState ..|> PaymentState
+ExpiredPaymentState ..|> PaymentState
+CancelledPaymentState ..|> PaymentState
+PaymentStateResolver o-- PaymentState : collects all beans
+
+class BiddingServiceImpl
+class AdminBiddingServiceImpl
+class AdminBidActionServiceImpl
+class PaymentServiceImpl
+class AdminPaymentServiceImpl
+
+BiddingServiceImpl ..> BiddingStateResolver
+AdminBiddingServiceImpl ..> BiddingStateResolver
+AdminBidActionServiceImpl ..> BiddingStateResolver
+PaymentServiceImpl ..> PaymentStateResolver
+AdminPaymentServiceImpl ..> PaymentStateResolver
+
+note bottom of BiddingStateResolver
+  Service เรียก resolver.resolve(status).canMoveTo(target)
+  เพิ่มสถานะใหม่ด้วยการเพิ่ม class (Open/Closed)
+end note
+@enduml

@@ -1,0 +1,46 @@
+@startuml
+title Sequence 4.4 - Admin ยกเลิก (Void) bid
+skinparam shadowing false
+autonumber
+
+actor "Admin" as Admin
+participant "Spring Security" as Sec
+participant "AdminBidActionController" as AC
+participant "AdminBidActionService\n(AdminBidActionServiceImpl)" as AS
+participant "BidActionRepository" as AR
+participant "BiddingRepository" as BR
+participant "BiddingStateResolver" as SR
+database "PostgreSQL" as DB
+
+Admin -> Sec : POST /api/v1/admin/bids/{bidId}/void {reason}
+Sec -> Sec : ตรวจ role ADMIN หรือ SUPER_ADMIN (else 403)
+Sec -> AC : voidBid(bidId, authentication, VoidBidRequest)
+AC -> AS : voidBid(adminEmail, bidId, reason)
+activate AS
+note right of AS : @Transactional
+AS -> AR : findBiddingIdById(bidId)
+AR --> AS : biddingId (else 404)
+AS -> BR : findByIdForUpdate(biddingId)
+BR -> DB : SELECT ... FOR UPDATE
+BR --> AS : Bidding
+AS -> AR : findById(bidId)
+AR --> AS : BidAction
+
+alt bid ถูก void แล้ว
+  AS --> AC : throw 409
+else ประมูลไม่ได้เป็น ACTIVE
+  AS -> SR : resolve(status).acceptsBids() = false
+  AS --> AC : throw 409
+else ทำรายการได้
+  AS -> AS : bid.status = VOIDED, voidedAt,\nvoidedBy = admin, voidReason
+  AS -> AR : saveAndFlush(bid)
+  AR -> DB : UPDATE bidactions
+  AS -> AR : findTopByBidding_IdAndStatusOrderByAmountDesc(biddingId, VALID)
+  AR --> AS : highest remaining valid bid (หรือไม่มี)
+  AS -> BR : save(bidding.lastBid = ราคาใหม่ หรือ null)
+  BR -> DB : UPDATE biddings
+  AS --> AC : BidAction
+end
+deactivate AS
+AC --> Admin : 200 OK (AdminBidActionResponse)
+@enduml

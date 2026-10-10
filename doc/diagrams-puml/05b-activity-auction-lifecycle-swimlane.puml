@@ -1,0 +1,52 @@
+@startuml
+title Activity Diagram 5.2 - วงจรประมูลจนส่งมอบสินค้า (Swimlane)
+skinparam shadowing false
+
+|Seller|
+start
+:สร้าง Seller Profile;
+:สร้าง Artwork;
+:เปิดประมูล\n(สถานะ ACTIVE);
+
+|Bidder / Buyer|
+:ลงราคาประมูล\n(หลายครั้งได้);
+
+|System Scheduler|
+:ตรวจ endDate ทุก 60 วินาที;
+:ปิดประมูล -> CLOSED\nตั้งผู้ชนะ + lastBid;
+
+if (มีผู้ชนะ และ Seller มี Profile?) then (ไม่)
+  #F5F5F5:จบ: ไม่มีการชำระเงิน;
+  stop
+else (ใช่)
+  :สร้าง Payment\nAWAITING_PAYMENT\n(dueDate = now + 3 วัน);
+endif
+
+repeat
+  |System Scheduler|
+  if (เลย dueDate และยังไม่ส่งสลิป?) then (ใช่)
+    #FFE0E0:Payment -> EXPIRED;
+    stop
+  else (ยัง)
+  endif
+  |Bidder / Buyer|
+  :ส่งสลิป\n-> PAYMENT_SUBMITTED;
+  |Seller|
+  :ตรวจสลิป;
+backward:Seller ปฏิเสธพร้อมเหตุผล\nกลับเป็น AWAITING_PAYMENT;
+repeat while (สลิปถูกต้อง?) is (ไม่ถูกต้อง) not (ถูกต้อง)
+
+:ยืนยัน -> PAID;
+:จัดส่งและกรอกเลขพัสดุ\n-> COMPLETED (salecount +1);
+
+|Bidder / Buyer|
+:ให้คะแนน Seller;
+
+#E0FFE0:จบ: ส่งมอบสำเร็จ;
+stop
+
+note right
+  Admin แทรกแซงได้ทุกเมื่อ:
+  void bid / ปิด-ยกเลิกประมูล / ยกเลิก Payment
+end note
+@enduml

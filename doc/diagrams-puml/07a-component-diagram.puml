@@ -1,0 +1,75 @@
+@startuml
+title Component Diagram - Auction System
+skinparam shadowing false
+skinparam componentStyle uml2
+left to right direction
+
+package "Client" {
+  [Web Browser\n(Thymeleaf pages)] as Browser
+  [API Client\n(Swagger UI / Bruno / Postman)] as ApiClient
+}
+
+package "Auction System (Spring Boot 4 / Java)" {
+
+  package "Cross-cutting" {
+    [Security\n(SecurityConfig, BCrypt,\nUserDetailsService)] as Sec
+    [GlobalExceptionHandler\n(ErrorResponse)] as Exc
+    [OpenApiConfig\n(springdoc Swagger UI)] as Oas
+    [AdminInitializer] as Init
+  }
+
+  package "Presentation Layer" {
+    [PageController\n(MVC + Thymeleaf)] as Web
+    [REST Controllers\ncontroller/api/*] as Rest
+  }
+
+  package "DTO Layer" {
+    [DTO\ndto/request, dto/response] as Dto
+    [Mappers\nmapper/*] as Map
+  }
+
+  package "Service Layer" {
+    [Service interfaces + Impl\n(@Transactional)] as Svc
+    [State components\n(BiddingState, PaymentState,\nStateResolver)] as State
+  }
+
+  package "Scheduler" {
+    [BiddingExpiryScheduler] as BSch
+    [PaymentExpiryScheduler] as PSch
+  }
+
+  package "Repository Layer" {
+    [Spring Data JPA\nrepository/*] as Repo
+  }
+
+  package "Domain Layer" {
+    [Entities and Enums\nmodel/*] as Ent
+  }
+}
+
+database "PostgreSQL\n(Neon in production,\npostgres:16 in docker-compose)" as DB
+
+Browser --> Sec : HTTP (HTML)
+ApiClient --> Sec : HTTP REST JSON
+Sec --> Web
+Sec --> Rest
+Sec --> Oas
+Web --> Svc
+Rest --> Dto
+Rest --> Map
+Rest --> Svc
+Map --> Dto
+Svc --> State
+Svc --> Repo
+BSch --> Svc
+PSch --> Svc
+Init --> Svc
+Repo --> Ent
+Repo --> DB : JDBC / Hibernate
+Exc ..> Rest : แปลง exception จาก
+
+note bottom of Rest
+  ไม่มีเส้น Presentation -> Repository ตรง ๆ
+  Controller ทุกตัวต้องผ่าน Service
+end note
+@enduml

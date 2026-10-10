@@ -1,0 +1,27 @@
+@startuml
+title State Diagram - Payment (Payment.Status)
+skinparam shadowing false
+
+[*] --> AWAITING_PAYMENT : สร้างอัตโนมัติเมื่อปิดประมูลที่มีผู้ชนะ
+
+AWAITING_PAYMENT --> PAYMENT_SUBMITTED : Buyer ส่งสลิป (submitSlip)
+AWAITING_PAYMENT --> EXPIRED : เลย dueDate (PaymentExpiryScheduler)
+AWAITING_PAYMENT --> CANCELLED : Admin ยกเลิก
+
+PAYMENT_SUBMITTED --> PAID : Seller ยืนยัน (confirmPayment)
+PAYMENT_SUBMITTED --> AWAITING_PAYMENT : Seller ปฏิเสธสลิป (rejectPayment)
+PAYMENT_SUBMITTED --> CANCELLED : Admin ยกเลิก
+
+PAID --> COMPLETED : Seller จัดส่ง (ship)
+PAID --> CANCELLED : Admin ยกเลิก
+
+COMPLETED --> CANCELLED : Admin ยกเลิกกรณีข้อพิพาท
+EXPIRED --> CANCELLED : Admin ยกเลิก
+
+CANCELLED --> [*]
+
+note right of COMPLETED
+  salecount ของ Seller +1
+  ถ้ายกเลิกหลังจุดนี้: -1 และถอนคะแนนที่ให้ไว้
+end note
+@enduml
