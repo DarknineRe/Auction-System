@@ -5,6 +5,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Page;
@@ -206,9 +209,13 @@ public class PageController {
         model.addAttribute("artworks", bidding.getArtworks());
         model.addAttribute("bids", bidActionService.getBidsByBidding(biddingId));
         model.addAttribute("comments", commentService.getCommentsByBiddingId(biddingId));
-        model.addAttribute("currentUser", isAuthenticated(authentication)
+        User currentUser = isAuthenticated(authentication)
                 ? userService.getCurrentUser(authentication.getName())
-                : null);
+                : null;
+        model.addAttribute("currentUser", currentUser);
+        model.addAttribute("payment", currentUser == null
+                ? null
+                : paymentService.findPaymentForParticipant(biddingId, currentUser.getId()).orElse(null));
         return "bidding-detail";
     }
 
@@ -296,6 +303,11 @@ public class PageController {
         model.addAttribute("bidsPage", bids);
         model.addAttribute("wonBiddings", wonBiddings.getContent());
         model.addAttribute("wonBiddingsPage", wonBiddings);
+        Map<Long, Payment> wonPayments = paymentService
+                .getPurchasesForBiddings(user.getId(), wonBiddings.map(Bidding::getId).getContent())
+                .stream()
+                .collect(Collectors.toMap(payment -> payment.getBidding().getId(), Function.identity()));
+        model.addAttribute("wonPayments", wonPayments);
         return workspace(model, "my-bids", "My bids");
     }
 
@@ -450,6 +462,18 @@ public class PageController {
         return "redirect:/payments/" + paymentId + "?success";
     }
 
+    @GetMapping("/seller/profile")
+    public String mySellerProfile(Authentication authentication, Model model) {
+        User user = currentUser(authentication);
+        Sellerprofile profile = getSellerProfileOrNull(authentication.getName());
+        model.addAttribute("sellerProfile", profile);
+        model.addAttribute("seller", user);
+        model.addAttribute("artworks", profile == null
+                ? List.of()
+                : artworkService.getArtworksBySeller(user.getId()));
+        return workspace(model, "my-seller-profile", "My seller profile");
+    }
+
     @GetMapping("/seller/settings")
     public String sellerSettings(Authentication authentication, Model model) {
         Sellerprofile profile = getSellerProfileOrNull(authentication.getName());
@@ -467,7 +491,7 @@ public class PageController {
         } else {
             sellerprofileService.updateCurrentSellerProfile(authentication.getName(), bankaccount.trim());
         }
-        return "redirect:/seller/settings?success";
+        return "redirect:/seller/profile?success";
     }
 
     @GetMapping("/sellers/{userId}")

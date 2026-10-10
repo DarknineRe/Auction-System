@@ -1,18 +1,17 @@
 /* Auction / item card. Usage:
    <article class="card">
-     <div class="card__media"><img src="..." alt="..."></div>
+     <div class="card__media"><img src="..." alt="..."><span class="badge badge--success">Active</span></div>
      <div class="card__body">
-       <span class="badge badge--success">Active</span>
        <h3 class="card__title">Title</h3>
        <p class="card__label">Current bid</p>
-       <p class="card__price">฿1,200</p>
+       <p class="card__price">1,200 THB</p>
        <p class="card__meta">Ends in 2d 4h</p>
      </div>
    </article>
    Wrap several cards in <div class="card-grid"> for a responsive grid. */
 .card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 24px;
 }
 
@@ -21,41 +20,69 @@
   flex-direction: column;
   overflow: hidden;
   color: inherit;
-  background: var(--white);
+  font-weight: 400;
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  transition: box-shadow 0.15s, transform 0.15s;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
 }
-.card:hover { box-shadow: 0 8px 20px rgba(20, 33, 61, 0.12); transform: translateY(-2px); }
+.card:hover { border-color: var(--accent); box-shadow: var(--shadow-md); transform: translateY(-3px); }
 a.card:hover { text-decoration: none; }
-a.card:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.6); outline-offset: 2px; }
+a.card:focus-visible { outline: none; box-shadow: var(--ring); }
 
 .card__media {
+  position: relative;
   aspect-ratio: 4 / 3;
-  background: #e5e7eb; /* shown while loading or when there is no image */
+  overflow: hidden;
+  /* shown while loading or when there is no image */
+  background: #e5e7eb;
 }
 .card__media img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.35s;
 }
+.card:hover .card__media img { transform: scale(1.04); }
+.card__media .badge { position: absolute; top: 12px; left: 12px; box-shadow: var(--shadow-sm); }
 
 .card__body {
   display: flex;
+  flex: 1;
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
-  padding: 16px;
+  padding: 16px 18px 18px;
 }
 
 .card__title {
-  margin: 4px 0 8px;
+  margin: 0 0 10px;
   font-size: 1.05rem;
   line-height: 1.3;
   color: var(--text);
 }
 
-.card__label { margin: 0; font-size: 0.8rem; color: var(--muted); }
-.card__price { margin: 0; font-size: 1.35rem; font-weight: 800; color: var(--navy); }
-.card__meta  { margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
+.card__label {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.card__price { margin: 0 0 12px; font-size: 1.4rem; font-weight: 800; color: var(--ink); }
+.card__meta  {
+  width: 100%;
+  margin: auto 0 0;
+  padding-top: 12px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card, .card__media img { transition: none; }
+  .card:hover, .card:hover .card__media img { transform: none; }
+}

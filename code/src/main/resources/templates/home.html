@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,12 +10,26 @@
 <body>
   <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-  <main class="home">
-    <header class="home__header">
-      <h1>Live auctions</h1>
-      <p>Browse items open for bidding and place your bid.</p>
-    </header>
+  <section class="hero">
+    <div class="hero__inner">
+      <div>
+        <p class="hero__eyebrow">Art auctions, open to everyone</p>
+        <h1>Live auctions</h1>
+        <p class="hero__text">Browse items open for bidding and place your bid.</p>
+      </div>
+      <div class="hero__actions">
+        <a class="btn btn--primary" th:href="@{/auctions/new}" sec:authorize="isAuthenticated()">Create auction</a>
+        <a class="btn btn--primary" th:href="@{/register}" sec:authorize="!isAuthenticated()">Start bidding</a>
+        <p class="hero__count" th:if="${biddings.totalElements > 0}"
+           th:text="${biddings.totalElements} + (${biddings.totalElements == 1} ? ' auction live now' : ' auctions live now')">
+          12 auctions live now
+        </p>
+      </div>
+    </div>
+  </section>
 
+  <main class="home">
+    <div th:replace="~{fragments/notifications :: pay-banner}"></div>
     <div th:if="${param.bidPlaced}" class="alert alert--success" role="status">Your bid was placed.</div>
     <div th:if="${biddings.content.isEmpty()}" class="state">
       <p class="state__title">No active auctions right now</p>
@@ -29,9 +43,9 @@
           <img th:if="${!bidding.artworks.isEmpty() and bidding.artworks[0].imageUrl != null}"
                th:src="${bidding.artworks[0].imageUrl}"
                th:alt="${bidding.artworks[0].title}" loading="lazy">
+          <span class="badge badge--success">Active</span>
         </div>
         <div class="card__body">
-          <span class="badge badge--success">Active</span>
           <h2 class="card__title"
               th:text="${bidding.artworks.isEmpty() ? 'Auction #' + bidding.id : bidding.artworks[0].title}">
             Auction item
@@ -52,7 +66,6 @@
 
     <nav class="pagination" aria-label="Auction pages" th:if="${biddings.totalPages > 1}">
       <a class="pagination__btn"
-         th:classappend="${biddings.first ? ' pagination__btn--disabled' : ''}"
          th:if="${!biddings.first}" th:href="@{/(page=${biddings.number - 1})}">Previous</a>
       <span class="pagination__btn pagination__btn--disabled" th:if="${biddings.first}">Previous</span>
       <span class="pagination__info"

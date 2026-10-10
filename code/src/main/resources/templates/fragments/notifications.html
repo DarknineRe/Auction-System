@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+  <!-- Reminder with a direct "Pay now" button while the buyer owes a payment.
+       Usage:  <div th:replace="~{fragments/notifications :: pay-banner}"></div>
+       Buyer items come first in the list, so the first one is the most urgent payment. -->
+  <th:block th:fragment="pay-banner"
+            th:with="due=${notifications == null or notifications.isEmpty() ? null : notifications[0]}">
+    <aside class="pay-banner" role="status"
+           th:if="${due != null and (due.type.name() == 'PAYMENT_DUE' or due.type.name() == 'SLIP_REJECTED')}">
+      <div>
+        <p class="pay-banner__title"
+           th:text="${due.type.name() == 'SLIP_REJECTED'
+               ? 'Your payment slip for auction #' + due.biddingId + ' was rejected'
+               : 'You won auction #' + due.biddingId + '!'}">You won an auction!</p>
+        <p class="pay-banner__text"
+           th:text="'Pay ' + ${#numbers.formatDecimal(due.amount, 1, 'COMMA', 2, 'POINT')} + ' THB before ' + ${#dates.format(due.dueDate, 'dd MMM yyyy HH:mm')} + ' to keep your item.'">
+          Pay before the due date to keep your item.
+        </p>
+      </div>
+      <a class="btn" th:href="@{/payments/{id}(id=${due.paymentId})}"
+         th:text="${due.type.name() == 'SLIP_REJECTED' ? 'Send a new slip' : 'Pay now'}">Pay now</a>
+    </aside>
+  </th:block>
+</body>
+</html>

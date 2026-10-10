@@ -18,7 +18,12 @@
       <p th:if="${page == 'edit-auction'}">Update the schedule or starting price of your auction.</p>
       <p th:if="${page == 'purchases'}">Payments for auctions you won.</p>
       <p th:if="${page == 'sales'}">Payments and shipping tasks for your sales.</p>
-      <p th:if="${page == 'payment-detail'}" th:text="'Payment #' + ${payment.id} + ' · ' + ${payment.status}"></p>
+      <p th:if="${page == 'payment-detail'}">
+        <span th:text="'Payment #' + ${payment.id} + ' · '"></span>
+        <a th:href="@{/biddings/{id}(id=${payment.bidding.id})}" th:text="'Auction #' + ${payment.bidding.id}"></a>
+        <span th:replace="~{fragments/status :: badge(${payment.status})}"></span>
+      </p>
+      <p th:if="${page == 'my-seller-profile'}">Your seller details as buyers see them, plus your payout account.</p>
       <p th:if="${page == 'seller-settings'}">Set up or update the bank account associated with your seller profile.</p>
       <p th:if="${page == 'seller-profile'}">Public seller information and listed artwork.</p>
       <p th:if="${page == 'admin-dashboard'}">Administrative tools. Access is checked by the server for every operation.</p>
@@ -26,8 +31,38 @@
       <p th:if="${page == 'admin-bids'}">Inspect a bidding’s history and void invalid bids.</p>
     </header>
 
+    <!-- Skipped where the page itself already offers the Pay now button -->
+    <th:block th:if="${page != 'payment-detail' and page != 'purchases' and page != 'my-bids'}">
+      <div th:replace="~{fragments/notifications :: pay-banner}"></div>
+    </th:block>
     <div th:if="${param.success}" class="alert alert--success" role="status">Your changes have been saved.</div>
 
+    <section th:if="${page == 'my-bids'}" class="workspace__panel">
+      <h2>Auctions you won</h2>
+      <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(wonBiddings)}">
+        <table class="workspace__table">
+          <thead><tr><th>Auction</th><th>Winning price</th><th>Payment</th><th></th></tr></thead>
+          <tbody><tr th:each="bid : ${wonBiddings}" th:with="payment=${wonPayments[bid.id]}">
+            <td><a th:href="@{/biddings/{id}(id=${bid.id})}" th:text="'Auction #' + ${bid.id}"></a></td>
+            <td th:text="${#numbers.formatDecimal(bid.lastBid == null ? bid.startingPrice : bid.lastBid, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
+            <td>
+              <!-- th:replace runs before th:if, so the condition needs its own element -->
+              <th:block th:if="${payment != null}"><span th:replace="~{fragments/status :: badge(${payment.status})}"></span></th:block>
+              <th:block th:if="${payment == null}"><span th:replace="~{fragments/status :: badge(${bid.status})}"></span></th:block>
+            </td>
+            <td class="workspace__cell-action">
+              <a class="btn btn--primary btn--sm" th:if="${payment != null and payment.status.name() == 'AWAITING_PAYMENT'}"
+                 th:href="@{/payments/{id}(id=${payment.id})}">Pay now</a>
+              <a class="btn btn--secondary btn--sm" th:if="${payment != null and payment.status.name() != 'AWAITING_PAYMENT'}"
+                 th:href="@{/payments/{id}(id=${payment.id})}">View payment</a>
+            </td>
+          </tr></tbody>
+        </table>
+      </div>
+      <p class="workspace__empty" th:if="${#lists.isEmpty(wonBiddings)}">No won auctions yet.</p>
+      <div th:replace="~{fragments/pagination :: pagination(${wonBiddingsPage}, '/my-bids', 'wonPage', null)}"></div>
+      <a class="btn btn--secondary" th:href="@{/purchases}">All purchases</a>
+    </section>
     <section th:if="${page == 'my-bids'}" class="workspace__panel">
       <h2>Bid history</h2>
       <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(bids)}">
@@ -45,23 +80,6 @@
       <p class="workspace__empty" th:if="${#lists.isEmpty(bids)}">You have not placed any bids yet.</p>
       <div th:replace="~{fragments/pagination :: pagination(${bidsPage}, '/my-bids', 'page', null)}"></div>
     </section>
-    <section th:if="${page == 'my-bids'}" class="workspace__panel">
-      <h2>Auctions you won</h2>
-      <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(wonBiddings)}">
-        <table class="workspace__table">
-          <thead><tr><th>Auction</th><th>Winning price</th><th>Status</th><th></th></tr></thead>
-          <tbody><tr th:each="bid : ${wonBiddings}">
-            <td th:text="'Auction #' + ${bid.id}"></td>
-            <td th:text="${#numbers.formatDecimal(bid.lastBid == null ? bid.startingPrice : bid.lastBid, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
-            <td th:text="${bid.status}"></td>
-            <td><a th:href="@{/purchases}" th:if="${bid.status.name() == 'CLOSED'}">View purchases</a></td>
-          </tr></tbody>
-        </table>
-      </div>
-      <p class="workspace__empty" th:if="${#lists.isEmpty(wonBiddings)}">No won auctions yet.</p>
-      <div th:replace="~{fragments/pagination :: pagination(${wonBiddingsPage}, '/my-bids', 'wonPage', null)}"></div>
-      <a class="btn btn--secondary" th:href="@{/purchases}">View purchases</a>
-    </section>
 
     <section th:if="${page == 'my-auctions'}">
       <div class="workspace__toolbar"><a class="btn btn--primary" th:href="@{/auctions/new}">Create auction</a></div>
@@ -70,15 +88,17 @@
           <thead><tr><th>Auction</th><th>Status</th><th>Current price</th><th>Ends</th><th>Actions</th></tr></thead>
           <tbody><tr th:each="bid : ${biddings}">
             <td><a th:href="@{/biddings/{id}(id=${bid.id})}" th:text="'#' + ${bid.id}"></a></td>
-            <td th:text="${bid.status}"></td>
+            <td><span th:replace="~{fragments/status :: badge(${bid.status})}"></span></td>
             <td th:text="${#numbers.formatDecimal(bid.lastBid == null ? bid.startingPrice : bid.lastBid, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
             <td th:text="${#dates.format(bid.endDate, 'dd MMM yyyy HH:mm')}"></td>
             <td>
-              <a th:if="${bid.status.name() == 'ACTIVE'}" th:href="@{/auctions/{id}/edit(id=${bid.id})}">Edit</a>
+              <a class="btn btn--secondary btn--sm" th:if="${bid.status.name() == 'ACTIVE'}"
+                 th:href="@{/auctions/{id}/edit(id=${bid.id})}">Edit</a>
               <form class="workspace__inline-form" th:if="${bid.status.name() == 'ACTIVE'}"
                     th:action="@{/auctions/{id}/cancel(id=${bid.id})}" method="post">
-                <button class="btn btn--secondary" type="submit">Cancel</button>
+                <button class="btn btn--danger btn--sm" type="submit">Cancel</button>
               </form>
+              <span th:if="${bid.status.name() != 'ACTIVE'}">—</span>
             </td>
           </tr></tbody>
         </table>
@@ -90,104 +110,212 @@
     <form th:if="${page == 'new-auction'}" class="workspace__form workspace__panel" th:action="@{/auctions}" method="post">
       <label>Artwork title<input name="title" maxlength="255" required></label>
       <label>Image URL (optional)<input name="imageUrl" type="url" maxlength="2048"></label>
-      <label>Starting price / minimum first bid (THB)<input name="startingPrice" type="number" min="0.01" step="0.01" required></label>
-      <label>Minimum bid increment (THB)<input name="minimumBidIncrement" type="number" min="0.01" step="0.01" value="1.00" required></label>
-      <label>Starts at<input name="startDate" type="datetime-local" required></label>
-      <label>Ends at<input name="endDate" type="datetime-local" required></label>
-      <button class="btn btn--primary" type="submit">Create auction</button>
+      <div class="workspace__form-row">
+        <label>Starting price / minimum first bid (THB)<input name="startingPrice" type="number" min="0.01" step="0.01" required></label>
+        <label>Minimum bid increment (THB)<input name="minimumBidIncrement" type="number" min="0.01" step="0.01" value="1.00" required></label>
+      </div>
+      <div class="workspace__form-row">
+        <label>Starts at<input name="startDate" type="datetime-local" required></label>
+        <label>Ends at<input name="endDate" type="datetime-local" required></label>
+      </div>
+      <div class="workspace__actions">
+        <button class="btn btn--primary" type="submit">Create auction</button>
+        <a class="btn btn--secondary" th:href="@{/my-auctions}">Cancel</a>
+      </div>
     </form>
 
     <form th:if="${page == 'edit-auction'}" class="workspace__form workspace__panel"
           th:action="@{/auctions/{id}/edit(id=${bidding.id})}" method="post">
-      <label>Starting price (THB)
-        <input name="startingPrice" type="number" min="0.01" step="0.01" th:value="${bidding.startingPrice}" required>
-      </label>
-      <label>Minimum bid increment (THB)
-        <input name="minimumBidIncrement" type="number" min="0.01" step="0.01"
-               th:value="${bidding.minimumBidIncrement}" required>
-      </label>
-      <label>Starts at<input name="startDate" type="datetime-local"
-          th:value="${#dates.format(bidding.startDate, 'yyyy-MM-dd''T''HH:mm')}" required></label>
-      <label>Ends at<input name="endDate" type="datetime-local"
-          th:value="${#dates.format(bidding.endDate, 'yyyy-MM-dd''T''HH:mm')}" required></label>
-      <button class="btn btn--primary" type="submit">Save changes</button>
-      <a class="workspace__link" th:href="@{/my-auctions}">Back to my auctions</a>
+      <div class="workspace__form-row">
+        <label>Starting price (THB)
+          <input name="startingPrice" type="number" min="0.01" step="0.01" th:value="${bidding.startingPrice}" required>
+        </label>
+        <label>Minimum bid increment (THB)
+          <input name="minimumBidIncrement" type="number" min="0.01" step="0.01"
+                 th:value="${bidding.minimumBidIncrement}" required>
+        </label>
+      </div>
+      <div class="workspace__form-row">
+        <label>Starts at<input name="startDate" type="datetime-local"
+            th:value="${#dates.format(bidding.startDate, 'yyyy-MM-dd''T''HH:mm')}" required></label>
+        <label>Ends at<input name="endDate" type="datetime-local"
+            th:value="${#dates.format(bidding.endDate, 'yyyy-MM-dd''T''HH:mm')}" required></label>
+      </div>
+      <div class="workspace__actions">
+        <button class="btn btn--primary" type="submit">Save changes</button>
+        <a class="btn btn--secondary" th:href="@{/my-auctions}">Back to my auctions</a>
+      </div>
     </form>
 
-    <section th:if="${page == 'purchases' or page == 'sales' or page == 'admin-payments'}">
+    <section th:if="${page == 'purchases' or page == 'sales'}">
       <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(payments)}">
         <table class="workspace__table">
-          <thead><tr><th>Payment</th><th>Status</th><th>Amount</th><th>Due</th><th>Auction</th><th th:if="${page == 'admin-payments'}">Users</th></tr></thead>
-          <tbody><tr th:each="payment : ${payments}">
-            <td>
-              <a th:if="${page != 'admin-payments'}" th:href="@{/payments/{id}(id=${payment.id})}" th:text="'#' + ${payment.id}"></a>
-              <span th:if="${page == 'admin-payments'}" th:text="'#' + ${payment.id}"></span>
-            </td>
-            <td th:text="${payment.status}"></td>
+          <thead><tr><th>Payment</th><th>Auction</th><th>Amount</th><th>Due</th><th>Status</th><th></th></tr></thead>
+          <tbody><tr th:each="payment : ${payments}" th:with="status=${payment.status.name()}">
+            <td><a th:href="@{/payments/{id}(id=${payment.id})}" th:text="'#' + ${payment.id}"></a></td>
+            <td><a th:href="@{/biddings/{id}(id=${payment.bidding.id})}" th:text="'Auction #' + ${payment.bidding.id}"></a></td>
             <td th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
             <td th:text="${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')}"></td>
-            <td><a th:href="@{/biddings/{id}(id=${payment.bidding.id})}" th:text="'Auction #' + ${payment.bidding.id}"></a></td>
-            <td th:if="${page == 'admin-payments'}" th:text="'Buyer #' + ${payment.buyer.id} + ' · Seller #' + ${payment.sellerprofile.user.id}"></td>
+            <td><span th:replace="~{fragments/status :: badge(${payment.status})}"></span></td>
+            <!-- The button names the next step for whoever is looking at the row -->
+            <td class="workspace__cell-action"
+                th:with="action=${page == 'purchases'
+                    ? (status == 'AWAITING_PAYMENT' ? 'Pay now' : null)
+                    : (status == 'PAYMENT_SUBMITTED' ? 'Review slip' : (status == 'PAID' ? 'Add shipping' : null))}">
+              <a class="btn btn--primary btn--sm" th:if="${action != null}"
+                 th:href="@{/payments/{id}(id=${payment.id})}" th:text="${action}">Pay now</a>
+              <a class="btn btn--secondary btn--sm" th:if="${action == null}"
+                 th:href="@{/payments/{id}(id=${payment.id})}">View</a>
+            </td>
           </tr></tbody>
         </table>
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(payments)}">No payment records found.</p>
-      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, ${page == 'purchases' ? '/purchases' : (page == 'sales' ? '/sales' : '/admin/payments')}, 'page', null)}"></div>
+      <div th:replace="~{fragments/pagination :: pagination(${tablePage}, ${page == 'purchases' ? '/purchases' : '/sales'}, 'page', null)}"></div>
     </section>
 
-    <section th:if="${page == 'payment-detail'}" class="workspace__panel">
-      <dl>
-        <dt>Status</dt><dd th:text="${payment.status}"></dd>
-        <dt>Amount</dt><dd th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></dd>
-        <dt>Buyer</dt><dd th:text="${payment.buyer.name}"></dd>
-        <dt>Seller</dt><dd><a th:href="@{/sellers/{id}(id=${payment.sellerprofile.user.id})}" th:text="${payment.sellerprofile.user.name}"></a></dd>
-        <dt>Seller bank account</dt><dd th:text="${payment.sellerprofile.bankaccount}"></dd>
-        <dt>Due date</dt><dd th:text="${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')}"></dd>
-        <dt>Shipping address</dt><dd th:text="${payment.shippingAddress ?: '—'}"></dd>
-        <dt>Carrier</dt><dd th:text="${payment.carrier ?: '—'}"></dd>
-        <dt>Tracking number</dt><dd th:text="${payment.trackingNumber ?: '—'}"></dd>
-        <dt>Tracking link</dt><dd><a th:if="${payment.trackingUrl != null}" th:href="${payment.trackingUrl}" rel="noopener noreferrer">Track shipment</a><span th:if="${payment.trackingUrl == null}">—</span></dd>
-        <dt>Shipping note</dt><dd th:text="${payment.shippingNote ?: '—'}"></dd>
-        <dt>Payment note</dt><dd th:text="${payment.rejectReason ?: payment.cancelReason ?: '—'}"></dd>
-      </dl>
-    </section>
-    <form th:if="${page == 'payment-detail' and payment.buyer.id == currentUserId and (payment.status.name() == 'AWAITING_PAYMENT' or payment.status.name() == 'EXPIRED')}"
-          class="workspace__form workspace__panel" th:action="@{/payments/{id}/slip(id=${payment.id})}" method="post">
-      <h2>Submit payment slip</h2>
-      <label>Slip image URL<input name="slipUrl" type="url" maxlength="2048" required></label>
-      <button class="btn btn--primary" type="submit">Submit slip</button>
-    </form>
-    <section th:if="${page == 'payment-detail' and payment.sellerprofile.user.id == currentUserId and payment.status.name() == 'PAYMENT_SUBMITTED'}" class="workspace__panel">
-      <h2>Review payment</h2>
-      <p><a th:href="${payment.slipUrl}" target="_blank" rel="noopener noreferrer">View submitted slip</a></p>
-      <div class="workspace__actions">
-        <form th:action="@{/payments/{id}/confirm(id=${payment.id})}" method="post"><button class="btn btn--primary" type="submit">Confirm payment</button></form>
-        <form class="workspace__inline-form" th:action="@{/payments/{id}/reject(id=${payment.id})}" method="post">
-          <label>Reason for rejection<input name="reason" maxlength="500" required></label>
-          <button class="btn btn--secondary" type="submit">Reject slip</button>
-        </form>
-      </div>
-    </section>
-    <form th:if="${page == 'payment-detail' and payment.sellerprofile.user.id == currentUserId and payment.status.name() == 'PAID'}"
-          class="workspace__form workspace__panel" th:action="@{/payments/{id}/ship(id=${payment.id})}" method="post">
-      <h2>Shipping details</h2>
-      <label>Carrier<input name="carrier" maxlength="100" required></label>
-      <label>Tracking number<input name="trackingNumber" maxlength="100" required></label>
-      <label>Tracking URL<input name="trackingUrl" type="url" maxlength="2048" required></label>
-      <label>Shipping note<textarea name="shippingNote" maxlength="1000"></textarea></label>
-      <button class="btn btn--primary" type="submit">Save shipping</button>
-    </form>
+    <th:block th:if="${page == 'payment-detail'}"
+              th:with="status=${payment.status.name()},
+                       isBuyer=${payment.buyer.id == currentUserId},
+                       isSeller=${payment.sellerprofile.user.id == currentUserId},
+                       step=${payment.status.name() == 'AWAITING_PAYMENT' ? 1 : (payment.status.name() == 'PAYMENT_SUBMITTED' ? 2 : (payment.status.name() == 'PAID' ? 3 : (payment.status.name() == 'COMPLETED' ? 5 : 0)))}">
+      <ol class="steps" aria-label="Payment progress" th:if="${step > 0}">
+        <li class="steps__item" th:classappend="${step > 1} ? 'is-done' : 'is-current'">Awaiting payment</li>
+        <li class="steps__item" th:classappend="${step > 2} ? 'is-done' : (${step == 2} ? 'is-current' : '')">Slip submitted</li>
+        <li class="steps__item" th:classappend="${step > 3} ? 'is-done' : (${step == 3} ? 'is-current' : '')">Payment confirmed</li>
+        <li class="steps__item" th:classappend="${step > 4} ? 'is-done' : ''">Shipped</li>
+      </ol>
+      <div class="alert alert--error" role="status" th:if="${status == 'EXPIRED'}">This payment expired because it was not paid before the due date.</div>
+      <div class="alert alert--error" role="status" th:if="${status == 'CANCELLED'}"
+           th:text="'This payment was cancelled' + (${payment.cancelReason != null} ? ': ' + ${payment.cancelReason} : '.')">This payment was cancelled.</div>
+      <div class="alert alert--error" role="status" th:if="${isBuyer and status == 'AWAITING_PAYMENT' and payment.rejectReason != null}"
+           th:text="'The seller rejected your slip: ' + ${payment.rejectReason} + ' Please send a new one.'">The seller rejected your slip.</div>
+
+      <section class="paybox workspace__panel" th:if="${isBuyer and status == 'AWAITING_PAYMENT'}">
+        <div class="paybox__summary">
+          <p class="paybox__label">Amount to pay</p>
+          <p class="paybox__amount" th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'">0.00 THB</p>
+          <p class="paybox__due" th:text="'Pay before ' + ${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')}">Pay before the due date</p>
+        </div>
+        <div class="paybox__pay">
+          <h2>How to pay</h2>
+          <ol class="paybox__how">
+            <li>Transfer the amount to bank account
+              <strong class="paybox__account" th:text="${payment.sellerprofile.bankaccount}">000-0-00000-0</strong>
+              (<span th:text="${payment.sellerprofile.user.name}">Seller</span>).</li>
+            <li>Paste a link to your transfer slip below and submit it.</li>
+          </ol>
+          <form class="workspace__form" th:action="@{/payments/{id}/slip(id=${payment.id})}" method="post">
+            <label>Slip image URL<input name="slipUrl" type="url" maxlength="2048" placeholder="https://" required></label>
+            <button class="btn btn--primary" type="submit">Submit slip</button>
+            <p class="paybox__hint">Your item ships to the address on <a th:href="@{/profile}">your profile</a>, so make sure it is filled in first.</p>
+          </form>
+        </div>
+      </section>
+
+      <section class="workspace__panel" th:if="${isSeller and status == 'PAYMENT_SUBMITTED'}">
+        <h2>Review payment</h2>
+        <p>Check the slip against your bank account, then confirm or reject it.</p>
+        <p><a class="btn btn--secondary" th:href="${payment.slipUrl}" target="_blank" rel="noopener noreferrer">View submitted slip</a></p>
+        <div class="workspace__actions workspace__actions--review">
+          <form th:action="@{/payments/{id}/confirm(id=${payment.id})}" method="post"><button class="btn btn--primary" type="submit">Confirm payment</button></form>
+          <form class="workspace__inline-form" th:action="@{/payments/{id}/reject(id=${payment.id})}" method="post">
+            <label>Reason for rejection<input name="reason" maxlength="500" required></label>
+            <button class="btn btn--danger" type="submit">Reject slip</button>
+          </form>
+        </div>
+      </section>
+
+      <form th:if="${isSeller and status == 'PAID'}"
+            class="workspace__form workspace__panel" th:action="@{/payments/{id}/ship(id=${payment.id})}" method="post">
+        <h2>Shipping details</h2>
+        <div class="workspace__form-row">
+          <label>Carrier<input name="carrier" maxlength="100" required></label>
+          <label>Tracking number<input name="trackingNumber" maxlength="100" required></label>
+        </div>
+        <label>Tracking URL<input name="trackingUrl" type="url" maxlength="2048" placeholder="https://" required></label>
+        <label>Shipping note<textarea name="shippingNote" maxlength="1000"></textarea></label>
+        <button class="btn btn--primary" type="submit">Save shipping</button>
+      </form>
+
+      <section class="workspace__panel">
+        <h2>Details</h2>
+        <dl>
+          <dt>Amount</dt><dd th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></dd>
+          <dt>Buyer</dt><dd th:text="${payment.buyer.name}"></dd>
+          <dt>Seller</dt><dd><a th:href="@{/sellers/{id}(id=${payment.sellerprofile.user.id})}" th:text="${payment.sellerprofile.user.name}"></a></dd>
+          <dt>Seller bank account</dt><dd th:text="${payment.sellerprofile.bankaccount}"></dd>
+          <dt>Due date</dt><dd th:text="${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')}"></dd>
+          <dt>Shipping address</dt><dd th:text="${payment.shippingAddress ?: '—'}"></dd>
+          <dt>Carrier</dt><dd th:text="${payment.carrier ?: '—'}"></dd>
+          <dt>Tracking number</dt><dd th:text="${payment.trackingNumber ?: '—'}"></dd>
+          <dt>Tracking link</dt><dd><a th:if="${payment.trackingUrl != null}" th:href="${payment.trackingUrl}" rel="noopener noreferrer">Track shipment</a><span th:if="${payment.trackingUrl == null}">—</span></dd>
+          <dt>Shipping note</dt><dd th:text="${payment.shippingNote ?: '—'}"></dd>
+          <dt>Payment note</dt><dd th:text="${payment.rejectReason ?: payment.cancelReason ?: '—'}"></dd>
+        </dl>
+      </section>
+    </th:block>
 
     <form th:if="${page == 'seller-settings'}" class="workspace__form workspace__panel" th:action="@{/seller/settings}" method="post">
       <label>Bank account number<input name="bankaccount" maxlength="255" th:value="${sellerProfile == null ? '' : sellerProfile.bankaccount}" required></label>
-      <button class="btn btn--primary" type="submit" th:text="${sellerProfile == null ? 'Create seller profile' : 'Update seller profile'}"></button>
+      <div class="workspace__actions">
+        <button class="btn btn--primary" type="submit" th:text="${sellerProfile == null ? 'Create seller profile' : 'Update seller profile'}"></button>
+        <a class="btn btn--secondary" th:href="@{/seller/profile}">Back to my seller profile</a>
+      </div>
       <p>Your bank account is only shown to authorized participants in a payment.</p>
     </form>
 
+    <section th:if="${page == 'my-seller-profile' and sellerProfile == null}" class="state">
+      <p class="state__title">You do not have a seller profile yet</p>
+      <p class="state__text">Add a bank account to start selling. Buyers pay into it after winning your auctions.</p>
+      <a class="btn btn--primary state__action" th:href="@{/seller/settings}">Create seller profile</a>
+    </section>
+    <th:block th:if="${page == 'my-seller-profile' and sellerProfile != null}">
+      <section class="workspace__panel">
+        <header class="seller">
+          <div class="seller__avatar" aria-hidden="true"
+               th:text="${#strings.isEmpty(seller.name) ? '?' : #strings.substring(seller.name, 0, 1)}">S</div>
+          <div class="seller__who">
+            <h2 th:text="${seller.name}">Seller</h2>
+            <p th:text="${seller.email}">email</p>
+          </div>
+          <a class="btn btn--secondary" th:href="@{/sellers/{id}(id=${seller.id})}">View public page</a>
+        </header>
+        <div class="workspace__stats">
+          <p><span>Rating</span><strong th:text="${sellerProfile.rating == null ? 'Not rated' : #numbers.formatDecimal(sellerProfile.rating, 1, 1) + ' / 5'}"></strong></p>
+          <p><span>Sales</span><strong th:text="${sellerProfile.salecount}"></strong></p>
+          <p><span>Artworks</span><strong th:text="${#lists.size(artworks)}"></strong></p>
+        </div>
+        <h2>Payout account</h2>
+        <dl>
+          <dt>Bank account</dt><dd th:text="${sellerProfile.bankaccount}"></dd>
+          <dt>Phone</dt><dd th:text="${#strings.isEmpty(seller.phone) ? '—' : seller.phone}"></dd>
+          <dt>Address</dt><dd th:text="${#strings.isEmpty(seller.address) ? '—' : seller.address}"></dd>
+        </dl>
+        <div class="workspace__actions">
+          <a class="btn btn--primary" th:href="@{/seller/settings}">Edit bank account</a>
+          <a class="btn btn--secondary" th:href="@{/my-auctions}">My auctions</a>
+          <a class="btn btn--secondary" th:href="@{/sales}">Sales</a>
+        </div>
+      </section>
+      <section class="workspace__panel">
+        <h2>Your artwork</h2>
+        <div class="workspace__grid">
+          <article class="workspace__card" th:each="artwork : ${artworks}">
+            <img th:if="${artwork.imageUrl != null}" th:src="${artwork.imageUrl}" th:alt="${artwork.title}" loading="lazy">
+            <h3 th:text="${artwork.title}"></h3>
+          </article>
+        </div>
+        <p class="workspace__empty" th:if="${#lists.isEmpty(artworks)}">No listed artwork yet. <a th:href="@{/auctions/new}">Create an auction</a> to add one.</p>
+      </section>
+    </th:block>
+
     <section th:if="${page == 'seller-profile'}" class="workspace__panel">
       <h2 th:text="${sellerProfile.user.name}"></h2>
-      <p>Rating: <span th:text="${sellerProfile.rating ?: 'Not rated'}"></span></p>
-      <p>Sales: <span th:text="${sellerProfile.salecount}"></span></p>
+      <div class="workspace__stats">
+        <p><span>Rating</span><strong th:text="${sellerProfile.rating ?: 'Not rated'}"></strong></p>
+        <p><span>Sales</span><strong th:text="${sellerProfile.salecount}"></strong></p>
+      </div>
       <h2>Artwork</h2>
       <div class="workspace__grid">
         <article class="workspace__card" th:each="artwork : ${artworks}">
@@ -210,16 +338,17 @@
       <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(users)}">
         <table class="workspace__table"><thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr></thead>
           <tbody><tr th:each="user : ${users}">
-            <td th:text="${user.id}"></td><td th:text="${user.name}"></td><td th:text="${user.email}"></td><td th:text="${user.role}"></td>
-            <td th:text="${user.enabled ? 'Enabled' : 'Disabled'}"></td>
+            <td th:text="${user.id}"></td><td th:text="${user.name}"></td><td th:text="${user.email}"></td>
+            <td><span class="badge badge--neutral" th:text="${#strings.replace(user.role, '_', ' ')}"></span></td>
+            <td><span class="badge" th:classappend="${user.enabled} ? 'badge--success' : 'badge--danger'" th:text="${user.enabled ? 'Enabled' : 'Disabled'}"></span></td>
             <td>
-              <form th:action="@{/admin/users/{id}/status(id=${user.id})}" method="post">
+              <form class="workspace__inline-form" th:action="@{/admin/users/{id}/status(id=${user.id})}" method="post">
                 <input type="hidden" name="enabled" th:value="${!user.enabled}">
-                <button class="btn btn--secondary" type="submit" th:text="${user.enabled ? 'Disable' : 'Enable'}"></button>
+                <button class="btn btn--sm" th:classappend="${user.enabled} ? 'btn--danger' : 'btn--secondary'" type="submit" th:text="${user.enabled ? 'Disable' : 'Enable'}"></button>
               </form>
-              <form th:if="${isSuperAdmin and user.role.name() == 'USER'}"
+              <form class="workspace__inline-form" th:if="${isSuperAdmin and user.role.name() == 'USER'}"
                     th:action="@{/admin/users/{id}/promote(id=${user.id})}" method="post">
-                <button class="btn btn--secondary" type="submit">Promote to Admin</button>
+                <button class="btn btn--secondary btn--sm" type="submit">Promote to Admin</button>
               </form>
             </td>
           </tr></tbody>
@@ -233,12 +362,13 @@
       <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(biddings)}">
         <table class="workspace__table"><thead><tr><th>ID</th><th>Owner</th><th>Status</th><th>Price</th><th>Ends</th><th>Actions</th></tr></thead>
           <tbody><tr th:each="bid : ${biddings}">
-            <td><a th:href="@{/biddings/{id}(id=${bid.id})}" th:text="${bid.id}"></a></td><td th:text="${bid.owner.name}"></td><td th:text="${bid.status}"></td>
+            <td><a th:href="@{/biddings/{id}(id=${bid.id})}" th:text="${bid.id}"></a></td><td th:text="${bid.owner.name}"></td>
+            <td><span th:replace="~{fragments/status :: badge(${bid.status})}"></span></td>
             <td th:text="${#numbers.formatDecimal(bid.lastBid == null ? bid.startingPrice : bid.lastBid, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
             <td th:text="${#dates.format(bid.endDate, 'dd MMM yyyy HH:mm')}"></td>
             <td th:if="${bid.status.name() == 'ACTIVE'}">
-              <form class="workspace__inline-form" th:action="@{/admin/auctions/{id}/close(id=${bid.id})}" method="post"><button class="btn btn--secondary">Close</button></form>
-              <form class="workspace__inline-form" th:action="@{/admin/auctions/{id}/cancel(id=${bid.id})}" method="post"><button class="btn btn--secondary">Cancel</button></form>
+              <form class="workspace__inline-form" th:action="@{/admin/auctions/{id}/close(id=${bid.id})}" method="post"><button class="btn btn--secondary btn--sm">Close</button></form>
+              <form class="workspace__inline-form" th:action="@{/admin/auctions/{id}/cancel(id=${bid.id})}" method="post"><button class="btn btn--danger btn--sm">Cancel</button></form>
             </td><td th:if="${bid.status.name() != 'ACTIVE'}">—</td>
           </tr></tbody>
         </table>
@@ -249,13 +379,17 @@
 
     <section th:if="${page == 'admin-payments'}">
       <div class="workspace__table-wrap" th:if="${!#lists.isEmpty(payments)}">
-        <table class="workspace__table"><thead><tr><th>ID</th><th>Status</th><th>Amount</th><th>Buyer</th><th>Seller</th><th>Action</th></tr></thead>
+        <table class="workspace__table"><thead><tr><th>ID</th><th>Auction</th><th>Status</th><th>Amount</th><th>Due</th><th>Buyer</th><th>Seller</th><th>Action</th></tr></thead>
           <tbody><tr th:each="payment : ${payments}">
-            <td th:text="${payment.id}"></td><td th:text="${payment.status}"></td><td th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
+            <td th:text="${payment.id}"></td>
+            <td><a th:href="@{/biddings/{id}(id=${payment.bidding.id})}" th:text="'Auction #' + ${payment.bidding.id}"></a></td>
+            <td><span th:replace="~{fragments/status :: badge(${payment.status})}"></span></td>
+            <td th:text="${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
+            <td th:text="${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')}"></td>
             <td th:text="${payment.buyer.name}"></td><td th:text="${payment.sellerprofile.user.name}"></td>
             <td><form class="workspace__inline-form" th:if="${payment.status.name() != 'CANCELLED' and payment.status.name() != 'COMPLETED'}"
                     th:action="@{/admin/payments/{id}/cancel(id=${payment.id})}" method="post">
-              <label>Reason<input name="reason" maxlength="500" required></label><button class="btn btn--secondary">Cancel payment</button>
+              <label>Reason<input name="reason" maxlength="500" required></label><button class="btn btn--danger btn--sm">Cancel payment</button>
             </form></td>
           </tr></tbody>
         </table>
@@ -268,7 +402,7 @@
       <form class="workspace__form" th:action="@{/admin/moderation}" method="post">
         <label>Content type<select name="type"><option value="artworks">Artwork</option><option value="comments">Comment</option></select></label>
         <label>Content ID<input name="contentId" type="number" min="1" required></label>
-        <button class="btn btn--primary" type="submit">Remove content</button>
+        <button class="btn btn--danger" type="submit">Remove content</button>
       </form>
       <p>The API does not currently provide a moderation queue; enter the exact ID of the content to remove.</p>
     </section>
@@ -282,11 +416,12 @@
         <table class="workspace__table"><thead><tr><th>Bid</th><th>User</th><th>Amount</th><th>Placed</th><th>Status</th><th>Action</th></tr></thead>
           <tbody><tr th:each="bid : ${bids}">
             <td th:text="${bid.id}"></td><td th:text="${bid.user.name}"></td><td th:text="${#numbers.formatDecimal(bid.amount, 1, 'COMMA', 2, 'POINT')} + ' THB'"></td>
-            <td th:text="${#dates.format(bid.timestamp, 'dd MMM yyyy HH:mm')}"></td><td th:text="${bid.status}"></td>
+            <td th:text="${#dates.format(bid.timestamp, 'dd MMM yyyy HH:mm')}"></td>
+            <td><span th:replace="~{fragments/status :: badge(${bid.status})}"></span></td>
             <td><form class="workspace__inline-form" th:if="${bid.status.name() == 'VALID'}"
                     th:action="@{/admin/bids/{id}/void(id=${bid.id})}" method="post">
               <input type="hidden" name="biddingId" th:value="${biddingId}">
-              <label>Reason<input name="reason" maxlength="500" required></label><button class="btn btn--secondary">Void bid</button>
+              <label>Reason<input name="reason" maxlength="500" required></label><button class="btn btn--danger btn--sm">Void bid</button>
             </form></td>
           </tr></tbody>
         </table>
@@ -296,8 +431,8 @@
     </section>
 
     <nav class="workspace__toolbar">
-      <a class="workspace__link" th:if="${page.startsWith('admin-')}" th:href="@{/admin}">Admin dashboard</a>
-      <a class="workspace__link" th:if="${page == 'payment-detail'}" th:href="@{/purchases}">Purchases</a>
+      <a class="workspace__link" th:if="${page.startsWith('admin-') and page != 'admin-dashboard'}" th:href="@{/admin}">&larr; Admin dashboard</a>
+      <a class="workspace__link" th:if="${page == 'payment-detail'}" th:href="@{/purchases}">&larr; Purchases</a>
       <a class="workspace__link" th:if="${page == 'payment-detail'}" th:href="@{/sales}">Sales</a>
     </nav>
   </main>
