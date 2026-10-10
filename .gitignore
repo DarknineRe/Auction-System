@@ -1,2 +1,5 @@
 code/buildlog.txt
 code/exitcode.txt
+code/src/main/java/com/example/project/model/PaymentBuilder.java
+code/src/main/java/com/example/project/service/implementation/PaymentServiceImpl.java
+doc/design-patterns.md

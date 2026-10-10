@@ -16,7 +16,7 @@
 |---|---|---|
 | **Singleton** | ควบคุมให้มีออบเจกต์ (Instance) ของคลาสเพียงตัวเดียวตลอดอายุการทำงานของระบบเพื่อประหยัดหน่วยความจำ (ทำงานผ่าน Spring IoC Container) | คลาสที่ถูกกำกับด้วย `@Service`, `@RestController` เช่น `service/implementation/BiddingServiceImpl.java` |
 | **Factory Method** | ควบคุมและจัดมาตรฐานการสร้างออบเจกต์ที่มีความซับซ้อนให้อยู่ที่จุดเดียว ทำให้ไม่ต้องเรียกใช้ Constructor โดยตรงในหลายๆ คลาสเมื่อต้องโยน Error | `exception/ErrorResponse.java` (มีการใช้ static factory method `ErrorResponse.of(...)` ในการสร้างออบเจกต์) |
-| **Builder** | ช่วยให้การสร้างออบเจกต์ที่มีตัวแปร (Properties) หลายตัวทำได้ง่ายและอ่านโค้ดรู้เรื่อง โดยหลีกเลี่ยงการใช้ Constructor ที่รับพารามิเตอร์จำนวนมาก | `config/SecurityConfig.java` (มีการใช้ `User.withUsername(...).password(...).build()` ซึ่งเป็น UserBuilder ของ Spring Security) |
+| **Builder** (เขียนเอง) | การสร้าง `Payment` ต้องใช้หลายค่า (bidding, buyer, seller, amount) และต้องคำนวณ `createdAt`/`dueDate` เอง การเรียก setter ทีละตัวใน Service ทำให้โค้ดยาวและลืมตั้งค่าได้ จึงรวมขั้นตอนไว้ใน Builder และตรวจความครบถ้วนใน `build()` | Builder: `model/PaymentBuilder.java`<br>ผู้ใช้งาน: `PaymentServiceImpl` (เมธอดสร้าง Payment หลัง bidding ปิด: `new PaymentBuilder().bidding(...).buyer(...).sellerprofile(...).amount(...).dueInDays(...).build()`) |
 
 ## Class Diagram ประกอบ (GoF Creational Patterns)
 
@@ -41,25 +41,25 @@ classDiagram
         +of(HttpStatus status, String message, String path, List~String~ details) ErrorResponse$
     }
     
-    %% Builder Pattern (Spring Security)
-    class UserBuilder {
+    %% Builder Pattern (hand-written)
+    class PaymentBuilder {
         <<Builder>>
-        -String username
-        -String password
-        -List~GrantedAuthority~ authorities
-        -boolean disabled
-        +password(String password) UserBuilder
-        +roles(String... roles) UserBuilder
-        +disabled(boolean disabled) UserBuilder
-        +build() UserDetails
+        -Bidding bidding
+        -User buyer
+        -Sellerprofile sellerprofile
+        -BigDecimal amount
+        -int dueDays
+        +bidding(Bidding bidding) PaymentBuilder
+        +buyer(User buyer) PaymentBuilder
+        +sellerprofile(Sellerprofile sellerprofile) PaymentBuilder
+        +amount(BigDecimal amount) PaymentBuilder
+        +dueInDays(int dueDays) PaymentBuilder
+        +build() Payment
     }
-    class User {
-        <<UserDetails>>
-        +withUsername(String username) UserBuilder$
-    }
-    
-    User ..> UserBuilder : creates
-    UserBuilder ..> User : builds
+    class Payment
+
+    PaymentBuilder ..> Payment : builds
+    PaymentServiceImpl ..> PaymentBuilder : uses
 ```
 
 ## Pattern ในส่วน Service Layer (Behavioral — State)
