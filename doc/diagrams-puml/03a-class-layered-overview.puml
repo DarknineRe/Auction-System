@@ -74,6 +74,17 @@ package "Service Layer (Service Layer Pattern)" #E9F7EC {
   class AdminBiddingServiceImpl
 }
 
+package "Builder Pattern (GoF Creational)" #E8FFF8 {
+  class PaymentBuilder <<Builder>> {
+    +bidding(Bidding) : PaymentBuilder
+    +buyer(User) : PaymentBuilder
+    +sellerprofile(Sellerprofile) : PaymentBuilder
+    +amount(BigDecimal) : PaymentBuilder
+    +dueInDays(int) : PaymentBuilder
+    +build() : Payment
+  }
+}
+
 package "State Pattern (GoF Behavioral)" #F3E8FF {
   class BiddingStateResolver <<Registry>> {
     +resolve(Status) : BiddingState
@@ -126,6 +137,8 @@ BiddingServiceImpl ..> BidActionRepository
 PaymentServiceImpl ..> PaymentStateResolver
 PaymentServiceImpl ..> PaymentRepository
 PaymentServiceImpl ..> SellerprofileRepository
+PaymentServiceImpl ..> PaymentBuilder : creates Payment via
+PaymentBuilder ..> Payment : builds
 BiddingClosingServiceImpl ..> PaymentService
 BiddingClosingServiceImpl ..> BiddingRepository
 BiddingClosingServiceImpl ..> BidActionRepository
@@ -146,6 +159,10 @@ SellerprofileRepository ..> Sellerprofile
 note right of BiddingStateResolver
   State Pattern: กฎการย้ายสถานะอยู่ใน
   ConcreteState ไม่ใช่ if/switch ใน Service
+end note
+note right of PaymentBuilder
+  Builder Pattern: ประกอบ Payment และคำนวณ
+  createdAt / dueDate ที่จุดเดียว, build() ตรวจค่าที่จำเป็น
 end note
 note bottom of BiddingServiceImpl
   Dependency Injection:

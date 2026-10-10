@@ -1,0 +1,72 @@
+@startuml
+title Class Diagram - GoF Creational Patterns (Singleton, Factory Method, Builder)
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty members
+
+package "Singleton (Spring IoC, default scope)" #E8F1FF {
+  class SpringIoCContainer <<Container>>
+  class BiddingServiceImpl <<Singleton>> {
+    -BiddingRepository biddingRepository
+    -BiddingStateResolver stateResolver
+    +placeBid()
+  }
+  class PaymentServiceImpl <<Singleton>> {
+    -PaymentRepository paymentRepository
+    -int dueDays
+    +createForClosedBidding(Bidding)
+  }
+}
+
+package "Factory Method (static factory)" #FFF4E0 {
+  class ErrorResponse <<Factory Method>> {
+    -Instant timestamp
+    -int status
+    -String error
+    -String message
+    -String path
+    -List<String> details
+    {static} +of(HttpStatus, String, String, List<String>) : ErrorResponse
+  }
+  class GlobalExceptionHandler <<RestControllerAdvice>> {
+    -build(HttpStatus, String, HttpServletRequest, List<String>)
+  }
+}
+
+package "Builder (เขียนเอง)" #E8FFF8 {
+  class PaymentBuilder <<Builder>> {
+    -Bidding bidding
+    -User buyer
+    -Sellerprofile sellerprofile
+    -BigDecimal amount
+    -int dueDays
+    +bidding(Bidding) : PaymentBuilder
+    +buyer(User) : PaymentBuilder
+    +sellerprofile(Sellerprofile) : PaymentBuilder
+    +amount(BigDecimal) : PaymentBuilder
+    +dueInDays(int) : PaymentBuilder
+    +build() : Payment
+  }
+  class Payment <<Entity / Product>> {
+    -Bidding bidding
+    -User buyer
+    -Sellerprofile sellerprofile
+    -BigDecimal amount
+    -Date createdAt
+    -Date dueDate
+  }
+}
+
+SpringIoCContainer ..> BiddingServiceImpl : one shared instance
+SpringIoCContainer ..> PaymentServiceImpl : one shared instance
+GlobalExceptionHandler ..> ErrorResponse : ErrorResponse.of(...)
+PaymentServiceImpl ..> PaymentBuilder : new PaymentBuilder()...build()
+PaymentBuilder ..> Payment : creates (sets createdAt, dueDate)
+
+note right of PaymentBuilder
+  build() โยน IllegalStateException
+  ถ้าขาด bidding / buyer / sellerprofile / amount
+  status เริ่มต้น = AWAITING_PAYMENT (default ของ Payment)
+end note
+@enduml
