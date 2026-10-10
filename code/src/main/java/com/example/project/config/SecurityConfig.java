@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.SecurityFilterChain;
@@ -35,6 +36,7 @@ public class SecurityConfig {
             RestAuthenticationEntryPoint authenticationEntryPoint,
             RestAccessDeniedHandler accessDeniedHandler,
             SecurityContextRepository securityContextRepository,
+            UserRepository userRepository,
             UserDetailsService userDetailsService,
             @Value("${app.remember-me.key:}") String rememberMeKey) throws Exception {
         http
@@ -63,6 +65,7 @@ public class SecurityConfig {
                                 "/api/v1/seller-profiles/users/*")
                         .permitAll()
                         .anyRequest().authenticated())
+                .addFilterBefore(new EnabledAccountFilter(userRepository), AuthorizationFilter.class)
                 .httpBasic(basic -> basic.authenticationEntryPoint(authenticationEntryPoint))
                 .formLogin(form -> form
                         .loginPage("/login")

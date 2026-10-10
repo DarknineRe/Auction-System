@@ -45,4 +45,8 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     List<Payment> findByStatusAndDueDateBefore(Payment.Status status, Date now);
+
+    @Query("select p.id from Payment p where p.status = :status and p.dueDate < :now")
+    List<Long> findIdsByStatusAndDueDateBefore(
+            @Param("status") Payment.Status status, @Param("now") Date now);
 }

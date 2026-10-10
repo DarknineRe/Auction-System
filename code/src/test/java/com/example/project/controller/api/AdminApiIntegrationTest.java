@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -153,6 +154,41 @@ class AdminApiIntegrationTest extends ApiIntegrationTestSupport {
                         .with(httpBasic(admin.email(), admin.password())))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.role").value("USER"));
+    }
+
+    @Test
+    void onlySuperAdminCanDemoteAnAdmin() throws Exception {
+        UserFixture superAdmin = createAdmin();
+        UserFixture regularAdmin = createRoleAdmin(User.Role.ADMIN);
+        MvcResult adminLogin = mockMvc.perform(post("/login")
+                        .with(csrf())
+                        .param("email", regularAdmin.email())
+                        .param("password", regularAdmin.password()))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+        MockHttpSession adminSession =
+                (MockHttpSession) adminLogin.getRequest().getSession(false);
+
+        mockMvc.perform(get("/admin/users")
+                        .with(httpBasic(superAdmin.email(), superAdmin.password())))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Demote to User")));
+
+        mockMvc.perform(post("/admin/users/{userId}/demote", regularAdmin.id())
+                        .with(httpBasic(regularAdmin.email(), regularAdmin.password()))
+                        .with(csrf()))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(post("/admin/users/{userId}/demote", regularAdmin.id())
+                        .with(httpBasic(superAdmin.email(), superAdmin.password()))
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection());
+
+        org.junit.jupiter.api.Assertions.assertEquals(User.Role.USER,
+                userRepository.findById(regularAdmin.id()).orElseThrow().getRole());
+
+        mockMvc.perform(get("/admin").session(adminSession))
+                .andExpect(status().isForbidden());
     }
 
     @Test

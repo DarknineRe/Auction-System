@@ -64,6 +64,8 @@ import com.example.project.service.CommentService;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 
@@ -162,6 +164,9 @@ public class PageController {
         userService.registerUser(name, email, password, phone, address);
         Authentication authentication = authenticationManager.authenticate(
                 UsernamePasswordAuthenticationToken.unauthenticated(email, password));
+        if (request.getSession(false) != null) {
+            request.changeSessionId();
+        }
         SecurityContext context = SecurityContextHolder.createEmptyContext();
         context.setAuthentication(authentication);
         SecurityContextHolder.setContext(context);
@@ -290,7 +295,7 @@ public class PageController {
     public String rateSeller(
             @PathVariable Long biddingId,
             Authentication authentication,
-            @RequestParam @Positive Integer score) {
+            @RequestParam @Min(1) @Max(5) Integer score) {
         User user = currentUser(authentication);
         sellerprofileService.rateSeller(biddingId, user.getId(), score);
         return "redirect:/biddings/" + biddingId + "?ratingSubmitted";
@@ -332,7 +337,10 @@ public class PageController {
     }
 
     @GetMapping("/auctions/new")
-    public String createAuctionForm(Model model) {
+    public String createAuctionForm(Authentication authentication, Model model) {
+        if (getSellerProfileOrNull(authentication.getName()) == null) {
+            return "redirect:/seller/settings?auctionRequired";
+        }
         return workspace(model, "new-auction", "Create an auction");
     }
 
@@ -345,6 +353,9 @@ public class PageController {
             @RequestParam @Positive BigDecimal minimumBidIncrement,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
+        if (getSellerProfileOrNull(authentication.getName()) == null) {
+            return "redirect:/seller/settings?auctionRequired";
+        }
         User owner = currentUser(authentication);
         Bidding bidding = auctionListingService.createListing(
                 owner.getId(), title.trim(), imageUrl, startingPrice, minimumBidIncrement,
@@ -547,6 +558,13 @@ public class PageController {
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     public String promoteUserToAdmin(@PathVariable Long userId, Authentication authentication) {
         adminUserService.promoteToAdmin(authentication.getName(), userId);
+        return "redirect:/admin/users?success";
+    }
+
+    @PostMapping("/admin/users/{userId}/demote")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public String demoteAdminToUser(@PathVariable Long userId, Authentication authentication) {
+        adminUserService.demoteAdminToUser(authentication.getName(), userId);
         return "redirect:/admin/users?success";
     }
 

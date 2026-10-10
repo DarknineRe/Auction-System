@@ -49,4 +49,5 @@ public class AdminModerationServiceImpl implements AdminModerationService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Comment not found: " + commentId));
     }
+
 }

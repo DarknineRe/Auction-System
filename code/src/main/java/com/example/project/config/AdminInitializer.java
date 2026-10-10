@@ -35,6 +35,7 @@ public class AdminInitializer implements ApplicationRunner {
         }
 
         boolean created = adminUserService.createAdminIfAbsent("Super Administrator", adminEmail, adminPassword);
-        log.info(created ? "Default super admin account created" : "Default super admin account already exists");
+        log.info(created ? "Default super admin account created"
+                : "Default super admin account not created; see account conflict warning if applicable");
     }
 }
