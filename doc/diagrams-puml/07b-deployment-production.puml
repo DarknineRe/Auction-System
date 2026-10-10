@@ -1,0 +1,34 @@
+@startuml
+title Deployment Diagram - Production (Render + Neon)
+skinparam shadowing false
+left to right direction
+
+node "User Device" as UserDev {
+  artifact "Web Browser" as Br
+}
+
+node "GitHub" as GH {
+  artifact "Repository (main)\ncode/Dockerfile" as Repo
+}
+
+node "Render - Web Service (Docker)" as Render {
+  node "Container: eclipse-temurin:26-jre" as Cont {
+    artifact "app.jar\nSpring Boot (port 8080)" as Jar
+  }
+}
+
+node "Neon - Cloud PostgreSQL" as Neon {
+  database "auction_system\nPostgreSQL" as Pg
+}
+
+Br --> Jar : HTTPS :443
+Jar --> Pg : JDBC over TLS :5432\nDB_URL / DB_USERNAME / DB_PASSWORD
+Repo ..> Render : build from code/Dockerfile
+
+note bottom of Jar
+  Environment variables:
+  DB_URL, DB_USERNAME, DB_PASSWORD,
+  REMEMBER_ME_KEY, PORT,
+  (optional) ADMIN_EMAIL, ADMIN_PASSWORD
+end note
+@enduml

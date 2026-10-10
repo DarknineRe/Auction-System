@@ -1,0 +1,131 @@
+@startuml
+title ER Diagram - Auction System (PostgreSQL)
+hide circle
+skinparam linetype ortho
+skinparam shadowing false
+skinparam entity {
+  BackgroundColor #FDFDFD
+}
+
+entity "users" as users {
+  * id : bigint <<PK>>
+  --
+  * name : varchar
+  * email : varchar <<UK>>
+  * password : varchar
+  phone : varchar
+  address : varchar
+  role : varchar
+  * enabled : boolean
+}
+
+entity "seller_profiles" as seller_profiles {
+  * sellprofile_id : bigint <<PK>>
+  --
+  * user_id : bigint <<FK, UK>>
+  * bankaccount : varchar
+  rating : numeric(3,2)
+  salecount : int
+}
+
+entity "artworks" as artworks {
+  * id : bigint <<PK>>
+  --
+  * title : varchar
+  image_url : varchar(2048)
+  seller_id : bigint <<FK>>
+}
+
+entity "biddings" as biddings {
+  * id : bigint <<PK>>
+  --
+  user_id : bigint <<FK owner>>
+  winner_user_id : bigint <<FK>>
+  starting_price : numeric(19,4)
+  last_bid : numeric(19,4)
+  start_date : timestamp
+  end_date : timestamp
+  * status : varchar
+  seller_rating : int
+}
+
+entity "bidding_artworks" as bidding_artworks {
+  * bidding_id : bigint <<FK>>
+  * artwork_id : bigint <<FK>>
+}
+
+entity "bidactions" as bidactions {
+  * id : bigint <<PK>>
+  --
+  bidding_id : bigint <<FK>>
+  user_id : bigint <<FK>>
+  * amount : numeric(19,4)
+  timestamp : timestamp
+  * status : varchar
+  voided_at : timestamp
+  voided_by_user_id : bigint <<FK>>
+  void_reason : varchar(500)
+}
+
+entity "comments" as comments {
+  * id : bigint <<PK>>
+  --
+  * bidding_id : bigint <<FK>>
+  user_id : bigint <<FK>>
+  * message : varchar(2000)
+  thumbsup : int
+  thumbsdown : int
+}
+
+entity "comment_reactions" as comment_reactions {
+  * id : bigint <<PK>>
+  --
+  * comment_id : bigint <<FK>>
+  * user_id : bigint <<FK>>
+  * type : varchar(20)
+  ..
+  UNIQUE (comment_id, user_id)
+}
+
+entity "payments" as payments {
+  * id : bigint <<PK>>
+  --
+  * bidding_id : bigint <<FK, UK>>
+  * buyer_user_id : bigint <<FK>>
+  * seller_profile_id : bigint <<FK>>
+  * amount : numeric(19,4)
+  * status : varchar(30)
+  * created_at : timestamp
+  * due_date : timestamp
+  slip_url : varchar(2048)
+  paid_at : timestamp
+  confirmed_at : timestamp
+  reject_reason : varchar(500)
+  shipping_address : varchar(1000)
+  carrier : varchar(100)
+  tracking_number : varchar(100)
+  tracking_url : varchar(2048)
+  shipping_note : varchar(1000)
+  shipped_at : timestamp
+  completed_at : timestamp
+  cancelled_at : timestamp
+  cancel_reason : varchar(500)
+}
+
+users ||--o| seller_profiles : has (1:1)
+seller_profiles ||--o{ artworks : owns
+biddings ||--|{ bidding_artworks : includes
+artworks ||--o{ bidding_artworks : listed in
+users ||--o{ biddings : owns
+users |o--o{ biddings : wins
+biddings ||--o{ bidactions : receives
+users ||--o{ bidactions : places
+users |o--o{ bidactions : voids
+biddings ||--o{ comments : has
+users ||--o{ comments : writes
+comments ||--o{ comment_reactions : gets
+users ||--o{ comment_reactions : gives
+biddings ||--o| payments : settled by (1:1)
+users ||--o{ payments : pays (buyer)
+seller_profiles ||--o{ payments : receives
+@enduml
