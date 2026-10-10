@@ -347,8 +347,8 @@ public class PageController {
     @PostMapping("/auctions")
     public String createAuction(
             Authentication authentication,
-            @RequestParam @NotBlank @Size(max = 255) String title,
-            @RequestParam(required = false) @Size(max = 2048) String imageUrl,
+            @RequestParam(required = false) List<String> title,
+            @RequestParam(required = false) List<String> imageUrl,
             @RequestParam @Positive BigDecimal startingPrice,
             @RequestParam @Positive BigDecimal minimumBidIncrement,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
@@ -356,9 +356,14 @@ public class PageController {
         if (getSellerProfileOrNull(authentication.getName()) == null) {
             return "redirect:/seller/settings?auctionRequired";
         }
+        List<String> titles = title == null ? List.of() : title;
+        List<String> imageUrls = imageUrl == null ? List.of() : imageUrl;
+        if (titles.stream().allMatch(value -> value == null || value.trim().isEmpty())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one artwork title is required");
+        }
         User owner = currentUser(authentication);
         Bidding bidding = auctionListingService.createListing(
-                owner.getId(), title.trim(), imageUrl, startingPrice, minimumBidIncrement,
+                owner.getId(), titles, imageUrls, startingPrice, minimumBidIncrement,
                 toDate(startDate), toDate(endDate));
         return "redirect:/biddings/" + bidding.getId() + "?success";
     }

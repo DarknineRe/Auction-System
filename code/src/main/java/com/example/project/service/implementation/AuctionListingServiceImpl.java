@@ -1,8 +1,10 @@
 package com.example.project.service.implementation;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -38,14 +40,48 @@ public class AuctionListingServiceImpl implements AuctionListingService {
 
     @Override
     @Transactional
-    public Bidding createListing(Long sellerUserId, String title, String imageUrl,
+    public Bidding createListing(Long sellerUserId, List<String> titles, List<String> imageUrls,
             BigDecimal startingPrice, BigDecimal minimumBidIncrement, Date startDate, Date endDate) {
-        validate(new CreateArtworkRequest(title, imageUrl));
-        Artwork artwork = artworkService.createArtwork(sellerUserId, title, imageUrl);
-        validate(new CreateBiddingRequest(
-                List.of(artwork.getId()), sellerUserId, startingPrice, minimumBidIncrement, startDate, endDate));
-        return biddingService.createBidding(
-                List.of(artwork.getId()), sellerUserId, startingPrice, minimumBidIncrement, startDate, endDate);
+        List<String> normalizedTitles = normalizeList(titles);
+        List<String> normalizedImageUrls = normalizeList(imageUrls);
+
+        if (normalizedTitles.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "At least one artwork title is required");
+        }
+
+        if (normalizedTitles.size() != normalizedImageUrls.size() && normalizedImageUrls.size() != 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "Artwork titles and image URLs must have the same number of entries");
+        }
+
+        List<Long> artworkIds = new ArrayList<>();
+        for (int i = 0; i < normalizedTitles.size(); i++) {
+            String title = normalizedTitles.get(i);
+            String imageUrl = i < normalizedImageUrls.size() ? normalizedImageUrls.get(i) : null;
+            validate(new CreateArtworkRequest(title, imageUrl));
+            Artwork artwork = artworkService.createArtwork(sellerUserId, title, imageUrl);
+            artworkIds.add(artwork.getId());
+        }
+
+        validate(new CreateBiddingRequest(artworkIds, sellerUserId, startingPrice, minimumBidIncrement, startDate, endDate));
+        return biddingService.createBidding(artworkIds, sellerUserId, startingPrice, minimumBidIncrement, startDate, endDate);
+    }
+
+    private List<String> normalizeList(List<String> values) {
+        if (values == null || values.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<String> normalized = new ArrayList<>();
+        for (String value : values) {
+            if (value == null) {
+                continue;
+            }
+            String trimmed = value.trim();
+            if (!trimmed.isEmpty()) {
+                normalized.add(trimmed);
+            }
+        }
+        return normalized;
     }
 
     private <T> void validate(T request) {

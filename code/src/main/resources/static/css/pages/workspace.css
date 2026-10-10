@@ -159,6 +159,23 @@
 .workspace__form .workspace__actions { margin: .25rem 0 0; }
 .workspace__actions--review { align-items: flex-end; gap: 1rem 2rem; }
 
+.workspace__artwork-list {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.workspace__artwork-row {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.2fr) minmax(220px, 1.4fr) auto;
+  gap: .75rem;
+  align-items: end;
+}
+
+.workspace__remove-artwork {
+  align-self: center;
+}
+
 .workspace__card,
 .workspace__panel {
   min-width: 0;
