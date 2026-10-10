@@ -27,7 +27,6 @@
       <p th:if="${page == 'seller-settings'}">Set up or update the bank account associated with your seller profile.</p>
       <p th:if="${page == 'seller-profile'}">Public seller information and listed artwork.</p>
       <p th:if="${page == 'admin-dashboard'}">Administrative tools. Access is checked by the server for every operation.</p>
-      <p th:if="${page == 'admin-moderation'}">There is no moderation queue yet; enter the exact content ID to remove.</p>
       <p th:if="${page == 'admin-bids'}">Inspect a bidding’s history and void invalid bids.</p>
     </header>
 
@@ -331,7 +330,6 @@
       <article class="workspace__card"><h2>Auctions</h2><p>Review, close, or cancel auctions.</p><a class="btn btn--primary" th:href="@{/admin/auctions}">Open</a></article>
       <article class="workspace__card" th:if="${canManagePayments}"><h2>Payments</h2><p>Review payment records.</p><a class="btn btn--primary" th:href="@{/admin/payments}">Open</a></article>
       <article class="workspace__card"><h2>Bid review</h2><p>Inspect and moderate bid history.</p><a class="btn btn--primary" th:href="@{/admin/bids}">Open</a></article>
-      <article class="workspace__card"><h2>Moderation</h2><p>Remove artwork or comments.</p><a class="btn btn--primary" th:href="@{/admin/moderation}">Open</a></article>
     </div>
 
     <section th:if="${page == 'admin-users'}">
@@ -396,15 +394,6 @@
       </div>
       <p class="workspace__empty" th:if="${#lists.isEmpty(payments)}">No payment records found.</p>
       <div th:replace="~{fragments/pagination :: pagination(${tablePage}, '/admin/payments', 'page', null)}"></div>
-    </section>
-
-    <section th:if="${page == 'admin-moderation'}" class="workspace__panel">
-      <form class="workspace__form" th:action="@{/admin/moderation}" method="post">
-        <label>Content type<select name="type"><option value="artworks">Artwork</option><option value="comments">Comment</option></select></label>
-        <label>Content ID<input name="contentId" type="number" min="1" required></label>
-        <button class="btn btn--danger" type="submit">Remove content</button>
-      </form>
-      <p>The API does not currently provide a moderation queue; enter the exact ID of the content to remove.</p>
     </section>
 
     <section th:if="${page == 'admin-bids'}">

@@ -69,7 +69,7 @@
    ```powershell
    $env:DB_URL="jdbc:postgresql://localhost:5432/auction_system"
    $env:DB_USERNAME="postgres"
-   $env:DB_PASSWORD="your_password"
+   $env:DB_PASSWORD="posdata"
    $env:REMEMBER_ME_KEY="supersecretremembermekey12345"
    $env:ADMIN_EMAIL="admin@example.com"
    $env:ADMIN_PASSWORD="adminpassword123"
@@ -106,7 +106,7 @@
 
    **Windows (PowerShell):**
    ```powershell
-   $env:DB_URL="jdbc:postgresql://localhost:5432/auction_system"; $env:DB_USERNAME="postgres"; $env:DB_PASSWORD=""; $env:REMEMBER_ME_KEY="devkey123"; $env:ADMIN_EMAIL="admin@example.com"; $env:ADMIN_PASSWORD="admin12345"; .\mvnw.cmd spring-boot:run
+   $env:DB_URL="jdbc:postgresql://localhost:5432/auction_system"; $env:DB_USERNAME="postgres"; $env:DB_PASSWORD="posdata"; $env:REMEMBER_ME_KEY="devkey123"; $env:ADMIN_EMAIL="admin@example.com"; $env:ADMIN_PASSWORD="admin12345"; .\mvnw.cmd spring-boot:run
    ```
 
 ### เข้าใช้งานผ่าน Browser (Thymeleaf Web UI)

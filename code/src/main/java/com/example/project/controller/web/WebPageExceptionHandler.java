@@ -100,9 +100,6 @@ public class WebPageExceptionHandler {
         if (requestPath.startsWith("/admin/payments")) {
             return "/admin/payments";
         }
-        if (requestPath.startsWith("/admin/moderation")) {
-            return "/admin/moderation";
-        }
         if (requestPath.startsWith("/admin/bids")) {
             return "/admin/bids";
         }
