@@ -1,27 +1,46 @@
+/* <button class="btn btn--primary">Save</button>
+   Variants: --primary, --secondary, --danger. Modifiers: --sm (table rows), --block (full width). */
 .btn {
-  display: block;
-  width: 100%;
-  padding: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 20px;
   font: inherit;
   font-weight: 700;
-  border: 0;
+  line-height: 1.2;
+  text-align: center;
+  white-space: nowrap;
+  border: 1px solid transparent;
   border-radius: var(--radius);
   cursor: pointer;
-  transition: background 0.15s, transform 0.05s;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.05s;
 }
+.btn:hover { text-decoration: none; }
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: none; box-shadow: var(--ring); }
+.btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .btn--primary {
-  color: var(--navy-dark);
-  background: var(--gold);
+  color: var(--on-primary);
+  background: var(--primary);
+  box-shadow: 0 4px 12px rgb(224 165 38 / 30%);
 }
-.btn--primary:hover {
-  background: var(--gold-dark);
-}
-.btn--primary:active {
-  transform: translateY(1px);
-}
+.btn--primary:hover { background: var(--primary-dark); }
 
-.btn:focus {
-  outline: 3px solid rgba(224, 165, 38, 0.5);
-  outline-offset: 2px;
+.btn--secondary {
+  color: var(--link);
+  background: var(--primary-soft);
 }
+.btn--secondary:hover { background: var(--primary-soft-dark); }
+
+.btn--danger {
+  color: var(--danger);
+  background: var(--surface);
+  border-color: var(--danger-border);
+}
+.btn--danger:hover { background: var(--danger-bg); }
+
+.btn--sm { min-height: 34px; padding: 6px 14px; font-size: 0.85rem; }
+.btn--block { display: flex; width: 100%; }

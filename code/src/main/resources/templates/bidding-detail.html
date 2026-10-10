@@ -17,12 +17,35 @@
     <div th:if="${param.commentPosted}" class="alert alert--success" role="status">Your comment was posted.</div>
     <div th:if="${param.ratingSubmitted}" class="alert alert--success" role="status">Your seller rating was submitted.</div>
 
+    <!-- Winner still has to pay: one button straight to the payment page -->
+    <aside class="pay-banner" role="status"
+           th:if="${payment != null and currentUser.id == payment.buyer.id and payment.status.name() == 'AWAITING_PAYMENT'}">
+      <div>
+        <p class="pay-banner__title">You won this auction!</p>
+        <p class="pay-banner__text"
+           th:text="'Pay ' + ${#numbers.formatDecimal(payment.amount, 1, 'COMMA', 2, 'POINT')} + ' THB before ' + ${#dates.format(payment.dueDate, 'dd MMM yyyy HH:mm')} + ' to keep your item.'">
+          Pay before the due date to keep your item.
+        </p>
+      </div>
+      <a class="btn" th:href="@{/payments/{id}(id=${payment.id})}">Pay now</a>
+    </aside>
+    <aside class="detail__payment"
+           th:if="${payment != null and !(currentUser.id == payment.buyer.id and payment.status.name() == 'AWAITING_PAYMENT')}">
+      <p>
+        <strong th:text="${currentUser.id == payment.buyer.id ? 'Your payment for this auction' : 'Payment from the winning bidder'}">Payment</strong>
+        <span th:replace="~{fragments/status :: badge(${payment.status})}"></span>
+      </p>
+      <a class="btn btn--secondary btn--sm" th:href="@{/payments/{id}(id=${payment.id})}"
+         th:text="${currentUser.id != payment.buyer.id and payment.status.name() == 'PAYMENT_SUBMITTED' ? 'Review slip'
+             : (currentUser.id != payment.buyer.id and payment.status.name() == 'PAID' ? 'Add shipping details' : 'View payment')}">View payment</a>
+    </aside>
+
     <div class="detail__layout">
       <section class="gallery" aria-label="Item photos">
         <div class="gallery__main">
           <img th:if="${!artworks.isEmpty() and artworks[0].imageUrl != null}"
                th:src="${artworks[0].imageUrl}" th:alt="${artworks[0].title}">
-          <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="workspace__empty">No image available.</p>
+          <p th:if="${artworks.isEmpty() or artworks[0].imageUrl == null}" class="gallery__empty">No image available.</p>
         </div>
         <div class="gallery__thumbs" th:if="${artworks.size() > 1}">
           <div class="gallery__thumb" th:each="artwork : ${artworks}">
@@ -33,9 +56,7 @@
       </section>
 
       <section class="info" aria-label="Auction details">
-        <span class="badge"
-              th:classappend="${bidding.status.name() == 'ACTIVE' ? ' badge--success' : (bidding.status.name() == 'CANCELLED' ? ' badge--danger' : ' badge--neutral')}"
-              th:text="${bidding.status}">Status</span>
+        <span th:replace="~{fragments/status :: badge(${bidding.status})}"></span>
         <h1 th:text="${artworks.isEmpty() ? 'Auction #' + bidding.id : (artworks.size() > 1 ? artworks[0].title + ' +' + (artworks.size() - 1) + ' more' : artworks[0].title)}">
           Auction item
         </h1>
@@ -58,8 +79,8 @@
               Your bid must meet the auction minimum.
             </p>
           </div>
-          <button type="submit" class="btn btn--primary" sec:authorize="isAuthenticated()">Place bid</button>
-          <a class="btn btn--primary" th:href="@{/login}" sec:authorize="!isAuthenticated()">Log in to bid</a>
+          <button type="submit" class="btn btn--primary btn--block" sec:authorize="isAuthenticated()">Place bid</button>
+          <a class="btn btn--primary btn--block" th:href="@{/login}" sec:authorize="!isAuthenticated()">Log in to bid</a>
         </form>
         <p class="bid__note" th:if="${bidding.status.name() != 'ACTIVE'}">This auction is not accepting bids.</p>
         <p class="bid__note" th:if="${bidding.status.name() == 'ACTIVE' and bidding.startDate.after(now)}">This auction has not started yet.</p>
@@ -78,15 +99,17 @@
         </ul>
 
         <form th:if="${currentUser != null and bidding.status.name() == 'CLOSED' and bidding.winner != null and currentUser.id == bidding.winner.id and bidding.sellerRating == null}"
-              th:action="@{/biddings/{id}/seller-rating(id=${bidding.id})}" method="post" class="workspace__form">
-          <label for="score">Rate your seller</label>
-          <select id="score" name="score" required>
-            <option value="5">5 - Excellent</option>
-            <option value="4">4 - Good</option>
-            <option value="3">3 - Average</option>
-            <option value="2">2 - Poor</option>
-            <option value="1">1 - Very poor</option>
-          </select>
+              th:action="@{/biddings/{id}/seller-rating(id=${bidding.id})}" method="post" class="rating">
+          <div class="field">
+            <label for="score">Rate your seller</label>
+            <select id="score" name="score" required>
+              <option value="5">5 - Excellent</option>
+              <option value="4">4 - Good</option>
+              <option value="3">3 - Average</option>
+              <option value="2">2 - Poor</option>
+              <option value="1">1 - Very poor</option>
+            </select>
+          </div>
           <button class="btn btn--secondary" type="submit">Submit rating</button>
         </form>
       </section>
@@ -147,13 +170,18 @@
               <button class="comment__btn comment__btn--danger" type="submit">Delete</button>
             </form>
           </div>
-          <form class="comments__form" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}"
-                th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
-            <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
-            <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
-                      th:text="${comment.message}" required></textarea>
-            <button class="comment__btn" type="submit">Save edit</button>
-          </form>
+          <details class="comment__edit" th:if="${currentUser != null and comment.user != null and currentUser.id == comment.user.id}">
+            <summary class="comment__btn">Edit</summary>
+            <form class="comments__form"
+                  th:action="@{/biddings/{biddingId}/comments/{commentId}(biddingId=${bidding.id},commentId=${comment.id})}" method="post">
+              <div class="field">
+                <label th:for="'comment-' + ${comment.id}">Edit your comment</label>
+                <textarea th:id="'comment-' + ${comment.id}" name="message" rows="2" maxlength="2000"
+                          th:text="${comment.message}" required></textarea>
+              </div>
+              <button class="btn btn--secondary btn--sm" type="submit">Save edit</button>
+            </form>
+          </details>
         </li>
       </ul>
     </section>

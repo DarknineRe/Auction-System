@@ -15,14 +15,20 @@
   padding: 8px 18px;
   font: inherit;
   font-weight: 600;
-  color: var(--navy);
-  background: var(--white);
+  color: var(--link);
+  background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: 999px;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
 }
-.pagination__btn:hover:not(:disabled) { background: var(--bg); border-color: var(--navy); }
-.pagination__btn:disabled { opacity: 0.45; cursor: not-allowed; }
+a.pagination__btn:hover,
+button.pagination__btn:hover:not(:disabled) {
+  text-decoration: none;
+  background: var(--primary-soft);
+  border-color: var(--accent);
+}
+.pagination__btn:disabled,
+.pagination__btn--disabled,
 .pagination__btn[aria-disabled="true"] { opacity: 0.45; cursor: not-allowed; }
-.pagination__btn:focus-visible { outline: 3px solid rgba(224, 165, 38, 0.5); outline-offset: 2px; }
+.pagination__btn:focus-visible { outline: none; box-shadow: var(--ring); }
