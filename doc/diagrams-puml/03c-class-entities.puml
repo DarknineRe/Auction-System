@@ -1,0 +1,115 @@
+@startuml
+title Class Diagram - Entity (Domain Layer)
+left to right direction
+skinparam shadowing false
+skinparam classAttributeIconSize 0
+hide empty members
+
+class User <<Entity>> {
+  -Long id
+  -String name
+  -String email
+  -String password
+  -String phone
+  -String address
+  -Role role
+  -boolean enabled
+}
+class Sellerprofile <<Entity>> {
+  -Long sellprofileId
+  -String bankaccount
+  -BigDecimal rating
+  -int salecount
+}
+class Artwork <<Entity>> {
+  -Long id
+  -String title
+  -String imageUrl
+}
+class Bidding <<Entity>> {
+  -Long id
+  -BigDecimal startingPrice
+  -BigDecimal lastBid
+  -Date startDate
+  -Date endDate
+  -Status status
+  -Integer sellerRating
+}
+class BidAction <<Entity>> {
+  -Long id
+  -BigDecimal amount
+  -Date timestamp
+  -Status status
+  -Date voidedAt
+  -String voidReason
+}
+class Comment <<Entity>> {
+  -Long id
+  -String message
+  -int thumbsup
+  -int thumbsdown
+}
+class CommentReaction <<Entity>> {
+  -Long id
+  -Type type
+}
+class Payment <<Entity>> {
+  -Long id
+  -BigDecimal amount
+  -Status status
+  -Date dueDate
+  -String slipUrl
+  -String shippingAddress
+  -String carrier
+  -String trackingNumber
+}
+
+enum "User.Role" as Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+}
+enum "Bidding.Status" as BiddingStatus {
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+enum "BidAction.Status" as BidStatus {
+  VALID
+  VOIDED
+}
+enum "Payment.Status" as PaymentStatus {
+  AWAITING_PAYMENT
+  PAYMENT_SUBMITTED
+  PAID
+  COMPLETED
+  EXPIRED
+  CANCELLED
+}
+enum "CommentReaction.Type" as ReactionType {
+  LIKE
+  DISLIKE
+}
+
+Sellerprofile "1" --> "1" User : user (OneToOne)
+Artwork "*" --> "1" Sellerprofile : sellerprofile (ManyToOne)
+Bidding "*" --> "*" Artwork : artworks (ManyToMany)
+Bidding "*" --> "1" User : owner
+Bidding "*" --> "0..1" User : winner
+Bidding "1" *-- "*" BidAction : bidActions\n(cascade ALL)
+Bidding "1" *-- "*" Comment : comments\n(cascade ALL, orphanRemoval)
+BidAction "*" --> "1" User : user
+BidAction "*" --> "0..1" User : voidedBy
+Comment "*" --> "1" User : user
+Comment "1" *-- "*" CommentReaction : reactions\n(cascade ALL, orphanRemoval)
+CommentReaction "*" --> "1" User : user
+Payment "1" --> "1" Bidding : bidding (OneToOne)
+Payment "*" --> "1" User : buyer
+Payment "*" --> "1" Sellerprofile : sellerprofile
+
+User ..> Role
+Bidding ..> BiddingStatus
+BidAction ..> BidStatus
+Payment ..> PaymentStatus
+CommentReaction ..> ReactionType
+@enduml

@@ -1,0 +1,11 @@
+@startuml
+title State Diagram - BidAction (BidAction.Status)
+skinparam shadowing false
+
+[*] --> VALID : ผู้ใช้ลงราคา (placeBid)
+VALID --> VOIDED : Admin void (ขณะประมูลยัง ACTIVE)
+VOIDED --> [*]
+
+VOIDED : เก็บ voidedAt, voidedBy, voidReason
+VOIDED : ไม่ถูกนับในราคาสูงสุด / ผู้ชนะ
+@enduml

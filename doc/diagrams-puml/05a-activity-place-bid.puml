@@ -1,0 +1,54 @@
+@startuml
+title Activity Diagram 5.1 - ลงราคาประมูล (Place Bid)
+skinparam shadowing false
+
+start
+:ผู้ใช้กดลงราคา;
+
+if (ล็อกอินแล้ว?) then (ไม่)
+  #FFE0E0:401 Unauthorized;
+  stop
+endif
+
+if (amount ผ่าน Bean Validation?) then (ไม่)
+  #FFE0E0:400 Bad Request;
+  stop
+endif
+
+:ล็อกแถว Bidding\n(SELECT FOR UPDATE);
+
+if (พบประมูล?) then (ไม่)
+  #FFE0E0:404 Not Found;
+  stop
+endif
+
+if (ผู้ลงราคาเป็นเจ้าของประมูล?) then (ใช่)
+  #FFE0E0:409 Conflict;
+  stop
+endif
+
+if (สถานะรับ bid? (acceptsBids)) then (ไม่)
+  #FFE0E0:409 Conflict;
+  stop
+endif
+
+if (อยู่ระหว่าง startDate - endDate?) then (ไม่)
+  #FFE0E0:409 Conflict;
+  stop
+endif
+
+if (ผู้ลงราคาเป็นผู้สูงสุดอยู่แล้ว?) then (ใช่)
+  #FFE0E0:409 Conflict;
+  stop
+endif
+
+if (amount >= ราคาขั้นต่ำ?\n(bid แรก: startingPrice\nถัดไป: สูงสุด + 1.00)) then (ไม่)
+  #FFE0E0:409 Conflict;
+  stop
+endif
+
+:บันทึก BidAction (VALID);
+:อัปเดต Bidding.lastBid;
+#E0FFE0:201 Created + BidActionResponse;
+stop
+@enduml
